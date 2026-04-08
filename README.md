@@ -262,6 +262,74 @@ Layer 2 is advisory — it cannot override Layer 1 freezes (just as in productio
 
 **Adjudication is entirely platform-side** — no changes to ZeroClaw agent behavior. Agents observe adjudication consequences through existing APIs (reputation queries, balance checks, task status showing "frozen").
 
+### Decision 9: Observability — WebSocket Event Stream + Web Dashboard
+
+The experiment operator needs to observe simulation runs in real time. Metosis OASIS provides a WebSocket-based event stream and a single-page web dashboard.
+
+**Event bus architecture:**
+
+All state-mutating operations across the three branches publish events to an internal async event bus. The bus serves two consumers: (1) the WebSocket endpoint for live streaming, and (2) an `event_log` SQLite table for post-hoc analysis.
+
+```
+┌─────────────────────────────────────────────────┐
+│  Metosis OASIS Server                           │
+│                                                 │
+│  Governance ─┐                                  │
+│  Execution  ─┼──► EventBus ──┬──► WebSocket     │
+│  Adjudication┘               └──► event_log DB  │
+└─────────────────────────────────┬────────────────┘
+                                  │ ws://
+                           ┌──────┴──────┐
+                           │  Dashboard  │
+                           │  (browser)  │
+                           └─────────────┘
+```
+
+**Event types:**
+
+| Category | Events |
+|----------|--------|
+| Session lifecycle | `session.created`, `session.state_changed`, `session.failed`, `session.deployed` |
+| Identity | `agent.registered`, `agent.identity_verified`, `agent.frozen`, `agent.unfrozen` |
+| Legislative | `proposal.submitted`, `straw_poll.cast`, `deliberation.message`, `vote.cast`, `vote.results`, `bid.submitted`, `regulatory.decision`, `spec.codified`, `approval.signed` |
+| Execution | `task.routed`, `task.committed`, `task.output_submitted`, `task.validated`, `task.settled` |
+| Adjudication | `guardian.alert`, `coordination.flag`, `override.decision`, `sanction.applied`, `reputation.updated`, `treasury.entry` |
+| System | `simulation.started`, `simulation.paused`, `simulation.completed`, `config.changed` |
+
+Each event carries: `event_id`, `event_type`, `timestamp`, `session_id` (if applicable), `agent_did` (if applicable), `payload` (JSON), `sequence_number` (monotonic for ordering).
+
+**WebSocket endpoint:**
+
+- `WS /ws/events` — streams all events in real time
+- Supports filter query params: `?types=session.*,guardian.*` (glob patterns), `?session_id=...`, `?agent_did=...`
+- Clients receive JSON messages: `{"event_type": "...", "timestamp": "...", "payload": {...}}`
+- Backpressure: server drops events if client falls behind (events are always persisted to DB regardless)
+
+**Web dashboard (single-page app):**
+
+A self-contained HTML/JS/CSS dashboard served by the Metosis OASIS server at `GET /dashboard`. No build step, no npm — vanilla JS with a lightweight charting library (Chart.js or similar bundled inline). The dashboard connects to the WebSocket and renders:
+
+| Panel | Content |
+|-------|---------|
+| Session timeline | Gantt-style view of all sessions, current states, color-coded by status |
+| Agent leaderboard | Sortable table: agent DID, reputation, balance, tasks completed, tasks failed, sanctions |
+| Reputation chart | Line chart of reputation scores over time per agent (or top-N) |
+| Treasury gauge | Running balance with inflow/outflow sparklines |
+| Fairness monitor | HHI-based fairness score per session, with constitutional minimum line |
+| Event log | Scrolling event feed (filterable by type, agent, session) |
+| Execution heatmap | Task status grid: rows = agents, columns = tasks, cells colored by status |
+| Alert panel | Active guardian alerts and coordination flags, sortable by severity |
+
+**Observatory REST endpoints (for polling and post-hoc queries):**
+
+- `GET /api/observatory/summary` — aggregate snapshot: active sessions, total agents, tasks in progress, treasury balance, alert count
+- `GET /api/observatory/agents/leaderboard` — ranked agent list with key metrics
+- `GET /api/observatory/reputation/timeseries?agent_did=...` — reputation history for charting
+- `GET /api/observatory/treasury/timeseries` — treasury balance over time
+- `GET /api/observatory/events?type=...&since=...&limit=...` — paginated event log query
+- `GET /api/observatory/sessions/timeline` — all sessions with state history for Gantt rendering
+- `GET /api/observatory/execution/heatmap?session_id=...` — agent x task status matrix
+
 ## Protocol Specification
 
 ### Governance Roles
@@ -433,6 +501,10 @@ New SQLite tables to be added alongside the existing OASIS social tables.
 - `agent_balance` — (agent_did TEXT PK FK, available_balance REAL DEFAULT 0, locked_stake REAL DEFAULT 0, total_earned REAL DEFAULT 0, total_slashed REAL DEFAULT 0, updated_at TIMESTAMP)
 - `treasury` — (entry_id INTEGER PK AUTOINCREMENT, entry_type TEXT CHECK(protocol_fee/insurance_fee/slash_proceeds/reputation_subsidy/gas_subsidy), amount REAL, source_task_id TEXT NULL, source_agent_did TEXT NULL, created_at TIMESTAMP)
 
+### Observatory Tables
+
+- `event_log` — (event_id TEXT PK, event_type TEXT, session_id TEXT NULL, agent_did TEXT NULL, payload JSON, sequence_number INTEGER UNIQUE, created_at TIMESTAMP)
+
 ## API Endpoints
 
 ### Governance (Legislative Branch)
@@ -502,6 +574,18 @@ New SQLite tables to be added alongside the existing OASIS social tables.
 - `GET /api/adjudication/treasury` — get treasury summary (inflows, outflows, balance)
 - `GET /api/adjudication/treasury/ledger` — get treasury transaction ledger
 
+### Observatory
+
+- `WS /ws/events` — real-time event stream (filterable by type, session, agent)
+- `GET /dashboard` — web dashboard (self-contained HTML/JS/CSS)
+- `GET /api/observatory/summary` — aggregate snapshot
+- `GET /api/observatory/agents/leaderboard` — ranked agent metrics
+- `GET /api/observatory/reputation/timeseries` — reputation history
+- `GET /api/observatory/treasury/timeseries` — treasury balance over time
+- `GET /api/observatory/events` — paginated event log
+- `GET /api/observatory/sessions/timeline` — session state history
+- `GET /api/observatory/execution/heatmap` — agent x task status matrix
+
 ## Project Structure
 
 ```
@@ -546,6 +630,14 @@ metosis-oasis/
 │   │   ├── treasury.py           # Treasury accounting (fees, slashing, subsidies)
 │   │   ├── schema.py             # SQLite adjudication table definitions
 │   │   └── endpoints.py          # FastAPI adjudication route definitions
+│   ├── observatory/              # Observability layer
+│   │   ├── __init__.py
+│   │   ├── event_bus.py          # Async event bus (publish/subscribe, persistence)
+│   │   ├── events.py             # Event type definitions and serialization
+│   │   ├── websocket.py          # WebSocket endpoint with filtering and backpressure
+│   │   ├── dashboard.py          # Serves self-contained HTML/JS/CSS dashboard
+│   │   ├── schema.py             # SQLite event_log table
+│   │   └── endpoints.py          # Observatory REST endpoints (summary, leaderboard, timeseries)
 │   ├── social_platform/          # Original OASIS platform (retained)
 │   │   ├── platform.py           # Action dispatch + SQLite state machine
 │   │   ├── channel.py            # Async message bus

@@ -21,7 +21,8 @@
 | P14 | Adjudication: Guardian, Sanctions & Settlement | `adjudication/guardian.py`, `sanctions.py`, `settlement.py`, `treasury.py` | ~35 tests | ~600 |
 | P15 | Adjudication: Override Panel, Endpoints & LLM | `adjudication/override_panel.py`, `coordination.py`, `endpoints.py` | ~25 tests | ~450 |
 | P16 | ZeroClaw Execution Skill + Cross-Branch E2E | Skill update (5 execution tools) + 3-branch E2E tests | ~12 tests | ~350 |
-| **Total** | | | **~452 tests** | **~8,300** |
+| P17 | Observatory: Event Bus, WebSocket & Dashboard | `observatory/event_bus.py`, `websocket.py`, `dashboard.py`, `endpoints.py` | ~20 tests | ~800 |
+| **Total** | | | **~472 tests** | **~9,100** |
 
 ---
 
@@ -482,6 +483,330 @@
 
 ---
 
+## P12: Execution — Schema, Routing & Commitment
+
+**Goal:** Execution branch foundation: tables, task routing from deployed contracts, and stake commitment.
+
+### Module: `oasis/execution/schema.py`
+- [ ] P12.1 — `create_execution_tables(db_path)` — DDL for `task_assignment`, `task_commitment`, `task_output`, `output_validation`, `settlement`
+
+### Module: `oasis/execution/router.py`
+- [ ] P12.2 — `route_tasks(session_id, db_path)` — after DEPLOYED, read approved bid assignments from `regulatory_decision` and create `task_assignment` rows (one per leaf DAG node per assigned agent)
+- [ ] P12.3 — `get_agent_tasks(agent_did, db_path)` — list tasks assigned to an agent (filterable by status)
+- [ ] P12.4 — `get_session_tasks(session_id, db_path)` — list all tasks for a deployed session
+
+### Module: `oasis/execution/commitment.py`
+- [ ] P12.5 — `commit_to_task(task_id, agent_did, db_path)` — validates agent is assignee, locks stake in `agent_balance`, creates `task_commitment` record, transitions task status pending→committed
+- [ ] P12.6 — `validate_commitment(task_id, db_path)` — checks stake is sufficient, agent is active, task is in correct state
+- [ ] P12.7 — `release_stake(task_id, db_path)` — unlock stake after settlement (called by settlement module)
+
+### Module: `oasis/config.py`
+- [ ] P12.8 — Platform configuration dataclass:
+  - `execution_mode: Literal["llm", "synthetic"]`
+  - `synthetic_quality: Literal["perfect", "mixed", "adversarial"]`
+  - `synthetic_success_rate: float` (default 0.8)
+  - `synthetic_latency_ms: Tuple[int, int]` (default (50, 200))
+  - `adjudication_llm_enabled: bool` (default False)
+  - `freeze_threshold: float`, `coordination_threshold: float`, `sanction_floor: float`
+  - `protocol_fee_rate: float` (default 0.02), `insurance_fee_rate: float` (default 0.01)
+  - `reputation_alpha: float` (default 0.5), `reputation_neutral: float` (default 0.5)
+
+### Test Matrix (P12)
+| Test File | Tests | What it validates |
+|-----------|-------|-------------------|
+| `test_execution_schema.py` | 3 | Tables created, idempotent, FK constraints enforced |
+| `test_router_basic.py` | 4 | Tasks created from approved bids, one per leaf node, correct assignee, session linkage |
+| `test_router_no_deploy.py` | 2 | Routing rejects non-DEPLOYED session, routing rejects session with no regulatory decision |
+| `test_commitment_valid.py` | 3 | Stake locked, status transitions to committed, commitment record created |
+| `test_commitment_invalid.py` | 4 | Wrong agent rejected, insufficient balance rejected, already committed rejected, inactive agent rejected |
+| `test_commitment_release.py` | 2 | Stake released after settlement, double-release prevented |
+| `test_config.py` | 3 | Default config valid, config overrides work, invalid mode rejected |
+| `test_agent_balance.py` | 4 | Initial balance set, lock reduces available, unlock restores, negative balance prevented |
+
+**Total: ~25 tests**
+
+---
+
+## P13: Execution — Runner, Validator & Endpoints
+
+**Goal:** Task execution dispatcher (LLM + synthetic modes), output validation, and HTTP endpoints.
+
+### Module: `oasis/execution/runner.py`
+- [ ] P13.1 — `ExecutionDispatcher` class:
+  - `__init__(config, db_path)`
+  - `dispatch_task(task_id)` — in LLM mode: transitions task to "executing", waits for agent output via API; in synthetic mode: delegates to synthetic generator
+  - `receive_output(task_id, output_data, agent_did)` — stores output, triggers validation
+  - `get_task_status(task_id)` → TaskStatus
+
+### Module: `oasis/execution/synthetic.py`
+- [ ] P13.2 — `SyntheticGenerator` class:
+  - `__init__(config)`
+  - `generate_output(task_assignment)` → SyntheticOutput
+  - `_perfect_output(task)` — valid schema, correct data, within timeout
+  - `_mixed_output(task, success_rate)` — configurable failure modes (timeout, schema mismatch, partial output)
+  - `_adversarial_output(task)` — high failure rate, malicious outputs (wrong schema, inflated metrics, contradictory data)
+
+### Module: `oasis/execution/validator.py`
+- [ ] P13.3 — `OutputValidator` class:
+  - `validate(task_id, output, db_path)` → `ValidationResult(schema_valid, timeout_valid, quality_score, guardian_alert)`
+  - `_check_schema(output, expected_schema)` — output matches DAG node output_schema
+  - `_check_timeout(latency_ms, timeout_ms)` — within node timeout
+  - `_check_quality(output)` — optional quality scoring (placeholder for Guardian dual-scorer)
+  - `_emit_guardian_alert(task_id, alert_type, severity)` — writes to `guardian_alert` table if validation fails
+
+### Module: `oasis/execution/endpoints.py`
+- [ ] P13.4 — FastAPI execution routes:
+  - `GET /api/execution/tasks/{task_id}` — task details + input data
+  - `POST /api/execution/tasks/{task_id}/commit` — commit to task
+  - `POST /api/execution/tasks/{task_id}/output` — submit output (LLM mode)
+  - `GET /api/execution/tasks/{task_id}/status` — task status
+  - `GET /api/execution/tasks/{task_id}/settlement` — settlement result
+  - `GET /api/execution/sessions/{session_id}/tasks` — list session tasks
+  - `GET /api/execution/agents/{agent_did}/tasks` — list agent tasks
+
+### Test Matrix (P13)
+| Test File | Tests | What it validates |
+|-----------|-------|-------------------|
+| `test_runner_llm_mode.py` | 4 | Task dispatched, status=executing, output received and stored, validation triggered |
+| `test_runner_synthetic_mode.py` | 3 | Synthetic output generated without agent interaction, output stored, status=completed |
+| `test_synthetic_perfect.py` | 3 | All outputs valid, schema correct, within timeout |
+| `test_synthetic_mixed.py` | 4 | ~80% success rate (statistical), failure modes varied, schema mismatches present, timeouts present |
+| `test_synthetic_adversarial.py` | 3 | High failure rate, malicious output patterns, guardian alerts generated |
+| `test_validator_pass.py` | 3 | Valid output passes all checks, no guardian alert, quality score populated |
+| `test_validator_fail.py` | 4 | Schema mismatch detected, timeout detected, quality below threshold, guardian alert emitted |
+| `test_api_execution.py` | 7 | Each endpoint returns correct response, state gates enforced (must be committed to submit output), 404 for unknown task |
+| `test_execution_state_flow.py` | 4 | Full flow: pending→committed→executing→completed, pending→committed→executing→failed, uncommitted output rejected, frozen task blocks output |
+
+**Total: ~35 tests**
+
+---
+
+## P14: Adjudication — Guardian, Sanctions & Settlement
+
+**Goal:** Detection pipeline, sanction enforcement, settlement formula, and treasury accounting.
+
+### Module: `oasis/adjudication/schema.py`
+- [ ] P14.1 — `create_adjudication_tables(db_path)` — DDL for `guardian_alert`, `coordination_flag`, `adjudication_decision`, `agent_balance`, `treasury`
+
+### Module: `oasis/adjudication/guardian.py`
+- [ ] P14.2 — `Guardian` class:
+  - `__init__(config, db_path)`
+  - `process_validation(validation_result)` — if validation failed, create `guardian_alert` with appropriate severity
+  - `check_anomaly(task_id, output)` — placeholder for dual-scorer anomaly detection (returns no-op in v1, extensible)
+  - `get_alerts(filters)` → List[GuardianAlert]
+  - Severity mapping: schema_failure→CRITICAL, timeout→WARNING, quality_below_threshold→WARNING, anomaly→CRITICAL
+
+### Module: `oasis/adjudication/sanctions.py`
+- [ ] P14.3 — `SanctionEngine` class:
+  - `freeze_agent(agent_did, reason, db_path)` — set agent active=0, block from new tasks
+  - `unfreeze_agent(agent_did, db_path)` — reactivate
+  - `slash_stake(agent_did, amount, reason, db_path)` — deduct from locked_stake, add to treasury as slash_proceeds
+  - `reduce_reputation(agent_did, performance_score, db_path)` — EMA update: `new_rep = λ * old_rep + (1-λ) * performance_score`
+  - `get_sanction_history(agent_did)` → List[AdjudicationDecision]
+
+### Module: `oasis/adjudication/settlement.py`
+- [ ] P14.4 — `SettlementCalculator` class:
+  - `__init__(config)`
+  - `settle_task(task_id, db_path)` → SettlementResult:
+    1. Compute R_base = bid × (1 - f_protocol - f_insurance)
+    2. Compute ψ(ρ) = 1 + α × (ρ - ρ_neutral) / ρ_max
+    3. R_task = R_base × min(ψ, 1.0) + treasury_subsidy
+    4. Write `settlement` row
+    5. Update `agent_balance` (add reward / deduct slash)
+    6. Update `reputation_ledger` (EMA)
+    7. Write treasury entries (protocol fee, insurance fee, subsidy if applicable)
+  - `reputation_multiplier(reputation)` → float
+  - `compute_treasury_subsidy(R_base, psi)` → float (premium financed from treasury)
+
+### Module: `oasis/adjudication/treasury.py`
+- [ ] P14.5 — `Treasury` class:
+  - `__init__(db_path)`
+  - `record_fee(task_id, fee_type, amount)` — append to treasury table
+  - `record_slash(agent_did, amount)` — append slash_proceeds entry
+  - `record_subsidy(task_id, agent_did, amount)` — append reputation_subsidy entry
+  - `get_balance()` → float (total inflows - total outflows)
+  - `get_summary()` → TreasurySummary (inflows by type, outflows by type, net balance)
+  - `get_ledger(filters)` → List[TreasuryEntry]
+
+### Test Matrix (P14)
+| Test File | Tests | What it validates |
+|-----------|-------|-------------------|
+| `test_adjudication_schema.py` | 3 | Tables created, idempotent, FK constraints |
+| `test_guardian_alerts.py` | 5 | Schema failure → CRITICAL alert, timeout → WARNING, quality below threshold → WARNING, anomaly → CRITICAL, valid output → no alert |
+| `test_guardian_query.py` | 3 | Filter by severity, filter by agent, filter by task |
+| `test_sanction_freeze.py` | 3 | Agent frozen (active=0), frozen agent cannot commit to new tasks, unfreeze restores |
+| `test_sanction_slash.py` | 4 | Stake deducted, treasury receives slash_proceeds, insufficient stake partial slash, sanction history recorded |
+| `test_sanction_reputation.py` | 3 | EMA update correct, λ=0.8 default, reputation_ledger appended |
+| `test_settlement_success.py` | 4 | Full settlement computed, fees deducted, reputation multiplier applied, balance updated |
+| `test_settlement_formula.py` | 4 | ψ(0)=0.75, ψ(neutral)=1.0, ψ(max)=1.25, treasury subsidy for ψ>1.0 |
+| `test_settlement_slash.py` | 2 | Failed task → slash, frozen task → slash |
+| `test_treasury_accounting.py` | 4 | Fees recorded, slash recorded, subsidy recorded, balance = inflows - outflows |
+
+**Total: ~35 tests**
+
+---
+
+## P15: Adjudication — Override Panel, Endpoints & LLM Toggle
+
+**Goal:** Deterministic rule engine (Layer 1), optional LLM adjudicator (Layer 2), coordination detection wrapper, and HTTP endpoints.
+
+### Module: `oasis/adjudication/override_panel.py`
+- [ ] P15.1 — `OverridePanel` class (two-layer, same pattern as clerks):
+  - `__init__(config, db_path, llm_enabled=False)`
+  - `layer1_evaluate(alert_or_flag)` → DeterministicDecision:
+    - Guardian alert + quality < freeze_threshold → FREEZE
+    - Guardian alert + quality ≥ freeze_threshold but < warn_threshold → NEEDS_REVIEW
+    - Coordination flag + kendall_tau > coordination_threshold → FLAG_AND_DELAY
+    - Performance: reputation < sanction_floor AND consecutive_failures ≥ 3 → SLASH
+    - Otherwise → DISMISS
+  - `layer2_evaluate(context, layer1_decision)` → LLMAdvisory (only when layer1 returns NEEDS_REVIEW):
+    - Evaluates borderline output quality
+    - Analyzes deliberation transcripts for genuine vs. coincidental agreement
+    - Evaluates appeal evidence
+  - `decide(alert_or_flag)` → AdjudicationDecision (combines Layer 1 + Layer 2)
+  - `process_batch(alerts, flags)` → List[AdjudicationDecision] (batch processing for efficiency)
+
+### Module: `oasis/adjudication/coordination.py`
+- [ ] P15.2 — `CoordinationDetector` class:
+  - `detect_voting_coordination(session_id, db_path)` — wraps `voting.kendall_tau` and `voting.coordination_detection` from P3
+  - `detect_bidding_coordination(session_id, db_path)` — Jaccard overlap on bid targets
+  - `flag_pairs(session_id, db_path)` → List[CoordinationFlag] — writes to `coordination_flag` table
+
+### Module: `oasis/adjudication/endpoints.py`
+- [ ] P15.3 — FastAPI adjudication routes:
+  - `GET /api/adjudication/alerts` — list alerts (query params: severity, agent_did, task_id)
+  - `GET /api/adjudication/alerts/{alert_id}` — alert details
+  - `GET /api/adjudication/flags` — list coordination flags (query params: session_id, agent_did)
+  - `GET /api/adjudication/decisions` — list decisions (query params: agent_did, decision_type)
+  - `GET /api/adjudication/decisions/{decision_id}` — decision details
+  - `GET /api/adjudication/agents/{agent_did}/balance` — agent balance
+  - `GET /api/adjudication/agents/{agent_did}/sanctions` — sanction history
+  - `GET /api/adjudication/treasury` — treasury summary
+  - `GET /api/adjudication/treasury/ledger` — treasury transaction ledger
+
+### Test Matrix (P15)
+| Test File | Tests | What it validates |
+|-----------|-------|-------------------|
+| `test_override_layer1.py` | 5 | CRITICAL alert → freeze, borderline → needs_review, coordination flag → flag_and_delay, sustained failure → slash, clean record → dismiss |
+| `test_override_layer2.py` | 4 | LLM disabled returns no advisory, LLM enabled evaluates borderline, advisory doesn't override Layer 1 freeze, advisory attached to decision |
+| `test_override_batch.py` | 2 | Batch processes multiple alerts, decisions stored in DB |
+| `test_coordination_voting.py` | 3 | Correlated pair flagged, uncorrelated pair not flagged, threshold configurable |
+| `test_coordination_bidding.py` | 3 | Overlapping bid targets flagged, diverse bids not flagged, Jaccard computed correctly |
+| `test_api_adjudication.py` | 8 | Each endpoint returns correct response, filters work, 404 for unknown entities |
+
+**Total: ~25 tests**
+
+---
+
+## P16: ZeroClaw Execution Skill + Full Cross-Branch E2E
+
+**Goal:** Update the ZeroClaw skill with 5 execution tools, and run full cross-branch E2E tests covering legislation → execution → adjudication.
+
+### Deliverable: Updated `skills/metosis-governance/SKILL.toml`
+- [ ] P16.1 — Add 5 execution tools to existing 10 governance tools (total 15):
+
+| Tool | Method | Endpoint | Purpose |
+|------|--------|----------|---------|
+| `get_task` | GET | `/api/execution/tasks/{task_id}` | Retrieve assigned task details |
+| `submit_commitment` | POST | `/api/execution/tasks/{task_id}/commit` | Commit to task (locks stake) |
+| `submit_task_output` | POST | `/api/execution/tasks/{task_id}/output` | Submit completed output |
+| `get_task_status` | GET | `/api/execution/tasks/{task_id}/status` | Check execution status |
+| `get_settlement` | GET | `/api/execution/tasks/{task_id}/settlement` | Get settlement result |
+
+- [ ] P16.2 — Update SKILL.md with execution tool documentation and full lifecycle guide
+
+### Cross-Branch E2E Tests
+- [ ] P16.3 — Full lifecycle E2E: legislate → deploy → route tasks → commit → execute (LLM mode) → validate → settle → reputation update
+- [ ] P16.4 — Full lifecycle E2E (synthetic mode): same pipeline but with synthetic outputs, verify settlement and reputation
+- [ ] P16.5 — Guardian freeze E2E: bad output → guardian alert → override panel freeze → stake slash → reputation reduction
+- [ ] P16.6 — Coordination detection E2E: correlated votes → flag → delay proposal → adjudication decision
+- [ ] P16.7 — Treasury balance E2E: run 10 tasks, verify fees + slashing + subsidies balance correctly
+- [ ] P16.8 — Mixed execution mode E2E: switch between LLM and synthetic mid-experiment via config
+- [ ] P16.9 — Scale smoke test: 50 agents, 20 tasks, verify no deadlocks or data races
+
+### Test Matrix (P16)
+| Test File | Tests | What it validates |
+|-----------|-------|-------------------|
+| `test_skill_execution_tools.py` | 3 | 5 new tools present in TOML, URL templates correct, args documented |
+| `test_skill_full_surface.py` | 2 | All 15 tools present, no duplicates |
+| `test_e2e_full_lifecycle_llm.py` | 1 | Complete 3-branch pipeline (LLM mode) |
+| `test_e2e_full_lifecycle_synthetic.py` | 1 | Complete 3-branch pipeline (synthetic mode) |
+| `test_e2e_guardian_freeze.py` | 1 | Bad output triggers freeze + slash pipeline |
+| `test_e2e_coordination.py` | 1 | Correlated votes flagged and delayed |
+| `test_e2e_treasury.py` | 1 | Treasury accounting correct over multiple tasks |
+| `test_e2e_mode_switch.py` | 1 | Config switch between LLM/synthetic works mid-run |
+| `test_e2e_scale.py` | 1 | 50 agents × 20 tasks completes without errors |
+
+**Total: ~12 tests** (each E2E is a multi-step scenario)
+
+---
+
+## P17: Observatory — Event Bus, WebSocket & Web Dashboard
+
+**Goal:** Real-time observability for experiment operators — event bus, WebSocket stream, REST aggregation endpoints, and a self-contained web dashboard.
+
+### Module: `oasis/observatory/schema.py`
+- [ ] P17.1 — `create_observatory_tables(db_path)` — DDL for `event_log`
+
+### Module: `oasis/observatory/events.py`
+- [ ] P17.2 — `EventType` enum covering all categories (session, identity, legislative, execution, adjudication, system)
+- [ ] P17.3 — `Event` dataclass: event_id, event_type, timestamp, session_id, agent_did, payload, sequence_number
+- [ ] P17.4 — `serialize_event(event)` → JSON string for WebSocket transmission
+
+### Module: `oasis/observatory/event_bus.py`
+- [ ] P17.5 — `EventBus` class (singleton):
+  - `__init__(db_path)`
+  - `publish(event)` — assigns monotonic sequence_number, persists to `event_log`, notifies all subscribers
+  - `subscribe(callback, filter=None)` → subscription_id
+  - `unsubscribe(subscription_id)`
+  - `replay(since_sequence=0, event_types=None, session_id=None, agent_did=None, limit=100)` → List[Event]
+  - Internal: asyncio queue per subscriber, sequence counter (atomic)
+- [ ] P17.6 — Instrument all state-mutating operations across governance, execution, and adjudication modules to call `event_bus.publish()` (decorator or explicit calls at each mutation point)
+
+### Module: `oasis/observatory/websocket.py`
+- [ ] P17.7 — `websocket_events(ws, filters)` — FastAPI WebSocket handler:
+  - Parse filter query params: `types` (glob patterns), `session_id`, `agent_did`
+  - Subscribe to EventBus with filter
+  - Stream events as JSON messages
+  - Backpressure: if client queue exceeds 1000 events, drop oldest (log warning)
+  - On disconnect: unsubscribe
+
+### Module: `oasis/observatory/endpoints.py`
+- [ ] P17.8 — Observatory REST endpoints:
+  - `GET /api/observatory/summary` — aggregate query: count sessions by state, count agents by status, tasks in progress, treasury balance, active alert count
+  - `GET /api/observatory/agents/leaderboard` — join agent_registry + agent_balance + reputation_ledger, sort by configurable metric
+  - `GET /api/observatory/reputation/timeseries` — query reputation_ledger for time-series data (query params: agent_did, since, until)
+  - `GET /api/observatory/treasury/timeseries` — running balance over time from treasury table
+  - `GET /api/observatory/events` — paginated event_log query (query params: type glob, session_id, agent_did, since, limit, offset)
+  - `GET /api/observatory/sessions/timeline` — session state history for Gantt rendering
+  - `GET /api/observatory/execution/heatmap` — pivot task_assignment by agent x task, return status matrix
+
+### Module: `oasis/observatory/dashboard.py`
+- [ ] P17.9 — `GET /dashboard` handler serving a self-contained HTML page:
+  - Single HTML file with inline CSS + JS (no build step, no npm)
+  - Chart.js (or lightweight alternative) bundled inline for charts
+  - Connects to `WS /ws/events` on load
+  - 8 panels: session timeline, agent leaderboard, reputation chart, treasury gauge, fairness monitor, event log, execution heatmap, alert panel
+  - Auto-reconnect on WebSocket disconnect
+  - Responsive layout (CSS grid)
+  - Dark theme (suitable for monitoring)
+
+### Test Matrix (P17)
+| Test File | Tests | What it validates |
+|-----------|-------|-------------------|
+| `test_event_types.py` | 3 | All event types defined, serialization round-trip, sequence_number monotonic |
+| `test_event_bus_publish.py` | 3 | Event published and persisted, subscriber notified, filter applied correctly |
+| `test_event_bus_replay.py` | 3 | Replay from sequence, replay with type filter, replay with session filter |
+| `test_websocket_stream.py` | 3 | Events streamed to connected client, filter query params work, disconnect cleans up |
+| `test_websocket_backpressure.py` | 2 | Slow client queue capped at 1000, events still persisted to DB |
+| `test_api_summary.py` | 2 | Summary returns correct aggregate counts, empty DB returns zeros |
+| `test_api_leaderboard.py` | 2 | Agents ranked correctly, sortable by different metrics |
+| `test_api_timeseries.py` | 2 | Reputation timeseries returns data points, treasury timeseries computes running balance |
+
+**Total: ~20 tests**
+
+---
+
 ## Dependency Graph
 
 ```
@@ -526,12 +851,15 @@ P14 (Adjudication Guardian/Sanctions/Settlement) ◄── P3, P12, P13
 P15 (Adjudication Override Panel/Endpoints/LLM) ◄── P14
  │
  ▼
-P16 (ZeroClaw Execution Skill + Cross-Branch E2E) ◄── ALL
+P16 (ZeroClaw Execution Skill + Cross-Branch E2E) ◄── ALL (P0–P15)
+ │
+ ▼
+P17 (Observatory: Event Bus, WebSocket, Dashboard) ◄── P16 (needs all modules instrumented)
 ```
 
 **Parallelizable within the legislative branch:** P2, P3, P5 can be built concurrently after P1. P4 depends on P3. P6 depends on P3, P4, P5. P7, P8, P9 are parallelizable after P6.
 
-**Sequential across branches:** Execution (P12-P13) requires a DEPLOYED legislative session. Adjudication (P14-P15) requires execution validation results. P16 is the capstone.
+**Sequential across branches:** Execution (P12-P13) requires a DEPLOYED legislative session. Adjudication (P14-P15) requires execution validation results. P16 is the cross-branch capstone. P17 instruments all modules.
 
 ---
 
@@ -551,3 +879,4 @@ P16 (ZeroClaw Execution Skill + Cross-Branch E2E) ◄── ALL
 | 10 | P14 | Adjudication foundation (guardian, sanctions, settlement, treasury) |
 | 11 | P15 | Adjudication logic (override panel, coordination, endpoints, LLM toggle) |
 | 12 | P16 | Skill update + cross-branch E2E (capstone) |
+| 13 | P17 | Observatory: event bus, WebSocket, dashboard |

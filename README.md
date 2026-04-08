@@ -82,6 +82,65 @@ Layer 2 can be toggled on/off per clerk per experiment, allowing measurement of 
 
 Agents use ZeroClaw (simulation scale, ~1,000 agents) or OpenClaw (production scale, ~20 agents) as the agent runtime. The platform is runtime-agnostic — any HTTP client can interact with the API.
 
+Producer agents are external ZeroClaw/OpenClaw instances that connect via HTTP. Clerk agents (Registrar, Speaker, Regulator, Codifier) are internal to the Metosis OASIS server — they are not ZeroClaw instances but Python processes with optional LLM calls for Layer 2 reasoning.
+
+```
+┌─────────────────────────────────────────────┐
+│  Metosis OASIS Server                       │
+│                                             │
+│  Clerks (internal, Python + LLM calls)      │
+│  ├─ Registrar  (Layer 1 + Layer 2)          │
+│  ├─ Speaker    (Layer 1 + Layer 2)          │
+│  ├─ Regulator  (Layer 1 + Layer 2)          │
+│  └─ Codifier   (Layer 1 + Layer 2)          │
+│                                             │
+│  Platform (SQLite, Channel, state machine)  │
+│  FastAPI HTTP API                           │
+└──────────────────┬──────────────────────────┘
+                   │ HTTP
+    ┌──────────────┼──────────────┐
+    ▼              ▼              ▼
+ ZeroClaw       ZeroClaw       ZeroClaw
+ Producer 1     Producer 2     Producer N
+```
+
+Producer agents interact with the governance protocol through a ZeroClaw skill (`metosis-governance`) that registers 10 HTTP tools in ZeroClaw's ToolRegistry — `attest_identity`, `submit_proposal`, `submit_straw_poll`, `discuss`, `cast_vote`, `submit_bid`, `get_evidence`, `get_session_state`, `get_vote_results`, `get_deliberation_summary`. The LLM sees these as callable functions with documented parameters.
+
+### Decision 6: Trust Model — Trusted Platform Assumption
+
+Metosis OASIS operates under a **trusted platform assumption**: the simulation server, its internal processes, and all internal state (SQLite) are assumed to be trusted. This is the key architectural difference from AgentCity production.
+
+**AgentCity vs. Metosis OASIS substitution table:**
+
+| Concern | AgentCity (Production) | Metosis OASIS (Mock) |
+|---------|----------------------|---------------------|
+| Agent-facing API | REST endpoints on agentcity.dev | Same REST endpoints on localhost:8000 |
+| State storage | On-chain (Base L2 smart contracts) | SQLite (trusted) |
+| State machine execution | Smart contract functions (Solidity) | Python process (trusted) |
+| Constitutional validation | On-chain STATICCALL (regimented) | Python function (trusted) |
+| Signatures / identity | Cryptographic DID + on-chain verification | Simulated (mock DIDs, mock signatures) |
+| Fairness enforcement | Smart contract invariant | Python HHI calculation |
+| Message logging | Append-only on-chain events | SQLite message_log table |
+| Clerk execution | ClerkContract authority envelopes (EVM-enforced) | Python Layer 1 + LLM Layer 2 |
+| Token economics | Real tokens, staking, slashing on-chain | Simulated balances in SQLite |
+| Immutability | Blockchain guarantees (tamper-proof history) | SQLite (trusted single-operator) |
+| Consensus | Blockchain consensus (Base L2) | Single-process (no Byzantine tolerance) |
+| Access control | EVM-level (impossible to violate) | Python-level (trusted not to violate) |
+
+**From the agent's perspective, the API is identical** — a ZeroClaw producer agent cannot distinguish between talking to `agentcity.dev` (production) and `localhost:8000` (Metosis OASIS). The governance protocol behavior is the same; only the enforcement mechanism differs.
+
+This maps to the **regimentation vs. deterrence** distinction from the paper (Esteva et al., 2001):
+
+- **AgentCity** uses **regimentation** — constitutional violations are impossible at the EVM level. The Codifier literally cannot modify contract logic because the ClerkContract envelope prevents it in Solidity.
+- **Metosis OASIS** uses **deterrence** — constitutional violations are detectable but not architecturally prevented. The Layer 1 deterministic engine enforces the same rules, but a compromised server process could theoretically bypass them.
+
+This is acceptable for simulation because:
+1. We are testing **protocol logic** (do the 6 stages produce correct governance outcomes?), not Byzantine fault tolerance.
+2. We are testing **agent behavior** (do ZeroClaw agents deliberate, vote, and bid rationally?), not blockchain security.
+3. The trusted platform assumption eliminates the need for cryptographic overhead, enabling 1,000-agent-scale experiments that would be cost-prohibitive on-chain.
+
+The trust boundary is explicit: **everything inside the Metosis OASIS server is trusted; everything outside (ZeroClaw agents) is untrusted.** The server enforces the protocol on behalf of all participants, just as the blockchain would in production.
+
 ## Protocol Specification
 
 ### Governance Roles

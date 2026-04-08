@@ -15,7 +15,8 @@
 | P8 | Governance API Endpoints | `governance/endpoints.py`, updated `api.py` | ~40 tests | ~600 |
 | P9 | Recursive Decomposition | `governance/dag.py` extension | ~15 tests | ~300 |
 | P10 | Integration & E2E | Full pipeline tests | ~20 tests | ~400 |
-| **Total** | | | **~310 tests** | **~5,200** |
+| P11 | ZeroClaw Governance Skill | `skills/metosis-governance/SKILL.toml` | ~10 tests | ~200 |
+| **Total** | | | **~320 tests** | **~5,400** |
 
 ---
 
@@ -440,6 +441,42 @@
 
 ---
 
+## P11: ZeroClaw Governance Skill
+
+**Goal:** Ship a ZeroClaw skill that registers all governance HTTP tools, enabling producer agents to participate in legislative sessions.
+
+### Deliverable: `skills/metosis-governance/SKILL.toml`
+- [ ] P11.1 — Skill metadata (name, description, version, tags)
+- [ ] P11.2 — 10 HTTP tools matching the governance API surface:
+
+| Tool | Method | Endpoint | Purpose |
+|------|--------|----------|---------|
+| `attest_identity` | POST | `/api/governance/sessions/{id}/identity/attest` | Prove identity to Registrar |
+| `submit_proposal` | POST | `/api/governance/sessions/{id}/proposals` | Propose DAG decomposition |
+| `get_evidence` | GET | `/api/governance/sessions/{id}/regulatory/evidence` | Read Regulator's briefing |
+| `submit_straw_poll` | POST | `/api/governance/sessions/{id}/deliberation/straw-poll` | Pre-deliberation preference |
+| `discuss` | POST | `/api/governance/sessions/{id}/deliberation/discuss` | Structured debate message |
+| `get_deliberation_summary` | GET | `/api/governance/sessions/{id}/deliberation/summary` | Read Speaker's synthesis |
+| `cast_vote` | POST | `/api/governance/sessions/{id}/vote` | Full ordinal ranking |
+| `submit_bid` | POST | `/api/governance/sessions/{id}/bids` | Bid on a task node |
+| `get_session_state` | GET | `/api/governance/sessions/{id}` | Check session state |
+| `get_vote_results` | GET | `/api/governance/sessions/{id}/vote/results` | Read Copeland results |
+
+- [ ] P11.3 — `skills/metosis-governance/SKILL.md` — human-readable skill documentation with governance protocol overview and tool usage guide
+- [ ] P11.4 — `skills/metosis-governance/README.md` — installation instructions (`zeroclaw skills install ./skills/metosis-governance`)
+- [ ] P11.5 — Config example: `allowed_domains = ["localhost:8000"]` in ZeroClaw's `config.toml`
+
+### Test Matrix (P11)
+| Test File | Tests | What it validates |
+|-----------|-------|-------------------|
+| `test_skill_toml.py` | 3 | TOML parses, all 10 tools present, all tools have kind="http" |
+| `test_skill_url_templates.py` | 3 | URL templates contain `{{session_id}}`, no broken placeholders, all endpoints match API |
+| `test_skill_tool_args.py` | 4 | Each tool has documented args, required args present, arg descriptions non-empty, no duplicate tool names |
+
+**Total: ~10 tests**
+
+---
+
 ## Dependency Graph
 
 ```
@@ -465,6 +502,8 @@ P8 (API Endpoints) ◄── P2, P6
  ▼
 P9 (Recursive Decomposition) ◄── P2, P4
  │
+ ├─► P11 (ZeroClaw Skill) ◄── P8 (API surface must be finalized)
+ │
  ▼
 P10 (Integration & E2E) ◄── ALL
 ```
@@ -483,4 +522,4 @@ P10 (Integration & E2E) ◄── ALL
 | 4 | P4 | Depends on P3 (fairness) |
 | 5 | P6 | Depends on P3 + P4 + P5 |
 | 6 | P7 + P8 + P9 (parallel) | P7 extends P6, P8 wires P6, P9 extends P4 |
-| 7 | P10 | Integration depends on all above |
+| 7 | P10 + P11 (parallel) | Integration depends on all above; skill depends on P8 API surface |

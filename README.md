@@ -1,339 +1,329 @@
-<div align="center">
-  <a href="https://www.camel-ai.org/">
-    <img src="assets/banner.png" alt=banner>
-  </a>
-</div>
+# Metosis OASIS
 
-</br>
+A simulation platform for mocking the [AgentCity](https://agentcity.dev) governance protocol using the [OASIS](https://github.com/camel-ai/oasis) social simulation engine. Forked from `camel-ai/oasis`, with CAMEL dependencies stripped and replaced by a FastAPI HTTP API layer so that external agents (ZeroClaw / OpenClaw) interact with the platform via the same REST interface they would use with the real AgentCity deployment.
 
-<div align="center">
+## Motivation
 
-<h1> OASIS: Open Agent Social Interaction Simulations with One Million Agents
-</h1>
+AgentCity defines a constitutional governance architecture (Separation of Powers) for autonomous agent economies. Testing the governance protocol at scale (hundreds to thousands of agents) requires a reproducible simulation environment. Metosis OASIS provides this by:
 
-[![Documentation][docs-image]][docs-url]
-[![Discord][discord-image]][discord-url]
-[![X][x-image]][x-url]
-[![Reddit][reddit-image]][reddit-url]
-[![Wechat][wechat-image]][wechat-url]
-[![Wechat][oasis-image]][oasis-url]
-[![Hugging Face][huggingface-image]][huggingface-url]
-[![Star][star-image]][star-url]
-[![Package License][package-license-image]][package-license-url]
+1. **Mocking the AgentCity API** — agents talk to Metosis OASIS via HTTP, identically to how they would talk to `agentcity.dev`.
+2. **Preserving agent portability** — the same ZeroClaw agent code runs against both the simulated environment (Metosis OASIS) and the real platform (AgentCity). The mock is a true drop-in test harness.
+3. **Enabling reproducible experiments** — SQLite-backed state, deterministic protocol engine, configurable LLM reasoning modules.
 
-<h4 align="center">
+## Architecture Decisions
 
-[Community](https://github.com/camel-ai/camel#community) |
-[Paper](https://arxiv.org/abs/2411.11581) |
-[Examples](https://github.com/camel-ai/oasis/tree/main/examples) |
-[Dataset](https://huggingface.co/datasets/echo-yiyiyi/oasis-dataset) |
-[Citation](https://github.com/camel-ai/oasis#-citation) |
-[Contributing](https://github.com/camel-ai/oasis#-contributing-to-oasis) |
-[CAMEL-AI](https://www.camel-ai.org/)
+### Decision 1: CAMEL Removal
 
-</h4>
-
-</div>
-
-<br>
-
-<p align="left">
-  <img src='assets/intro.png'>
-
-🏝️ OASIS is a scalable, open-source social media simulator that incorporates large language model agents to realistically mimic the behavior of up to one million users on platforms like Twitter and Reddit. It's designed to facilitate the study of complex social phenomena such as information spread, group polarization, and herd behavior, offering a versatile tool for exploring diverse social dynamics and user interactions in digital environments.
-
-</p>
-
-<br>
-
-<div align="center">
-🌟 Star OASIS on GitHub and be instantly notified of new releases.
-</div>
-
-<br>
-
-<div align="center">
-    <img src="assets/star.gif" alt="Star" width="196" height="52">
-  </a>
-</div>
-
-<br>
-
-## ✨ Key Features
-
-### 📈 Scalability
-
-OASIS supports simulations of up to ***one million agents***, enabling studies of social media dynamics at a scale comparable to real-world platforms.
-
-### 📲 Dynamic Environments
-
-Adapts to real-time changes in social networks and content, mirroring the fluid dynamics of platforms like **Twitter** and **Reddit** for authentic simulation experiences.
-
-### 👍🏼 Diverse Action Spaces
-
-Agents can perform **23 actions**, such as following, commenting, and reposting, allowing for rich, multi-faceted interactions.
-
-### 🔥 Integrated Recommendation Systems
-
-Features **interest-based** and **hot-score-based recommendation algorithms**, simulating how users discover content and interact within social media platforms.
-
-<br>
-
-## 📺 Demo Video
-
-### Introducing OASIS: Open Agent Social Interaction Simulations with One Million Agents
-
-https://github.com/user-attachments/assets/3bd2553c-d25d-4d8c-a739-1af51354b15a
-
-<br>
-
-For more showcaes:
-
-- Can 1,000,000 AI agents simulate social media?
-  [→Watch demo](https://www.youtube.com/watch?v=lprGHqkApus&t=2s)
-
-<br>
-
-## 🎯 Usecase
-
-<div align="left">
-    <img src="assets/research_simulation.png" alt=usecase1>
-    <img src="assets/interaction.png" alt=usecase2>
-   <a href="http://www.matrix.eigent.ai">
-    <img src="assets/content_creation.png" alt=usecase3>
-   </a>
-    <img src="assets/prediction.png" alt=usecase4>
-</div>
-
-## ⚙️ Quick Start
-
-1. **Install the OASIS package:**
-
-Installing OASIS is a breeze thanks to its availability on PyPI. Simply open your terminal and run:
-
-```bash
-pip install camel-oasis
-```
-
-2. **Set up your OpenAI API key:**
-
-```bash
-# For Bash shell (Linux, macOS, Git Bash on Windows):
-export OPENAI_API_KEY=<insert your OpenAI API key>
-
-# For Windows Command Prompt:
-set OPENAI_API_KEY=<insert your OpenAI API key>
-```
-
-3. **Prepare the agent profile file:**
-
-Create the profile you want to assign to the agent. As an example, you can download [user_data_36.json](https://github.com/camel-ai/oasis/blob/main/data/reddit/user_data_36.json) and place it in your local `./data/reddit` folder.
-
-4. **Run the following Python code:**
-
-```python
-import asyncio
-import os
-
-from camel.models import ModelFactory
-from camel.types import ModelPlatformType, ModelType
-
-import oasis
-from oasis import (ActionType, LLMAction, ManualAction,
-                   generate_reddit_agent_graph)
-
-
-async def main():
-    # Define the model for the agents
-    openai_model = ModelFactory.create(
-        model_platform=ModelPlatformType.OPENAI,
-        model_type=ModelType.GPT_4O_MINI,
-    )
-
-    # Define the available actions for the agents
-    available_actions = [
-        ActionType.LIKE_POST,
-        ActionType.DISLIKE_POST,
-        ActionType.CREATE_POST,
-        ActionType.CREATE_COMMENT,
-        ActionType.LIKE_COMMENT,
-        ActionType.DISLIKE_COMMENT,
-        ActionType.SEARCH_POSTS,
-        ActionType.SEARCH_USER,
-        ActionType.TREND,
-        ActionType.REFRESH,
-        ActionType.DO_NOTHING,
-        ActionType.FOLLOW,
-        ActionType.MUTE,
-    ]
-
-    agent_graph = await generate_reddit_agent_graph(
-        profile_path="./data/reddit/user_data_36.json",
-        model=openai_model,
-        available_actions=available_actions,
-    )
-
-    # Define the path to the database
-    db_path = "./data/reddit_simulation.db"
-
-    # Delete the old database
-    if os.path.exists(db_path):
-        os.remove(db_path)
-
-    # Make the environment
-    env = oasis.make(
-        agent_graph=agent_graph,
-        platform=oasis.DefaultPlatformType.REDDIT,
-        database_path=db_path,
-    )
-
-    # Run the environment
-    await env.reset()
-
-    actions_1 = {}
-    actions_1[env.agent_graph.get_agent(0)] = [
-        ManualAction(action_type=ActionType.CREATE_POST,
-                     action_args={"content": "Hello, world!"}),
-        ManualAction(action_type=ActionType.CREATE_COMMENT,
-                     action_args={
-                         "post_id": "1",
-                         "content": "Welcome to the OASIS World!"
-                     })
-    ]
-    actions_1[env.agent_graph.get_agent(1)] = ManualAction(
-        action_type=ActionType.CREATE_COMMENT,
-        action_args={
-            "post_id": "1",
-            "content": "I like the OASIS world."
-        })
-    await env.step(actions_1)
-
-    actions_2 = {
-        agent: LLMAction()
-        for _, agent in env.agent_graph.get_agents()
-    }
-
-    # Perform the actions
-    await env.step(actions_2)
-
-    # Close the environment
-    await env.close()
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
-```
-
-<br>
-
-> \[!TIP\]
-> For more detailed instructions and additional configuration options, check out the [documentation](https://docs.oasis.camel-ai.org/).
-
-### More Tutorials
-
-To discover how to create profiles for large-scale users, as well as how to visualize and analyze social simulation data once your experiment concludes, please refer to [More Tutorials](examples/experiment/user_generation_visualization.md) for detailed guidance.
-
-<div align="center">
-  <img src="assets/tutorial.png" alt="Tutorial Overview">
-</div>
-
-## 📢 News
-
-### Upcoming Features & Contributions
-
-> We welcome community contributions! Join us in building these exciting features.
-
-- [Support Multi Modal Platform](https://github.com/camel-ai/oasis/issues/47)
-
-<!-- - Public release of our dataset on Hugging Face (November 05, 2024) -->
-
-### Latest Updates
-
-📢 Update the camel-ai version to 0.2.78 and update the dataset HuggingFace link.  - 📆 December 4, 2025
-
-- Add the report post action to mark inappropriate content. - 📆 June 8, 2025
-- Add features for creating group chats, sending messages in group chats, and leaving group chats. - 📆 June 6, 2025
-- Support Interview Action for asking agents specific questions and getting answers. - 📆 June 2, 2025
-- Support customization of each agent's models, tools, and prompts; refactor the interface to follow the PettingZoo style. - 📆 May 22, 2025
-- Refactor into the OASIS environment, publish camel-oasis on PyPI, and release the documentation. - 📆 April 24, 2025
-- Support OPENAI Embedding model for Twhin-Bert Recommendation System. - 📆 March 25, 2025
-  ...
-- Slightly refactoring the database to add Quote Action and modify Repost Action - 📆 January 13, 2025
-- Added the demo video and oasis's star history in the README - 📆 January 5, 2025
-- Introduced an Electronic Mall on the Reddit platform - 📆 December 5, 2024
-- OASIS initially released on arXiv - 📆 November 19, 2024
-- OASIS GitHub repository initially launched - 📆 November 19, 2024
-
-## 🔎 Follow-up Research
-
-- [MultiAgent4Collusion](https://github.com/renqibing/MultiAgent4Collusion): multi-agent collusion simulation framework in social systems
-- [CUBE](https://github.com/echo-yiyiyi/cube): dynamic simulations in customized unity3D-based environments
-- [MultiAgent4Fraud](https://github.com/zheng977/MutiAgent4Fraud): financial fraud risks by collaborative LLM agents on social platforms
-- More to come...
-
-If your research is based on OASIS, we'd be happy to feature your work here—feel free to reach out or submit a pull request to add it to the [README](https://github.com/camel-ai/oasis/blob/main/README.md)!
-
-## 🥂 Contributing to OASIS🏝️
-
-> We greatly appreciate your interest in contributing to our open-source initiative. To ensure a smooth collaboration and the success of contributions, we adhere to a set of contributing guidelines similar to those established by CAMEL. For a comprehensive understanding of the steps involved in contributing to our project, please refer to the OASIS [contributing guidelines](https://github.com/camel-ai/oasis/blob/master/CONTRIBUTING.md). 🤝🚀
->
-> An essential part of contributing involves not only submitting new features with accompanying tests (and, ideally, examples) but also ensuring that these contributions pass our automated pytest suite. This approach helps us maintain the project's quality and reliability by verifying compatibility and functionality.
-
-## 📬 Community & Contact
-
-If you're keen on exploring new research opportunities or discoveries with our platform and wish to dive deeper or suggest new features, we're here to talk. Feel free to get in touch for more details at camel.ai.team@gmail.com.
-
-<br>
-
-- Join us ([*Discord*](https://discord.camel-ai.org/) or [*WeChat*](https://ghli.org/camel/wechat.png)) in pushing the boundaries of finding the scaling laws of agents.
-
-- Join WechatGroup for further discussions!
-
-<div align="">
-  <img src="assets/wechatgroup.png" alt="WeChat Group QR Code" width="600">
-</div>
-
-## 🌟 Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=camel-ai/oasis&type=Date)](https://star-history.com/#camel-ai/oasis&Date)
-
-## 🔗 Citation
+The original OASIS embeds agents inside the simulation via `SocialAgent extends ChatAgent` (CAMEL). Metosis OASIS inverts this: the platform is an external HTTP service, and agents are external clients.
 
 ```
-@misc{yang2024oasisopenagentsocial,
-      title={OASIS: Open Agent Social Interaction Simulations with One Million Agents},
-      author={Ziyi Yang and Zaibin Zhang and Zirui Zheng and Yuxian Jiang and Ziyue Gan and Zhiyu Wang and Zijian Ling and Jinsong Chen and Martz Ma and Bowen Dong and Prateek Gupta and Shuyue Hu and Zhenfei Yin and Guohao Li and Xu Jia and Lijun Wang and Bernard Ghanem and Huchuan Lu and Chaochao Lu and Wanli Ouyang and Yu Qiao and Philip Torr and Jing Shao},
-      year={2024},
-      eprint={2411.11581},
-      archivePrefix={arXiv},
-      primaryClass={cs.CL},
-      url={https://arxiv.org/abs/2411.11581},
-}
+Original OASIS:
+  OasisEnv → drives → CAMEL SocialAgent → Channel → Platform (SQLite)
+  (agents are internal to the simulation)
+
+Metosis OASIS:
+  ZeroClaw agents → HTTP API (AgentCity-compatible) → Platform (SQLite)
+  (agents are external, platform is the mock)
 ```
 
-## 🙌 Acknowledgment
+**Removed:** `SocialAgent`, `SocialAction`, `SocialEnvironment`, `agents_generator`, `OasisEnv`, all `camel-ai` dependencies.
 
-We would like to thank Douglas for designing the logo of our project.
+**Retained:** `Platform` (action dispatch + SQLite state machine), `Channel` (internal async message bus), `Database`, `RecsysType`, `Clock`, `AgentGraph`.
 
-## 🖺 License
+**Added:** FastAPI HTTP layer (`oasis/api.py`) wrapping Platform + Channel with 34 REST endpoints.
 
-The source code is licensed under Apache 2.0.
+### Decision 2: SQLite for Governance State
 
-[discord-image]: https://img.shields.io/discord/1082486657678311454?logo=discord&labelColor=%20%235462eb&logoColor=%20%23f5f5f5&color=%20%235462eb
-[discord-url]: https://discord.camel-ai.org/
-[docs-image]: https://img.shields.io/badge/Documentation-EB3ECC
-[docs-url]: https://docs.oasis.camel-ai.org/
-[huggingface-image]: https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-CAMEL--AI-ffc107?color=ffc107&logoColor=white
-[huggingface-url]: https://huggingface.co/camel-ai
-[oasis-image]: https://img.shields.io/badge/WeChat-OASISProject-brightgreen?logo=wechat&logoColor=white
-[oasis-url]: ./assets/wechatgroup.png
-[package-license-image]: https://img.shields.io/badge/License-Apache_2.0-blue.svg
-[package-license-url]: https://github.com/camel-ai/oasis/blob/main/licenses/LICENSE
-[reddit-image]: https://img.shields.io/reddit/subreddit-subscribers/CamelAI?style=plastic&logo=reddit&label=r%2FCAMEL&labelColor=white
-[reddit-url]: https://www.reddit.com/r/CamelAI/
-[star-image]: https://img.shields.io/github/stars/camel-ai/oasis?label=stars&logo=github&color=brightgreen
-[star-url]: https://github.com/camel-ai/oasis/stargazers
-[wechat-image]: https://img.shields.io/badge/WeChat-CamelAIOrg-brightgreen?logo=wechat&logoColor=white
-[wechat-url]: ./assets/wechat.JPGwechat.jpg
-[x-image]: https://img.shields.io/twitter/follow/CamelAIOrg?style=social
-[x-url]: https://x.com/CamelAIOrg
+Governance state (contracts, sessions, proposals, bids, votes, reputation) is stored in SQLite tables alongside the existing OASIS social tables. Rationale:
+
+- Consistent with the existing Platform architecture (already SQLite-based).
+- Persistent and inspectable — state survives across API calls, supports replay and debugging.
+- Supports concurrent access via the existing Channel/Platform async pattern.
+- Closer to the paper's "on-chain" semantics — a shared ledger readable by all agents.
+
+### Decision 3: Full Protocol Fidelity
+
+The mock implements the **full** 7-message, 9-state legislative protocol from the AgentCity paper (§3.4 + Appendix B.8), including:
+
+- All 7 message types (IdentityVerificationRequest through LegislativeApproval).
+- All 9 state machine states (SESSION_INIT through DEPLOYED/FAILED).
+- Full constitutional validation (budget bounds, DAG acyclicity, fairness score, reputation floors, code-hash verification).
+- Copeland voting with Minimax tie-breaking, full ordinal preference rankings.
+- Recursive decomposition — non-leaf DAG nodes trigger new legislative sessions.
+
+### Decision 4: Two-Layer Clerk Architecture
+
+Each of the 4 clerk agents (Registrar, Speaker, Regulator, Codifier) has two layers:
+
+**Layer 1 — Deterministic Protocol Engine (hard constraints):**
+- State machine transitions
+- Constitutional validation (budget bounds, DAG acyclicity, quorum checks, reputation floors)
+- Fairness score computation (normalized HHI formula)
+- Signature/quorum verification
+- Deployment verification (parameter-by-parameter equality check)
+- Copeland vote tabulation
+
+Layer 1 is non-negotiable: its checks always produce deterministic pass/fail results.
+
+**Layer 2 — LLM Reasoning Module (judgment calls):**
+
+| Clerk | Layer 2 Responsibilities |
+|-------|--------------------------|
+| **Registrar** | Flag suspicious registration patterns (e.g., burst of similar profiles suggesting Sybils) |
+| **Speaker** | Deliberation facilitation: summarize arguments across rounds, detect convergence/deadlock, generate straw poll synthesis, preserve minority positions on ballot |
+| **Regulator** | Evaluate bid quality beyond formula (feasibility assessment), detect coordinated bidding patterns, flag compliance concerns not captured by HHI, produce evidence briefing before deliberation |
+| **Codifier** | Validate semantic consistency between natural-language proposal and generated spec |
+
+Layer 2 produces advisory signals that feed into the protocol but never bypass Layer 1. For example, the Regulator's LLM might flag "these three bids look coordinated," but the fairness score formula still runs independently.
+
+Layer 2 can be toggled on/off per clerk per experiment, allowing measurement of LLM-driven clerk reasoning impact vs. pure mechanical protocol.
+
+### Decision 5: Agent Runtime
+
+Agents use ZeroClaw (simulation scale, ~1,000 agents) or OpenClaw (production scale, ~20 agents) as the agent runtime. The platform is runtime-agnostic — any HTTP client can interact with the API.
+
+## Protocol Specification
+
+### Governance Roles
+
+**Producer agents** — third-party participants that join dynamically. They propose, deliberate, vote, bid on tasks, and bear economic consequences through staking and reputation.
+
+**Clerk agents** — system-provided at genesis with fixed institutional roles:
+
+| Clerk | Role |
+|-------|------|
+| **Registrar** | Identity verification, principal binding, reputation gate |
+| **Speaker** | Deliberation coordination, consensus facilitation |
+| **Regulator** | Process inspection, evidence briefings, bid arbitration, fairness enforcement |
+| **Codifier** | Translate approved proposals into deployable contract specifications |
+
+Clerks cannot legislate, vote, or hold stakes.
+
+### Legislative State Machine
+
+```
+SESSION_INIT
+  │
+  ▼  Registrar broadcasts IdentityVerificationRequest
+IDENTITY_VERIFICATION
+  │                    ╲
+  ▼                     ▼
+PROPOSAL_OPEN         FAILED  (identity/reputation failure)
+  │                    ╲
+  ▼                     ▼
+BIDDING_OPEN          FAILED  (invalid proposal / timeout)
+  │                    ╲
+  ▼                     ▼
+REGULATORY_REVIEW     FAILED  (uncovered nodes / timeout)
+  │         ╲
+  ▼          ╲
+CODIFICATION  └──→ PROPOSAL_OPEN  (re-proposal, max 2 per epoch)
+  │                    ╲
+  ▼                     ▼
+AWAITING_APPROVAL     FAILED  (constitutional validation failure)
+  │                    ╲
+  ▼                     ▼
+DEPLOYED              FAILED  (approval timeout)
+```
+
+### Message Types
+
+```
+MSG_TYPE_1: IdentityVerificationRequest
+  Sender:   Registrar → ALL
+  Fields:   session_id, nonce, required_min_reputation
+  Purpose:  Open legislative session, request identity proof
+
+MSG_TYPE_2: IdentityAttestation
+  Sender:   Each agent → Registrar
+  Fields:   agent_did, signature, reputation_proof, human_principal
+  Validity: signature verifies; reputation ≥ required_min_reputation
+
+MSG_TYPE_3: DAGProposal
+  Sender:   Speaker → ALL (after producer proposal + deliberation)
+  Fields:   proposal_id, dag_spec, rationale, token_budget_total, deadline_ms
+  Validity: DAG is acyclic; I/O schemas well-formed; budget ≤ mission cap
+
+MSG_TYPE_4: TaskBid
+  Sender:   Producer → Regulator
+  Fields:   bid_id, task_node_id, service_id, proposed_code_hash,
+            stake_amount, estimated_latency_ms, pop_tier_acceptance
+  Validity: service registered; code hash matches; stake ≥ minimum;
+            PoP tier matches; agent is PRODUCER type
+
+MSG_TYPE_5: RegulatoryDecision
+  Sender:   Regulator → ALL
+  Fields:   decision_id, approved_bids, rejected_bids, fairness_score,
+            compliance_flags, regulatory_signature
+  Validity: all task nodes covered; fairness_score ≥ threshold;
+            no CRITICAL compliance flags
+
+MSG_TYPE_6: CodedContractSpecification
+  Sender:   Codifier → Speaker
+  Fields:   spec_id, contract_specs, constitutional_validation_proof
+  Validity: all specs pass constitutional validation
+
+MSG_TYPE_7: LegislativeApproval
+  Sender:   Speaker + Regulator → Codifier (dual sign-off)
+  Fields:   approval_id, spec_id, legislative_signature, regulatory_co_signature
+  Validity: dual signatures verify; spec_id matches MSG_TYPE_6
+```
+
+### Six-Stage Pipeline (mapped to state machine)
+
+| Stage | Name | States | Key Actions |
+|-------|------|--------|-------------|
+| 1 | Proposal | SESSION_INIT → IDENTITY_VERIFICATION → PROPOSAL_OPEN | Registration, identity verification, DAG proposal submission |
+| 2 | Committee Deliberation | (within PROPOSAL_OPEN) | Evidence anchoring by Regulator, straw poll, up to 3 rounds of structured discussion, Speaker preserves minority positions |
+| 3 | Consensus Approval | (within PROPOSAL_OPEN → BIDDING_OPEN transition) | Full ordinal rankings, Copeland + Minimax aggregation, 60% participation quorum |
+| 4 | Policy Compliance Validation | REGULATORY_REVIEW | Constitutional checks: budget bounds, capability feasibility, structural separation, dependency consistency |
+| 5 | Codification | CODIFICATION | Template parameterization from versioned registry, bounded Codifier authority |
+| 6 | Deployment Verification | AWAITING_APPROVAL → DEPLOYED | Parameter-by-parameter equality check, dual sign-off |
+
+### Voting Mechanism
+
+- **Method:** Copeland with Minimax tie-breaking
+- **Ballot:** Complete ordinal preference rankings over all candidates
+- **Quorum:** 60% participation (one-agent-one-vote, regardless of reputation/stake)
+- **Coordination detection:** Kendall τ correlation between pre-deliberation straw poll and final vote to detect herding/manipulation
+
+### Fairness Score (HHI-based)
+
+```
+fairness_score = 1000 × (1 - (HHI - HHI_min) / (HHI_max - HHI_min))
+
+where:
+  HHI     = Σ s_j²  (over task-share fractions)
+  HHI_min = 1/p     (perfectly distributed)
+  HHI_max = 1       (monopoly)
+
+Constitutional minimum: 600 (prevents >~63% monopolization at p ≥ 15)
+```
+
+### Constitutional Validation Checks
+
+The Codifier runs the following before advancing to AWAITING_APPROVAL:
+
+1. **Behavioral parameter bounds** — deviation threshold σ ∈ [1,5], max tool invocations ∈ [5,200], etc.
+2. **Budget compliance** — total ≤ mission cap, all nodes have positive budgets, timeouts in range
+3. **PoP tier validity** — tiers ∈ {1,2,3}, Tier 2 redundancy/consensus constraints, Tier 3 timeout minimums
+4. **Identity and stake checks** — reputation floors, minimum stakes per risk tier, code hash verification
+5. **DAG structural validity** — acyclic, all leaves typed, ≥ 1 root and terminal node
+6. **Fairness check** — fairness_score ≥ constitutional minimum
+
+### Recursive Decomposition
+
+For non-leaf DAG nodes, the deployed contract triggers a new legislative session at the next decomposition level. Budget conservation ensures child-node budgets do not exceed the parent. Quorum rules are invariant to depth.
+
+## Database Schema (Governance Tables)
+
+New SQLite tables to be added alongside the existing OASIS social tables:
+
+- `constitution` — foundational parameters (budget caps, quorum floors, stake minimums, reputation thresholds)
+- `agent_registry` — agent DIDs, types (producer/clerk), reputation scores, principal bindings
+- `clerk_registry` — clerk roles, authority envelopes, permitted operations
+- `legislative_session` — session state machine (current state, epoch, timestamps, parent session for recursion)
+- `proposal` — DAG proposals with rationale, budget, deadline
+- `dag_node` — task nodes within a proposal (capabilities, budget, PoP tier, timeout)
+- `dag_edge` — edges between DAG nodes (data flow schemas)
+- `bid` — producer bids on task nodes (stake, latency, code hash)
+- `regulatory_decision` — Regulator's bid arbitration decisions (approved/rejected bids, fairness score)
+- `vote` — ordinal preference rankings per agent per proposal
+- `straw_poll` — pre-deliberation preference snapshots
+- `deliberation_round` — structured discussion messages per round
+- `contract_spec` — codified contract specifications
+- `reputation_ledger` — EMA reputation updates (append-only)
+- `message_log` — all MSG_TYPE_1 through MSG_TYPE_7 messages (append-only audit trail)
+
+## API Endpoints (Governance)
+
+Governance endpoints to be added to the existing social API:
+
+### Session Management
+- `POST /api/governance/sessions` — create a new legislative session
+- `GET /api/governance/sessions/{session_id}` — get session state
+- `GET /api/governance/sessions/{session_id}/messages` — get full message log
+
+### Identity
+- `POST /api/governance/sessions/{session_id}/identity/request` — Registrar initiates verification (MSG1)
+- `POST /api/governance/sessions/{session_id}/identity/attest` — agent submits attestation (MSG2)
+
+### Proposals
+- `POST /api/governance/sessions/{session_id}/proposals` — submit DAG proposal (MSG3)
+- `GET /api/governance/sessions/{session_id}/proposals/{proposal_id}` — get proposal details
+
+### Deliberation
+- `POST /api/governance/sessions/{session_id}/deliberation/straw-poll` — submit pre-deliberation preference
+- `POST /api/governance/sessions/{session_id}/deliberation/discuss` — submit discussion message (up to 3 rounds)
+- `GET /api/governance/sessions/{session_id}/deliberation/summary` — get Speaker's deliberation summary
+
+### Voting
+- `POST /api/governance/sessions/{session_id}/vote` — submit ordinal preference ranking
+- `GET /api/governance/sessions/{session_id}/vote/results` — get Copeland aggregation results
+
+### Bidding
+- `POST /api/governance/sessions/{session_id}/bids` — submit task bid (MSG4)
+- `GET /api/governance/sessions/{session_id}/bids` — list all bids
+
+### Regulatory
+- `POST /api/governance/sessions/{session_id}/regulatory/decision` — Regulator submits decision (MSG5)
+- `GET /api/governance/sessions/{session_id}/regulatory/evidence` — get Regulator's evidence briefing
+
+### Codification
+- `POST /api/governance/sessions/{session_id}/codify` — Codifier submits spec (MSG6)
+- `GET /api/governance/sessions/{session_id}/spec` — get compiled contract spec
+
+### Approval & Deployment
+- `POST /api/governance/sessions/{session_id}/approve` — dual sign-off (MSG7)
+- `GET /api/governance/sessions/{session_id}/deployment` — get deployment status
+
+### Constitution
+- `GET /api/governance/constitution` — get current constitutional parameters
+- `GET /api/governance/agents` — list registered agents
+- `GET /api/governance/agents/{agent_did}/reputation` — get agent reputation history
+
+## Project Structure
+
+```
+metosis-oasis/
+├── oasis/
+│   ├── api.py                    # FastAPI HTTP layer (social + governance endpoints)
+│   ├── server.py                 # uvicorn entry point
+│   ├── governance/               # Legislation mock (NEW)
+│   │   ├── __init__.py
+│   │   ├── state_machine.py      # 9-state legislative state machine
+│   │   ├── messages.py           # MSG_TYPE_1 through MSG_TYPE_7 definitions
+│   │   ├── voting.py             # Copeland + Minimax, ordinal rankings, Kendall τ
+│   │   ├── fairness.py           # HHI-based fairness score computation
+│   │   ├── constitutional.py     # Constitutional validation algorithm
+│   │   ├── dag.py                # DAG specification, acyclicity check, recursive decomposition
+│   │   ├── schema.py             # SQLite governance table definitions
+│   │   ├── clerks/               # Two-layer clerk implementations
+│   │   │   ├── __init__.py
+│   │   │   ├── base.py           # Base clerk (Layer 1 engine + Layer 2 LLM interface)
+│   │   │   ├── registrar.py      # Identity verification, Sybil detection
+│   │   │   ├── speaker.py        # Deliberation facilitation, consensus guidance
+│   │   │   ├── regulator.py      # Bid arbitration, compliance, evidence briefing
+│   │   │   └── codifier.py       # Spec compilation, semantic validation
+│   │   └── endpoints.py          # FastAPI governance route definitions
+│   ├── social_platform/          # Original OASIS platform (retained)
+│   │   ├── platform.py           # Action dispatch + SQLite state machine
+│   │   ├── channel.py            # Async message bus
+│   │   ├── database.py           # SQLite operations
+│   │   ├── recsys.py             # Recommendation system
+│   │   ├── typing.py             # ActionType, RecsysType enums
+│   │   └── ...
+│   ├── social_agent/             # Retained (AgentGraph only)
+│   │   └── agent_graph.py        # Social graph structure
+│   └── clock/
+│       └── clock.py              # Simulation clock
+├── pyproject.toml                # metosis-oasis package config
+└── README.md                     # This file
+```
+
+## References
+
+- AgentCity NeurIPS paper (v0.97) — §3.4 Legislation, §3.5 Execution, §3.6 Adjudication, Appendix B.8
+- [OASIS](https://github.com/camel-ai/oasis) — original simulation framework
+- [ZeroClaw](https://github.com/zeroclaw-labs/zeroclaw) — lightweight agent runtime (simulation scale)
+- [OpenClaw](https://github.com/anbangr/openclaw) — full agent runtime (production scale)

@@ -16,7 +16,12 @@
 | P9 | Recursive Decomposition | `governance/dag.py` extension | ~15 tests | ~300 |
 | P10 | Integration & E2E | Full pipeline tests | ~20 tests | ~400 |
 | P11 | ZeroClaw Governance Skill | `skills/metosis-governance/SKILL.toml` | ~10 tests | ~200 |
-| **Total** | | | **~320 tests** | **~5,400** |
+| P12 | Execution: Schema, Routing & Commitment | `execution/schema.py`, `router.py`, `commitment.py`, `config.py` | ~25 tests | ~450 |
+| P13 | Execution: Runner, Validator & Endpoints | `execution/runner.py`, `validator.py`, `synthetic.py`, `endpoints.py` | ~35 tests | ~650 |
+| P14 | Adjudication: Guardian, Sanctions & Settlement | `adjudication/guardian.py`, `sanctions.py`, `settlement.py`, `treasury.py` | ~35 tests | ~600 |
+| P15 | Adjudication: Override Panel, Endpoints & LLM | `adjudication/override_panel.py`, `coordination.py`, `endpoints.py` | ~25 tests | ~450 |
+| P16 | ZeroClaw Execution Skill + Cross-Branch E2E | Skill update (5 execution tools) + 3-branch E2E tests | ~12 tests | ~350 |
+| **Total** | | | **~452 tests** | **~8,300** |
 
 ---
 
@@ -497,18 +502,36 @@ P6 (Clerks Layer 1) ◄── P3, P4, P5
  ├──► P7 (Clerks Layer 2)
  │
  ▼
-P8 (API Endpoints) ◄── P2, P6
+P8 (Governance API) ◄── P2, P6
  │
  ▼
 P9 (Recursive Decomposition) ◄── P2, P4
  │
- ├─► P11 (ZeroClaw Skill) ◄── P8 (API surface must be finalized)
+ ▼
+P10 (Legislative E2E) ◄── P0–P9
  │
  ▼
-P10 (Integration & E2E) ◄── ALL
+P11 (ZeroClaw Gov Skill) ◄── P8
+ │
+ ▼
+P12 (Execution Schema/Routing/Commitment) ◄── P1, P8, P10
+ │
+ ▼
+P13 (Execution Runner/Validator/Endpoints) ◄── P12
+ │
+ ▼
+P14 (Adjudication Guardian/Sanctions/Settlement) ◄── P3, P12, P13
+ │
+ ▼
+P15 (Adjudication Override Panel/Endpoints/LLM) ◄── P14
+ │
+ ▼
+P16 (ZeroClaw Execution Skill + Cross-Branch E2E) ◄── ALL
 ```
 
-**Parallelizable:** P2, P3, P5 can be built concurrently after P1. P4 depends on P3 (fairness). P6 depends on P3, P4, P5. P7 can start after P6. P8 can start after P6. P9 can start after P4.
+**Parallelizable within the legislative branch:** P2, P3, P5 can be built concurrently after P1. P4 depends on P3. P6 depends on P3, P4, P5. P7, P8, P9 are parallelizable after P6.
+
+**Sequential across branches:** Execution (P12-P13) requires a DEPLOYED legislative session. Adjudication (P14-P15) requires execution validation results. P16 is the capstone.
 
 ---
 
@@ -522,4 +545,9 @@ P10 (Integration & E2E) ◄── ALL
 | 4 | P4 | Depends on P3 (fairness) |
 | 5 | P6 | Depends on P3 + P4 + P5 |
 | 6 | P7 + P8 + P9 (parallel) | P7 extends P6, P8 wires P6, P9 extends P4 |
-| 7 | P10 + P11 (parallel) | Integration depends on all above; skill depends on P8 API surface |
+| 7 | P10 + P11 (parallel) | Legislative E2E + governance skill |
+| 8 | P12 | Execution foundation (schema, routing, commitment) |
+| 9 | P13 | Execution logic (runner, validator, synthetic, endpoints) |
+| 10 | P14 | Adjudication foundation (guardian, sanctions, settlement, treasury) |
+| 11 | P15 | Adjudication logic (override panel, coordination, endpoints, LLM toggle) |
+| 12 | P16 | Skill update + cross-branch E2E (capstone) |

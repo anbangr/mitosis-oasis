@@ -141,6 +141,127 @@ This is acceptable for simulation because:
 
 The trust boundary is explicit: **everything inside the Metosis OASIS server is trusted; everything outside (ZeroClaw agents) is untrusted.** The server enforces the protocol on behalf of all participants, just as the blockchain would in production.
 
+### Decision 7: Execution Branch Mock (Option B + C Fallback)
+
+The AgentCity execution branch (§3.5) handles task routing, service execution, and settlement after a legislative session deploys a contract. Metosis OASIS mocks this with two modes, selectable via `execution_mode` configuration:
+
+**Option B — LLM-as-Service (`execution_mode = "llm"`):**
+
+ZeroClaw producer agents use their CognitiveLoop to actually produce task outputs. The platform mocks only the infrastructure layer (routing, contract enforcement, settlement) — the cognitive work is real.
+
+```
+Real AgentCity execution:
+  Contract → TaskRouter → ServiceProvider (real infra) → Output → Settlement (on-chain)
+
+Metosis OASIS (LLM mode):
+  Contract → Python TaskRouter (trusted) → ZeroClaw agent (real LLM work) → Output → Python Settlement (trusted)
+```
+
+This tests whether agents can produce meaningful outputs under governance constraints, with real LLM reasoning but mocked infrastructure.
+
+**Option C — Synthetic Output (`execution_mode = "synthetic"`):**
+
+For 1,000-agent scale experiments where LLM cost per task is prohibitive, synthetic outputs replace real cognitive work. Outputs are generated from configurable templates with tunable quality:
+
+```python
+execution_mode = "synthetic"          # no LLM calls per task
+synthetic_quality = "mixed"           # "perfect" | "mixed" | "adversarial"
+synthetic_latency_ms = (50, 200)      # simulated execution time range
+```
+
+- `perfect` — all tasks succeed, outputs match expected schemas
+- `mixed` — configurable success rate (default 80%), realistic failure modes (timeout, schema mismatch, partial output)
+- `adversarial` — high failure rate, malicious outputs, to stress-test adjudication
+
+This tests protocol correctness and reputation dynamics at scale without LLM cost.
+
+**Execution mock layers:**
+
+| Layer | AgentCity (Production) | Metosis OASIS (Mock) |
+|-------|----------------------|---------------------|
+| Task routing | Smart contract dispatches to service providers | Python router assigns tasks to agents based on bid assignments |
+| Commitment | Agent commits on-chain (stake locked) | SQLite commitment record (balance reserved) |
+| Service execution | Real infrastructure (API calls, compute) | LLM mode: ZeroClaw CognitiveLoop / Synthetic mode: template output |
+| Output validation | Guardian module (on-chain) | Python validator (schema check, timeout check) |
+| Settlement | On-chain token transfer (reward/slash) | SQLite balance update (reward/slash) |
+| Reputation update | On-chain EMA update | SQLite reputation_ledger append |
+
+**Execution API tools (ZeroClaw skill addition):**
+
+| Tool | Method | Endpoint | Purpose |
+|------|--------|----------|---------|
+| `get_task` | GET | `/api/execution/tasks/{task_id}` | Retrieve assigned task details and input data |
+| `submit_commitment` | POST | `/api/execution/tasks/{task_id}/commit` | Commit to task execution (locks stake) |
+| `submit_task_output` | POST | `/api/execution/tasks/{task_id}/output` | Submit completed task output |
+| `get_task_status` | GET | `/api/execution/tasks/{task_id}/status` | Check task execution status |
+| `get_settlement` | GET | `/api/execution/tasks/{task_id}/settlement` | Get settlement result (reward/slash) |
+
+**From the ZeroClaw agent's perspective**, these 5 execution tools + the 10 governance tools form the complete AgentCity API surface. The agent code is identical whether running against Metosis OASIS or production AgentCity — only the `base_url` in the skill config changes.
+
+### Decision 8: Adjudication Branch Mock (Deterministic + Optional LLM Toggle)
+
+The AgentCity adjudication branch (§3.6) is the **human-governed** branch — human principals review audit trails, issue sanctions, amend constitutional parameters, and resolve disputes via an Override Panel. The paper's own experiments use a deterministic decision model for adjudicators (Limitation 3, §5), validating a non-human mock.
+
+Metosis OASIS mocks adjudication with the same two-layer pattern used for clerks:
+
+**Layer 1 — Deterministic Adjudicator (always on):**
+
+A Python rule engine that implements the six-stage accountability pipeline as deterministic decision rules:
+
+| Stage | AgentCity (Production) | Metosis OASIS (Mock) |
+|-------|----------------------|---------------------|
+| 1. Principal registration | On-chain via AgentContract | SQLite agent_registry (already in P1) |
+| 2. Detection | Guardian alerts + coordination detection + human review | Guardian: Python output validator; Coordination: Kendall τ (already in P3); Human review: deterministic rule engine |
+| 3. Adjudication | Override Panel (human quorum, rotation, conflict-of-interest) | Python rule engine: threshold-based freeze/slash decisions |
+| 4. Sanctions & rewards | On-chain stake slashing, reputation reduction, agent freezing | SQLite balance deduction, reputation_ledger update, agent active=0 |
+| 5. Settlement | On-chain token transfer with reputation multiplier (Eq. 3) | Python settlement calculator with same formula |
+| 6. Treasury recirculation | Protocol fees, slashing proceeds, gas subsidies | SQLite treasury balance tracking |
+
+The deterministic rule engine evaluates three detection signals:
+
+```python
+# Guardian freeze: task output failed validation
+if guardian_alert and quality_score < freeze_threshold:
+    action = "freeze"  # immediate, no human needed
+
+# Coordination detection: suspiciously correlated voting
+if kendall_tau_pair > coordination_threshold:
+    action = "flag_and_delay"  # delay proposal, flag agents
+
+# Performance-based: sustained underperformance
+if agent_reputation < sanction_floor and consecutive_failures >= 3:
+    action = "slash_stake"  # percentage based on severity
+```
+
+Settlement follows the paper's formula exactly:
+
+```
+R_task(i) = R_base(i) × min(ψ(ρ_i), 1.0) + treasury_subsidy(i)
+
+where:
+  R_base(i) = b_i × (1 - f_p - f_i)           # bid minus protocol + insurance fees
+  ψ(ρ)      = 1 + α × (ρ_i - ρ_neutral) / ρ_max  # reputation multiplier
+  α = 0.5 (default)
+  ψ(0) = 0.75 (25% penalty at min reputation)
+  ψ(ρ_neutral) = 1.0
+  ψ(ρ_max) = 1.25 (25% premium at max reputation)
+```
+
+**Layer 2 — LLM Adjudicator (optional toggle):**
+
+When enabled, the LLM evaluates ambiguous cases that the deterministic engine cannot resolve:
+
+| Scenario | Layer 1 (Deterministic) | Layer 2 (LLM) |
+|----------|------------------------|---------------|
+| Output clearly fails schema validation | Freeze — no ambiguity | Not invoked |
+| Output passes schema but quality is borderline | Flags for review | Evaluates output quality, recommends freeze/pass |
+| Coordination detection flags agent pair | Delays proposal | Analyzes deliberation transcripts for genuine vs. coincidental agreement |
+| Agent appeals a sanction | Cannot process appeals | Evaluates appeal evidence, recommends uphold/overturn |
+
+Layer 2 is advisory — it cannot override Layer 1 freezes (just as in production, the Guardian's deterministic freeze is immediate and unconditional). It can only influence decisions in the ambiguous zone where Layer 1 returns "needs_review".
+
+**Adjudication is entirely platform-side** — no changes to ZeroClaw agent behavior. Agents observe adjudication consequences through existing APIs (reputation queries, balance checks, task status showing "frozen").
+
 ## Protocol Specification
 
 ### Governance Roles
@@ -274,9 +395,11 @@ The Codifier runs the following before advancing to AWAITING_APPROVAL:
 
 For non-leaf DAG nodes, the deployed contract triggers a new legislative session at the next decomposition level. Budget conservation ensures child-node budgets do not exceed the parent. Quorum rules are invariant to depth.
 
-## Database Schema (Governance Tables)
+## Database Schema
 
-New SQLite tables to be added alongside the existing OASIS social tables:
+New SQLite tables to be added alongside the existing OASIS social tables.
+
+### Governance Tables (Legislative Branch)
 
 - `constitution` — foundational parameters (budget caps, quorum floors, stake minimums, reputation thresholds)
 - `agent_registry` — agent DIDs, types (producer/clerk), reputation scores, principal bindings
@@ -294,61 +417,100 @@ New SQLite tables to be added alongside the existing OASIS social tables:
 - `reputation_ledger` — EMA reputation updates (append-only)
 - `message_log` — all MSG_TYPE_1 through MSG_TYPE_7 messages (append-only audit trail)
 
-## API Endpoints (Governance)
+### Execution Tables
 
-Governance endpoints to be added to the existing social API:
+- `task_assignment` — (task_id TEXT PK, session_id TEXT FK, node_id TEXT FK, assignee_did TEXT FK, bid_id TEXT FK, status TEXT CHECK(pending/committed/executing/completed/failed/frozen), input_data JSON, created_at TIMESTAMP, committed_at TIMESTAMP NULL, completed_at TIMESTAMP NULL)
+- `task_commitment` — (commitment_id TEXT PK, task_id TEXT FK, agent_did TEXT FK, stake_locked REAL, committed_at TIMESTAMP)
+- `task_output` — (output_id TEXT PK, task_id TEXT FK, agent_did TEXT FK, output_data JSON, output_hash TEXT, latency_ms INTEGER, submitted_at TIMESTAMP)
+- `output_validation` — (validation_id TEXT PK, output_id TEXT FK, schema_valid BOOLEAN, timeout_valid BOOLEAN, quality_score REAL NULL, guardian_alert BOOLEAN DEFAULT 0, validation_details JSON, validated_at TIMESTAMP)
+- `settlement` — (settlement_id TEXT PK, task_id TEXT FK, agent_did TEXT FK, bid_amount REAL, fee_protocol REAL, fee_insurance REAL, reputation_multiplier REAL, reward_base REAL, treasury_subsidy REAL, reward_final REAL, slash_amount REAL DEFAULT 0, settled_at TIMESTAMP)
 
-### Session Management
+### Adjudication Tables
+
+- `guardian_alert` — (alert_id TEXT PK, task_id TEXT FK, agent_did TEXT FK, alert_type TEXT CHECK(schema_failure/timeout/quality_below_threshold/anomaly), severity TEXT CHECK(INFO/WARNING/CRITICAL), quality_score REAL NULL, details JSON, created_at TIMESTAMP)
+- `coordination_flag` — (flag_id TEXT PK, session_id TEXT FK, agent_did_a TEXT FK, agent_did_b TEXT FK, kendall_tau REAL, jaccard_overlap REAL NULL, flagged_at TIMESTAMP)
+- `adjudication_decision` — (decision_id TEXT PK, alert_id TEXT NULL FK, flag_id TEXT NULL FK, agent_did TEXT FK, decision_type TEXT CHECK(freeze/unfreeze/slash/warn/dismiss), layer TEXT CHECK(deterministic/llm_advisory), reason TEXT, slash_amount REAL DEFAULT 0, decided_at TIMESTAMP)
+- `agent_balance` — (agent_did TEXT PK FK, available_balance REAL DEFAULT 0, locked_stake REAL DEFAULT 0, total_earned REAL DEFAULT 0, total_slashed REAL DEFAULT 0, updated_at TIMESTAMP)
+- `treasury` — (entry_id INTEGER PK AUTOINCREMENT, entry_type TEXT CHECK(protocol_fee/insurance_fee/slash_proceeds/reputation_subsidy/gas_subsidy), amount REAL, source_task_id TEXT NULL, source_agent_did TEXT NULL, created_at TIMESTAMP)
+
+## API Endpoints
+
+### Governance (Legislative Branch)
+
+#### Session Management
 - `POST /api/governance/sessions` — create a new legislative session
 - `GET /api/governance/sessions/{session_id}` — get session state
 - `GET /api/governance/sessions/{session_id}/messages` — get full message log
 
-### Identity
+#### Identity
 - `POST /api/governance/sessions/{session_id}/identity/request` — Registrar initiates verification (MSG1)
 - `POST /api/governance/sessions/{session_id}/identity/attest` — agent submits attestation (MSG2)
 
-### Proposals
+#### Proposals
 - `POST /api/governance/sessions/{session_id}/proposals` — submit DAG proposal (MSG3)
 - `GET /api/governance/sessions/{session_id}/proposals/{proposal_id}` — get proposal details
 
-### Deliberation
+#### Deliberation
 - `POST /api/governance/sessions/{session_id}/deliberation/straw-poll` — submit pre-deliberation preference
 - `POST /api/governance/sessions/{session_id}/deliberation/discuss` — submit discussion message (up to 3 rounds)
 - `GET /api/governance/sessions/{session_id}/deliberation/summary` — get Speaker's deliberation summary
 
-### Voting
+#### Voting
 - `POST /api/governance/sessions/{session_id}/vote` — submit ordinal preference ranking
 - `GET /api/governance/sessions/{session_id}/vote/results` — get Copeland aggregation results
 
-### Bidding
+#### Bidding
 - `POST /api/governance/sessions/{session_id}/bids` — submit task bid (MSG4)
 - `GET /api/governance/sessions/{session_id}/bids` — list all bids
 
-### Regulatory
+#### Regulatory
 - `POST /api/governance/sessions/{session_id}/regulatory/decision` — Regulator submits decision (MSG5)
 - `GET /api/governance/sessions/{session_id}/regulatory/evidence` — get Regulator's evidence briefing
 
-### Codification
+#### Codification
 - `POST /api/governance/sessions/{session_id}/codify` — Codifier submits spec (MSG6)
 - `GET /api/governance/sessions/{session_id}/spec` — get compiled contract spec
 
-### Approval & Deployment
+#### Approval & Deployment
 - `POST /api/governance/sessions/{session_id}/approve` — dual sign-off (MSG7)
 - `GET /api/governance/sessions/{session_id}/deployment` — get deployment status
 
-### Constitution
+#### Constitution
 - `GET /api/governance/constitution` — get current constitutional parameters
 - `GET /api/governance/agents` — list registered agents
 - `GET /api/governance/agents/{agent_did}/reputation` — get agent reputation history
+
+### Execution Branch
+
+- `GET /api/execution/tasks/{task_id}` — get assigned task details and input data
+- `POST /api/execution/tasks/{task_id}/commit` — commit to task execution (locks stake)
+- `POST /api/execution/tasks/{task_id}/output` — submit completed task output
+- `GET /api/execution/tasks/{task_id}/status` — check task execution status
+- `GET /api/execution/tasks/{task_id}/settlement` — get settlement result (reward/slash)
+- `GET /api/execution/sessions/{session_id}/tasks` — list all tasks for a deployed session
+- `GET /api/execution/agents/{agent_did}/tasks` — list all tasks assigned to an agent
+
+### Adjudication Branch
+
+- `GET /api/adjudication/alerts` — list all guardian alerts (filterable by severity, agent, task)
+- `GET /api/adjudication/alerts/{alert_id}` — get alert details
+- `GET /api/adjudication/flags` — list coordination flags (filterable by session, agent pair)
+- `GET /api/adjudication/decisions` — list adjudication decisions (filterable by agent, type)
+- `GET /api/adjudication/decisions/{decision_id}` — get decision details
+- `GET /api/adjudication/agents/{agent_did}/balance` — get agent balance (available, locked, earned, slashed)
+- `GET /api/adjudication/agents/{agent_did}/sanctions` — get agent sanction history
+- `GET /api/adjudication/treasury` — get treasury summary (inflows, outflows, balance)
+- `GET /api/adjudication/treasury/ledger` — get treasury transaction ledger
 
 ## Project Structure
 
 ```
 metosis-oasis/
 ├── oasis/
-│   ├── api.py                    # FastAPI HTTP layer (social + governance endpoints)
+│   ├── api.py                    # FastAPI HTTP layer (social + governance + execution + adjudication)
 │   ├── server.py                 # uvicorn entry point
-│   ├── governance/               # Legislation mock (NEW)
+│   ├── config.py                 # Platform configuration (execution_mode, thresholds, etc.)
+│   ├── governance/               # Legislation mock
 │   │   ├── __init__.py
 │   │   ├── state_machine.py      # 9-state legislative state machine
 │   │   ├── messages.py           # MSG_TYPE_1 through MSG_TYPE_7 definitions
@@ -365,6 +527,25 @@ metosis-oasis/
 │   │   │   ├── regulator.py      # Bid arbitration, compliance, evidence briefing
 │   │   │   └── codifier.py       # Spec compilation, semantic validation
 │   │   └── endpoints.py          # FastAPI governance route definitions
+│   ├── execution/                # Execution mock
+│   │   ├── __init__.py
+│   │   ├── router.py             # Task routing: deployed contract → task assignments
+│   │   ├── commitment.py         # Stake locking on task commitment
+│   │   ├── runner.py             # Execution dispatcher (LLM mode: wait for agent output; synthetic mode: generate)
+│   │   ├── validator.py          # Output validation (schema check, timeout check, quality scoring)
+│   │   ├── synthetic.py          # Synthetic output generator (perfect/mixed/adversarial)
+│   │   ├── schema.py             # SQLite execution table definitions
+│   │   └── endpoints.py          # FastAPI execution route definitions
+│   ├── adjudication/             # Adjudication mock
+│   │   ├── __init__.py
+│   │   ├── guardian.py           # Guardian alert generation from validation results
+│   │   ├── coordination.py       # Coordination detection (wraps voting.kendall_tau)
+│   │   ├── override_panel.py     # Deterministic rule engine (Layer 1) + LLM adjudicator (Layer 2)
+│   │   ├── sanctions.py          # Stake slashing, reputation reduction, agent freezing
+│   │   ├── settlement.py         # Settlement formula (Eq. 3), reputation multiplier
+│   │   ├── treasury.py           # Treasury accounting (fees, slashing, subsidies)
+│   │   ├── schema.py             # SQLite adjudication table definitions
+│   │   └── endpoints.py          # FastAPI adjudication route definitions
 │   ├── social_platform/          # Original OASIS platform (retained)
 │   │   ├── platform.py           # Action dispatch + SQLite state machine
 │   │   ├── channel.py            # Async message bus

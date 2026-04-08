@@ -18,7 +18,6 @@ from typing import Any, Literal
 import igraph as ig
 from neo4j import GraphDatabase
 
-from oasis.social_agent.agent import SocialAgent
 from oasis.social_platform.config import Neo4jConfig
 
 
@@ -187,21 +186,24 @@ class AgentGraph:
             assert neo4j_config is not None
             assert neo4j_config.is_valid()
             self.graph = Neo4jHandler(neo4j_config)
-        self.agent_mappings: dict[int, SocialAgent] = {}
+        self.agent_mappings: dict[int, dict] = {}
 
     def reset(self):
         if self.backend == "igraph":
             self.graph = ig.Graph(directed=True)
         else:
             self.graph.reset_graph()
-        self.agent_mappings: dict[int, SocialAgent] = {}
+        self.agent_mappings: dict[int, dict] = {}
 
-    def add_agent(self, agent: SocialAgent):
+    def add_agent(self, agent_id: int, agent_info: dict | None = None):
+        """Add an agent by ID with optional info dict."""
+        if agent_info is None:
+            agent_info = {}
         if self.backend == "igraph":
-            self.graph.add_vertex(agent.social_agent_id)
+            self.graph.add_vertex(agent_id)
         else:
-            self.graph.create_agent(agent.social_agent_id)
-        self.agent_mappings[agent.social_agent_id] = agent
+            self.graph.create_agent(agent_id)
+        self.agent_mappings[agent_id] = agent_info
 
     def add_edge(self, agent_id_0: int, agent_id_1: int):
         try:
@@ -209,12 +211,12 @@ class AgentGraph:
         except Exception:
             pass
 
-    def remove_agent(self, agent: SocialAgent):
+    def remove_agent(self, agent_id: int):
         if self.backend == "igraph":
-            self.graph.delete_vertices(agent.social_agent_id)
+            self.graph.delete_vertices(agent_id)
         else:
-            self.graph.delete_agent(agent.social_agent_id)
-        del self.agent_mappings[agent.social_agent_id]
+            self.graph.delete_agent(agent_id)
+        del self.agent_mappings[agent_id]
 
     def remove_edge(self, agent_id_0: int, agent_id_1: int):
         if self.backend == "igraph":
@@ -223,17 +225,17 @@ class AgentGraph:
         else:
             self.graph.remove_edge(agent_id_0, agent_id_1)
 
-    def get_agent(self, agent_id: int) -> SocialAgent:
+    def get_agent(self, agent_id: int) -> dict:
         return self.agent_mappings[agent_id]
 
     def get_agents(
             self,
-            agent_ids: list[int] = None) -> list[tuple[int, SocialAgent]]:
+            agent_ids: list[int] = None) -> list[tuple[int, dict]]:
         if agent_ids:
             return [(agent_id, self.get_agent(agent_id))
                     for agent_id in agent_ids]
         if self.backend == "igraph":
-            return [(node.index, self.agent_mappings[node.index])
+            return [(node.index, self.agent_mappings.get(node.index, {}))
                     for node in self.graph.vs]
         else:
             return [(agent_id, self.agent_mappings[agent_id])

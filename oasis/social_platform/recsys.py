@@ -23,13 +23,25 @@ from math import log
 from typing import Any, Dict, List
 
 import numpy as np
-import torch
-from sentence_transformers import SentenceTransformer
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
 
-from .process_recsys_posts import (generate_post_vector,
-                                   generate_post_vector_openai)
+# Heavy ML imports are deferred to avoid hard dependency on torch/transformers
+# for the basic reddit/random recsys paths.
+try:
+    import torch
+    from sentence_transformers import SentenceTransformer
+    from sklearn.feature_extraction.text import TfidfVectorizer
+    from sklearn.metrics.pairwise import cosine_similarity
+    from .process_recsys_posts import (generate_post_vector,
+                                       generate_post_vector_openai)
+    _HAS_ML = True
+except ImportError:
+    torch = None  # type: ignore[assignment]
+    SentenceTransformer = None  # type: ignore[assignment,misc]
+    TfidfVectorizer = None  # type: ignore[assignment,misc]
+    cosine_similarity = None  # type: ignore[assignment]
+    generate_post_vector = None  # type: ignore[assignment]
+    generate_post_vector_openai = None  # type: ignore[assignment]
+    _HAS_ML = False
 from .typing import ActionType, RecsysType
 
 rec_log = logging.getLogger(name='social.rec')
@@ -40,10 +52,10 @@ model = None
 twhin_tokenizer = None
 twhin_model = None
 
-# Create the TF-IDF model
-tfidf_vectorizer = TfidfVectorizer()
+# Create the TF-IDF model (only if ML libs are available)
+tfidf_vectorizer = TfidfVectorizer() if _HAS_ML else None
 # Prepare the twhin model
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu") if _HAS_ML else None
 
 # All historical tweets and the most recent tweet of each user
 user_previous_post_all = {}
@@ -113,11 +125,12 @@ def get_recsys_model(recsys_type: str = None):
 
 
 # Move model to GPU if available
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
-if model is not None:
-    model.to(device)
+if _HAS_ML:
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    if model is not None:
+        model.to(device)
 else:
-    pass
+    device = None
 
 
 # Reset global variables

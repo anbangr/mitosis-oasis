@@ -1,0 +1,12 @@
+.git
+.github
+__pycache__
+*.pyc
+*.pyo
+.pytest_cache
+.ruff_cache
+test/
+docs/
+*.md
+!README.md
+.pre-commit-config.yaml

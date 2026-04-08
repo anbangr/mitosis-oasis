@@ -1,0 +1,22 @@
+version: "3.8"
+
+services:
+  metosis-oasis:
+    image: ghcr.io/anbangr/metosis-oasis:latest
+    container_name: metosis-oasis
+    restart: unless-stopped
+    ports:
+      - "8100:8000"
+    volumes:
+      - metosis-data:/app/data
+    environment:
+      - OASIS_DB_PATH=/app/data/governance.db
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  metosis-data:

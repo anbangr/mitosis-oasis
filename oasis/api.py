@@ -16,6 +16,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from oasis.governance.endpoints import init_governance_db, router as governance_router
+from oasis.execution.endpoints import init_execution_db, router as execution_router
 from oasis.social_platform.channel import Channel
 from oasis.social_platform.platform import Platform
 from oasis.social_platform.typing import ActionType
@@ -84,6 +85,9 @@ app = FastAPI(
 
 # Include governance API router (P8)
 app.include_router(governance_router)
+
+# Include execution API router (P13)
+app.include_router(execution_router)
 
 
 # ---------------------------------------------------------------------------

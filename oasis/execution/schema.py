@@ -1,4 +1,4 @@
-"""Execution SQLite schema — 6 tables for the execution branch.
+"""Execution SQLite schema — 7 tables for the execution branch.
 
 Tables
 ------
@@ -8,6 +8,7 @@ Tables
 4. output_validation   — validation pass/fail + quality scores
 5. settlement          — post-execution settlement + rewards/penalties
 6. agent_balance       — agent token balances and locked stakes
+7. guardian_alert      — alerts emitted by the output validator
 """
 from __future__ import annotations
 
@@ -86,6 +87,17 @@ CREATE TABLE IF NOT EXISTS agent_balance (
     locked_stake      REAL NOT NULL DEFAULT 0.0,
     available_balance REAL NOT NULL DEFAULT 100.0,
     FOREIGN KEY (agent_did) REFERENCES agent_registry(agent_did)
+);
+
+-- 7. Guardian alerts (emitted when output validation fails)
+CREATE TABLE IF NOT EXISTS guardian_alert (
+    alert_id    TEXT PRIMARY KEY,
+    task_id     TEXT NOT NULL,
+    alert_type  TEXT NOT NULL,
+    severity    TEXT NOT NULL,
+    details     TEXT,
+    created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (task_id) REFERENCES task_assignment(task_id)
 );
 """
 

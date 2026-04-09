@@ -1,6 +1,134 @@
 # Metosis OASIS
 
+![release](https://img.shields.io/github/v/release/anbangr/metosis-oasis?label=release&color=blue)
+![tests](https://img.shields.io/badge/tests-479%20passed-brightgreen)
+![modules](https://img.shields.io/badge/modules-41-blue)
+![lines](https://img.shields.io/badge/lines-~9%2C600-lightgrey)
+![python](https://img.shields.io/badge/python-3.10%E2%80%933.11-blue)
+![license](https://img.shields.io/badge/license-Apache%202.0-green)
+
 A simulation platform for mocking the [AgentCity](https://agentcity.dev) governance protocol using the [OASIS](https://github.com/camel-ai/oasis) social simulation engine. Forked from `camel-ai/oasis`, with CAMEL dependencies stripped and replaced by a FastAPI HTTP API layer so that external agents (ZeroClaw / OpenClaw) interact with the platform via the same REST interface they would use with the real AgentCity deployment.
+
+## Architecture
+
+```mermaid
+graph TB
+    subgraph External["External Agents"]
+        ZC1["ZeroClaw<br/>Producer 1"]
+        ZC2["ZeroClaw<br/>Producer 2"]
+        ZCN["ZeroClaw<br/>Producer N"]
+    end
+
+    API["FastAPI HTTP API<br/>43 REST + WebSocket + Dashboard"]
+
+    ZC1 -->|HTTP| API
+    ZC2 -->|HTTP| API
+    ZCN -->|HTTP| API
+
+    subgraph Server["Metosis OASIS Server"]
+        API --> GOV
+        API --> EXEC
+        API --> ADJ
+        API --> OBS
+
+        subgraph GOV["Legislative Branch · 14 modules"]
+            direction TB
+            SM["State Machine<br/>9 states · 13 transitions"]
+            CLERKS["Clerks ×4<br/>Registrar · Speaker<br/>Regulator · Codifier"]
+            L1["Layer 1<br/>Deterministic Engine"]
+            L2["Layer 2<br/>LLM Reasoning"]
+            VOTE["Voting<br/>Copeland + Minimax"]
+            FAIR["Fairness<br/>HHI · Kendall τ"]
+            DAG["DAG Validation<br/>+ Recursive Decomposition"]
+            CONST["Constitutional<br/>Validator (6 checks)"]
+            MSG["Messages<br/>MSG1–MSG7 (Pydantic)"]
+            SKILL["ZeroClaw Skill<br/>15 HTTP tools"]
+            CLERKS --- L1
+            CLERKS --- L2
+            SM --- CLERKS
+            CLERKS --- VOTE
+            CLERKS --- FAIR
+            CLERKS --- DAG
+            CLERKS --- CONST
+            CLERKS --- MSG
+        end
+
+        subgraph EXEC["Execution Branch · 8 modules"]
+            direction TB
+            ROUTER["Task Router<br/>bid → assignment"]
+            COMMIT["Commitment<br/>stake locking"]
+            RUNNER["Dispatcher<br/>LLM / Synthetic"]
+            SYNTH["Synthetic Gen<br/>perfect · mixed<br/>adversarial"]
+            VALID["Output Validator<br/>schema · timeout · quality"]
+            ROUTER --- COMMIT
+            COMMIT --- RUNNER
+            RUNNER --- SYNTH
+            RUNNER --- VALID
+        end
+
+        subgraph ADJ["Adjudication Branch · 9 modules"]
+            direction TB
+            GUARD["Guardian<br/>alert generation"]
+            COORD["Coordination<br/>Detector"]
+            PANEL["Override Panel<br/>Layer 1 + Layer 2"]
+            SANC["Sanctions<br/>freeze · slash · EMA"]
+            SETTLE["Settlement<br/>R_base × ψ(ρ) + subsidy"]
+            TREAS["Treasury<br/>fees · slashing · subsidies"]
+            GUARD --- PANEL
+            COORD --- PANEL
+            PANEL --- SANC
+            PANEL --- SETTLE
+            SETTLE --- TREAS
+        end
+
+        subgraph OBS["Observatory · 6 modules"]
+            direction TB
+            BUS["Event Bus<br/>publish · subscribe · replay"]
+            WS["WebSocket<br/>/ws/events"]
+            REST["REST Endpoints ×7<br/>summary · leaderboard<br/>timeseries · heatmap"]
+            DASH["Dashboard<br/>8 panels · dark theme<br/>Chart.js · auto-reconnect"]
+            BUS --- WS
+            BUS --- REST
+            WS --- DASH
+        end
+
+        GOV -->|DEPLOYED session| EXEC
+        EXEC -->|validation results| ADJ
+        GOV -.->|events| OBS
+        EXEC -.->|events| OBS
+        ADJ -.->|events| OBS
+
+        DB[("SQLite<br/>25 tables")]
+        GOV --- DB
+        EXEC --- DB
+        ADJ --- DB
+        OBS --- DB
+    end
+
+    BROWSER["Operator Browser"]
+    DASH -->|WS + REST| BROWSER
+
+    style External fill:#1a1a2e,stroke:#e94560,color:#eee
+    style Server fill:#0f3460,stroke:#16213e,color:#eee
+    style GOV fill:#533483,stroke:#7b2d8e,color:#eee
+    style EXEC fill:#0e6655,stroke:#148f77,color:#eee
+    style ADJ fill:#922b21,stroke:#c0392b,color:#eee
+    style OBS fill:#1f618d,stroke:#2e86c1,color:#eee
+    style DB fill:#7d6608,stroke:#b7950b,color:#eee
+    style API fill:#2c3e50,stroke:#566573,color:#eee
+    style BROWSER fill:#1a1a2e,stroke:#e94560,color:#eee
+```
+
+### Branch Summary
+
+| Branch | Modules | Endpoints | Tables | Tests | Key Components |
+|--------|---------|-----------|--------|-------|----------------|
+| **Legislative** | 14 | 20 | 15 | ~260 | State machine, 4 clerks (2-layer), Copeland voting, HHI fairness, DAG validation, constitutional checks, recursive decomposition, MSG1–MSG7 |
+| **Execution** | 8 | 7 | 6 | ~60 | Task routing, stake commitment, LLM/synthetic dispatch, output validation, settlement |
+| **Adjudication** | 9 | 9 | 5 | ~60 | Guardian alerts, coordination detection, override panel (2-layer), sanctions, settlement formula, treasury |
+| **Observatory** | 6 | 7 + WS + Dashboard | 1 | ~20 | Event bus, WebSocket stream, REST aggregation, 8-panel dark-theme dashboard |
+| **Cross-branch E2E** | — | — | — | ~12 | Full lifecycle, guardian freeze, coordination, treasury, 50-agent scale |
+| **Total** | **41** | **43 + WS + Dashboard** | **25** | **479** | |
 
 ## Motivation
 

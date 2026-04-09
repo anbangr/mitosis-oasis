@@ -22,7 +22,7 @@ def test_skill_toml_parses():
     assert "tools" in data
 
 
-# ---------- Test 2: All 10 tools are present ----------
+# ---------- Test 2: All 15 tools are present ----------
 
 EXPECTED_TOOLS = {
     "attest_identity",
@@ -35,11 +35,16 @@ EXPECTED_TOOLS = {
     "submit_bid",
     "get_session_state",
     "get_vote_results",
+    "get_task",
+    "submit_commitment",
+    "submit_task_output",
+    "get_task_status",
+    "get_settlement",
 }
 
 
 def test_all_ten_tools_present():
-    """All 10 governance HTTP tools are defined in the TOML."""
+    """All 15 governance + execution HTTP tools are defined in the TOML."""
     data = _load_skill()
     tool_names = {t["name"] for t in data["tools"]}
     assert tool_names == EXPECTED_TOOLS, (

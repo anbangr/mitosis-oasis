@@ -26,7 +26,7 @@ def test_each_tool_has_args():
 
 # ---------- Test 2: Required args present ----------
 
-# Minimum required args for each tool (session_id is always required)
+# Minimum required args for each tool
 REQUIRED_ARGS = {
     "attest_identity": {"session_id", "agent_did", "signature", "reputation_score"},
     "submit_proposal": {"session_id", "proposer_did", "dag_spec", "token_budget_total", "deadline_ms"},
@@ -42,6 +42,12 @@ REQUIRED_ARGS = {
     },
     "get_session_state": {"session_id"},
     "get_vote_results": {"session_id"},
+    # Execution tools
+    "get_task": {"task_id"},
+    "submit_commitment": {"task_id", "agent_did"},
+    "submit_task_output": {"task_id", "agent_did", "output_data"},
+    "get_task_status": {"task_id"},
+    "get_settlement": {"task_id"},
 }
 
 

@@ -1,11 +1,11 @@
-# Metosis OASIS — ZeroClaw Governance Skill
-# Enables producer agents to participate in legislative sessions via HTTP tools.
+# Metosis OASIS — ZeroClaw Governance & Execution Skill
+# Enables producer agents to participate in legislative sessions and execute tasks via HTTP tools.
 
 [skill]
 name = "metosis-governance"
-description = "Governance protocol tools for AgentCity legislative sessions — identity, proposals, deliberation, voting, and bidding"
-version = "0.1.0"
-tags = ["governance", "legislative", "agentcity"]
+description = "Governance and execution protocol tools for AgentCity — identity, proposals, deliberation, voting, bidding, task commitment, execution, and settlement"
+version = "0.2.0"
+tags = ["governance", "legislative", "execution", "agentcity"]
 
 # ---------------------------------------------------------------------------
 # Config example (place in ZeroClaw config.toml):
@@ -287,3 +287,100 @@ name = "session_id"
 type = "string"
 required = true
 description = "Legislative session identifier (path parameter)"
+
+# ==========================================================================
+#  EXECUTION TOOLS (5)
+# ==========================================================================
+
+# ========================= Tool 11: get_task ================================
+
+[[tools]]
+name = "get_task"
+description = "Retrieve assigned task details including DAG node info, input/output schemas, and budget."
+kind = "http"
+method = "GET"
+url_template = "/api/execution/tasks/{task_id}"
+
+[[tools.args]]
+name = "task_id"
+type = "string"
+required = true
+description = "Execution task identifier (path parameter)"
+
+# ========================= Tool 12: submit_commitment =======================
+
+[[tools]]
+name = "submit_commitment"
+description = "Commit to a task by locking your stake. Transitions task from pending to committed."
+kind = "http"
+method = "POST"
+url_template = "/api/execution/tasks/{task_id}/commit"
+
+[[tools.args]]
+name = "task_id"
+type = "string"
+required = true
+description = "Execution task identifier (path parameter)"
+
+[[tools.args]]
+name = "agent_did"
+type = "string"
+required = true
+description = "DID of the agent committing to the task"
+
+# ========================= Tool 13: submit_task_output ======================
+
+[[tools]]
+name = "submit_task_output"
+description = "Submit completed task output (LLM mode). Task must be in executing state."
+kind = "http"
+method = "POST"
+url_template = "/api/execution/tasks/{task_id}/output"
+
+[[tools.args]]
+name = "task_id"
+type = "string"
+required = true
+description = "Execution task identifier (path parameter)"
+
+[[tools.args]]
+name = "agent_did"
+type = "string"
+required = true
+description = "DID of the agent submitting output"
+
+[[tools.args]]
+name = "output_data"
+type = "string"
+required = true
+description = "JSON-encoded output data including task_id, result, status, and optional metrics"
+
+# ========================= Tool 14: get_task_status =========================
+
+[[tools]]
+name = "get_task_status"
+description = "Check execution status of a task — pending, committed, executing, validated, or settled."
+kind = "http"
+method = "GET"
+url_template = "/api/execution/tasks/{task_id}/status"
+
+[[tools.args]]
+name = "task_id"
+type = "string"
+required = true
+description = "Execution task identifier (path parameter)"
+
+# ========================= Tool 15: get_settlement ==========================
+
+[[tools]]
+name = "get_settlement"
+description = "Get settlement result for a completed task — reward breakdown, fees, reputation update, and treasury subsidy."
+kind = "http"
+method = "GET"
+url_template = "/api/execution/tasks/{task_id}/settlement"
+
+[[tools.args]]
+name = "task_id"
+type = "string"
+required = true
+description = "Execution task identifier (path parameter)"

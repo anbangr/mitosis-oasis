@@ -15,113 +15,71 @@ on:
       - 'docs/**'
       - 'LICENSE'
       - '.gitignore'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
 
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+  # ── Python CI (pytest with system deps) ────────────────────────────────────
+  python-ci:
+    uses: anbangr/mitosis-cicd/.github/workflows/_reusable-python-ci.yml@main
+    with:
+      python-versions: '["3.10"]'
+      apt-packages: "libcairo2-dev pkg-config libigraph-dev"
+      install-command: 'pip install -e .'
+      run-ruff: false
+      pytest-markers: ""
+      run-coverage: false
 
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python 3.10
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
-          cache: pip
-
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libcairo2-dev pkg-config libigraph-dev
-
-      - name: Install Python dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e .
-
-      - name: Run tests
-        run: python -m pytest -v --tb=short
-
+  # ── Docker build + push to GHCR ───────────────────────────────────────────
   docker:
-    needs: test
+    needs: [python-ci]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: read
-      packages: write
+    uses: anbangr/mitosis-cicd/.github/workflows/_reusable-docker-ghcr.yml@main
+    with:
+      image-name: ghcr.io/anbangr/mitosis-oasis
 
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Log in to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: |
-            ghcr.io/anbangr/mitosis-oasis:latest
-            ghcr.io/anbangr/mitosis-oasis:${{ github.sha }}
-
+  # ── Deploy to droplet ──────────────────────────────────────────────────────
   deploy:
-    needs: docker
+    needs: [docker]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Deploy to droplet
-        uses: appleboy/ssh-action@v1
-        with:
-          host: 157.245.48.133
-          username: root
-          key: ${{ secrets.DROPLET_SSH_KEY }}
-          script: |
-            mkdir -p /root/mitosis-oasis
-            cd /root/mitosis-oasis
-
-            # Write docker-compose.yml
-            cat > docker-compose.yml << 'COMPOSE'
-            version: "3.8"
-            services:
-              mitosis-oasis:
-                image: ghcr.io/anbangr/mitosis-oasis:latest
-                container_name: mitosis-oasis
-                restart: unless-stopped
-                ports:
-                  - "8100:8000"
-                volumes:
-                  - mitosis-data:/app/data
-                environment:
-                  - OASIS_DB_PATH=/app/data/governance.db
-                healthcheck:
-                  test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
-                  interval: 30s
-                  timeout: 5s
-                  retries: 3
-                  start_period: 10s
+    uses: anbangr/mitosis-cicd/.github/workflows/_reusable-deploy-ssh.yml@main
+    with:
+      image-name: ghcr.io/anbangr/mitosis-oasis
+      deploy-script: |
+        mkdir -p /root/mitosis-oasis
+        cd /root/mitosis-oasis
+        cat > docker-compose.yml << 'COMPOSE'
+        version: "3.8"
+        services:
+          mitosis-oasis:
+            image: ghcr.io/anbangr/mitosis-oasis:latest
+            container_name: mitosis-oasis
+            restart: unless-stopped
+            ports:
+              - "8100:8000"
             volumes:
-              mitosis-data:
-            COMPOSE
-
-            # Pull and restart
-            docker pull ghcr.io/anbangr/mitosis-oasis:latest
-            docker compose up -d --force-recreate
-
-            # Wait for health check
-            sleep 5
-            curl -sf http://localhost:8100/api/health || echo "Health check pending..."
+              - mitosis-data:/app/data
+            environment:
+              - OASIS_DB_PATH=/app/data/governance.db
+            healthcheck:
+              test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+              interval: 30s
+              timeout: 5s
+              retries: 3
+              start_period: 10s
+        volumes:
+          mitosis-data:
+        COMPOSE
+        docker compose up -d --force-recreate
+      health-url: "http://157.245.48.133:8100/api/health"
+    secrets:
+      DROPLET_IP: ${{ secrets.DROPLET_IP }}
+      DROPLET_USER: ${{ secrets.DROPLET_USER }}
+      DROPLET_SSH_KEY: ${{ secrets.DROPLET_SSH_KEY }}

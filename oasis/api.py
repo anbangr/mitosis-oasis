@@ -15,9 +15,15 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
+from fastapi import WebSocket
+
 from oasis.governance.endpoints import init_governance_db, router as governance_router
 from oasis.execution.endpoints import init_execution_db, router as execution_router
 from oasis.adjudication.endpoints import init_adjudication_db, router as adjudication_router
+from oasis.observatory.endpoints import init_observatory_db, router as observatory_router
+from oasis.observatory.dashboard import router as dashboard_router
+from oasis.observatory.event_bus import EventBus
+from oasis.observatory.websocket import websocket_events
 from oasis.social_platform.channel import Channel
 from oasis.social_platform.platform import Platform
 from oasis.social_platform.typing import ActionType
@@ -80,7 +86,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Metosis-OASIS API",
     description="REST API for OASIS social simulation platform",
-    version="0.3.0",
+    version="0.4.0",
     lifespan=lifespan,
 )
 
@@ -92,6 +98,22 @@ app.include_router(execution_router)
 
 # Include adjudication API router (P15)
 app.include_router(adjudication_router)
+
+# Include observatory API router + dashboard (P17)
+app.include_router(observatory_router)
+app.include_router(dashboard_router)
+
+
+# ---------------------------------------------------------------------------
+# Observatory WebSocket endpoint
+# ---------------------------------------------------------------------------
+
+
+@app.websocket("/ws/events")
+async def ws_events(ws: WebSocket):
+    """WebSocket endpoint for real-time event streaming."""
+    bus = EventBus.get_instance()
+    await websocket_events(ws, bus)
 
 
 # ---------------------------------------------------------------------------

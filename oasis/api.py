@@ -17,6 +17,7 @@ from pydantic import BaseModel
 
 from oasis.governance.endpoints import init_governance_db, router as governance_router
 from oasis.execution.endpoints import init_execution_db, router as execution_router
+from oasis.adjudication.endpoints import init_adjudication_db, router as adjudication_router
 from oasis.social_platform.channel import Channel
 from oasis.social_platform.platform import Platform
 from oasis.social_platform.typing import ActionType
@@ -88,6 +89,9 @@ app.include_router(governance_router)
 
 # Include execution API router (P13)
 app.include_router(execution_router)
+
+# Include adjudication API router (P15)
+app.include_router(adjudication_router)
 
 
 # ---------------------------------------------------------------------------

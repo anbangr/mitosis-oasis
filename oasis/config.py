@@ -27,6 +27,7 @@ class PlatformConfig:
 
     # Constitutional thresholds
     freeze_threshold: float = 0.9
+    warn_threshold: float = 0.7
     coordination_threshold: float = 0.7
     sanction_floor: float = 0.1
 

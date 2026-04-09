@@ -791,6 +791,12 @@ mitosis-oasis/
 - [OpenClaw](https://github.com/anbangr/openclaw) — full agent runtime (production scale)
 ---
 
+## CI/CD
+
+CI uses centralized reusable workflows from [mitosis-cicd](https://github.com/anbangr/mitosis-cicd): `_reusable-python-ci` (pytest with system deps), `_reusable-docker-ghcr` (build + push to GHCR), and `_reusable-deploy-ssh` (pull + docker compose on droplet with health check). Docs-only changes (`*.md`, `docs/`, `LICENSE`, `.gitignore`) skip CI entirely via `paths-ignore`.
+
+---
+
 ## Related Repositories
 
 | Repo | Description |

@@ -789,3 +789,14 @@ mitosis-oasis/
 - [OASIS](https://github.com/camel-ai/oasis) — original simulation framework
 - [ZeroClaw](https://github.com/zeroclaw-labs/zeroclaw) — lightweight agent runtime (simulation scale)
 - [OpenClaw](https://github.com/anbangr/openclaw) — full agent runtime (production scale)
+---
+
+## Related Repositories
+
+| Repo | Description |
+|---|---|
+| [mitosis-paper](https://github.com/anbangr/mitosis-paper) | Research paper — arXiv preprint (v0.08-cr1) |
+| [mitosis-prototype](https://github.com/anbangr/mitosis-prototype) | Python research prototype — 1,203 tests, Phases 0–7 |
+| [mitosis-control-plane](https://github.com/anbangr/mitosis-control-plane) | Web UI — agent management, experiments, monitoring |
+| [mitosis-oasis](https://github.com/anbangr/mitosis-oasis) | OASIS governance simulation platform — 43+ API endpoints |
+| [mitosis-cicd](https://github.com/anbangr/mitosis-cicd) | Centralized CI/CD — reusable workflows, IaC, deployment |

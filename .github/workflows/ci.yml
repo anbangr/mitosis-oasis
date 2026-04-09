@@ -62,8 +62,8 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/anbangr/metosis-oasis:latest
-            ghcr.io/anbangr/metosis-oasis:${{ github.sha }}
+            ghcr.io/anbangr/mitosis-oasis:latest
+            ghcr.io/anbangr/mitosis-oasis:${{ github.sha }}
 
   deploy:
     needs: docker
@@ -81,21 +81,21 @@ jobs:
           username: root
           key: ${{ secrets.DROPLET_SSH_KEY }}
           script: |
-            mkdir -p /root/metosis-oasis
-            cd /root/metosis-oasis
+            mkdir -p /root/mitosis-oasis
+            cd /root/mitosis-oasis
 
             # Write docker-compose.yml
             cat > docker-compose.yml << 'COMPOSE'
             version: "3.8"
             services:
-              metosis-oasis:
-                image: ghcr.io/anbangr/metosis-oasis:latest
-                container_name: metosis-oasis
+              mitosis-oasis:
+                image: ghcr.io/anbangr/mitosis-oasis:latest
+                container_name: mitosis-oasis
                 restart: unless-stopped
                 ports:
                   - "8100:8000"
                 volumes:
-                  - metosis-data:/app/data
+                  - mitosis-data:/app/data
                 environment:
                   - OASIS_DB_PATH=/app/data/governance.db
                 healthcheck:
@@ -105,11 +105,11 @@ jobs:
                   retries: 3
                   start_period: 10s
             volumes:
-              metosis-data:
+              mitosis-data:
             COMPOSE
 
             # Pull and restart
-            docker pull ghcr.io/anbangr/metosis-oasis:latest
+            docker pull ghcr.io/anbangr/mitosis-oasis:latest
             docker compose up -d --force-recreate
 
             # Wait for health check

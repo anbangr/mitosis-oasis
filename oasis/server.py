@@ -1,4 +1,4 @@
-"""Metosis-OASIS server entry point."""
+"""Mitosis-OASIS server entry point."""
 import uvicorn
 
 

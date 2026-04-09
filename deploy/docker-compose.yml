@@ -1,14 +1,14 @@
 version: "3.8"
 
 services:
-  metosis-oasis:
-    image: ghcr.io/anbangr/metosis-oasis:latest
-    container_name: metosis-oasis
+  mitosis-oasis:
+    image: ghcr.io/anbangr/mitosis-oasis:latest
+    container_name: mitosis-oasis
     restart: unless-stopped
     ports:
       - "8100:8000"
     volumes:
-      - metosis-data:/app/data
+      - mitosis-data:/app/data
     environment:
       - OASIS_DB_PATH=/app/data/governance.db
     healthcheck:
@@ -19,4 +19,4 @@ services:
       start_period: 10s
 
 volumes:
-  metosis-data:
+  mitosis-data:

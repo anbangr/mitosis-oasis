@@ -1,6 +1,6 @@
 """Shared fixtures for API-level tests.
 
-Provides a FastAPI ``TestClient`` wired to the Metosis-OASIS app with
+Provides a FastAPI ``TestClient`` wired to the Mitosis-OASIS app with
 an in-memory database, plus governance-specific helpers.
 """
 from __future__ import annotations
@@ -32,7 +32,7 @@ def gov_db(tmp_path: Path) -> Path:
 
 @pytest.fixture()
 def client(gov_db: Path) -> TestClient:
-    """Return a synchronous TestClient for the Metosis-OASIS API.
+    """Return a synchronous TestClient for the Mitosis-OASIS API.
 
     The governance database is initialised via the *gov_db* fixture so
     all governance endpoints work without the full platform lifespan.

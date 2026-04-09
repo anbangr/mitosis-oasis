@@ -1,4 +1,4 @@
-# Metosis OASIS — Implementation Plan
+# Mitosis OASIS — Implementation Plan
 
 ## Phase Overview
 
@@ -15,7 +15,7 @@
 | P8 | Governance API Endpoints | `governance/endpoints.py`, updated `api.py` | ~40 tests | ~600 |
 | P9 | Recursive Decomposition | `governance/dag.py` extension | ~15 tests | ~300 |
 | P10 | Integration & E2E | Full pipeline tests | ~20 tests | ~400 |
-| P11 | ZeroClaw Governance Skill | `skills/metosis-governance/SKILL.toml` | ~10 tests | ~200 |
+| P11 | ZeroClaw Governance Skill | `skills/mitosis-governance/SKILL.toml` | ~10 tests | ~200 |
 | P12 | Execution: Schema, Routing & Commitment | `execution/schema.py`, `router.py`, `commitment.py`, `config.py` | ~25 tests | ~450 |
 | P13 | Execution: Runner, Validator & Endpoints | `execution/runner.py`, `validator.py`, `synthetic.py`, `endpoints.py` | ~35 tests | ~650 |
 | P14 | Adjudication: Guardian, Sanctions & Settlement | `adjudication/guardian.py`, `sanctions.py`, `settlement.py`, `treasury.py` | ~35 tests | ~600 |
@@ -451,7 +451,7 @@
 
 **Goal:** Ship a ZeroClaw skill that registers all governance HTTP tools, enabling producer agents to participate in legislative sessions.
 
-### Deliverable: `skills/metosis-governance/SKILL.toml`
+### Deliverable: `skills/mitosis-governance/SKILL.toml`
 - [ ] P11.1 — Skill metadata (name, description, version, tags)
 - [ ] P11.2 — 10 HTTP tools matching the governance API surface:
 
@@ -468,8 +468,8 @@
 | `get_session_state` | GET | `/api/governance/sessions/{id}` | Check session state |
 | `get_vote_results` | GET | `/api/governance/sessions/{id}/vote/results` | Read Copeland results |
 
-- [ ] P11.3 — `skills/metosis-governance/SKILL.md` — human-readable skill documentation with governance protocol overview and tool usage guide
-- [ ] P11.4 — `skills/metosis-governance/README.md` — installation instructions (`zeroclaw skills install ./skills/metosis-governance`)
+- [ ] P11.3 — `skills/mitosis-governance/SKILL.md` — human-readable skill documentation with governance protocol overview and tool usage guide
+- [ ] P11.4 — `skills/mitosis-governance/README.md` — installation instructions (`zeroclaw skills install ./skills/mitosis-governance`)
 - [ ] P11.5 — Config example: `allowed_domains = ["localhost:8000"]` in ZeroClaw's `config.toml`
 
 ### Test Matrix (P11)
@@ -702,7 +702,7 @@
 
 **Goal:** Update the ZeroClaw skill with 5 execution tools, and run full cross-branch E2E tests covering legislation → execution → adjudication.
 
-### Deliverable: Updated `skills/metosis-governance/SKILL.toml`
+### Deliverable: Updated `skills/mitosis-governance/SKILL.toml`
 - [ ] P16.1 — Add 5 execution tools to existing 10 governance tools (total 15):
 
 | Tool | Method | Endpoint | Purpose |

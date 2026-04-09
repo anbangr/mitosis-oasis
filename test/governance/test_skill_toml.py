@@ -4,7 +4,7 @@ from pathlib import Path
 import tomli
 
 
-SKILL_TOML = Path(__file__).resolve().parents[2] / "skills" / "metosis-governance" / "SKILL.toml"
+SKILL_TOML = Path(__file__).resolve().parents[2] / "skills" / "mitosis-governance" / "SKILL.toml"
 
 
 def _load_skill():

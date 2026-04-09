@@ -253,7 +253,7 @@ _DEFAULT_CLERKS = [
         "agent_did": f"did:oasis:clerk-{role}",
         "agent_type": "clerk",
         "display_name": f"Clerk ({role.title()})",
-        "human_principal": "platform@metosis.dev",
+        "human_principal": "platform@mitosis.dev",
         "clerk_role": role,
         "authority_envelope": json.dumps({
             "role": role,

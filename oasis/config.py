@@ -1,4 +1,4 @@
-"""Platform configuration for the Metosis-OASIS execution engine."""
+"""Platform configuration for the Mitosis-OASIS execution engine."""
 from __future__ import annotations
 
 from dataclasses import dataclass, field

@@ -1,4 +1,4 @@
-"""Metosis-OASIS FastAPI HTTP server.
+"""Mitosis-OASIS FastAPI HTTP server.
 
 Wraps the existing Platform + Channel with REST endpoints so that external
 agents (ZeroClaw) can interact with the simulation via HTTP instead of being
@@ -86,7 +86,7 @@ async def lifespan(app: FastAPI):
     # Also initialize the EventBus singleton with the observatory DB
     EventBus.get_instance(_obs_db)
 
-    logger.info("Metosis-OASIS platform started")
+    logger.info("Mitosis-OASIS platform started")
 
     yield  # Server is now running
 
@@ -100,7 +100,7 @@ async def lifespan(app: FastAPI):
             logger.warning("Platform shutdown issue: %s", exc)
             if _platform_task is not None:
                 _platform_task.cancel()
-    logger.info("Metosis-OASIS platform stopped")
+    logger.info("Mitosis-OASIS platform stopped")
 
 
 # ---------------------------------------------------------------------------
@@ -108,7 +108,7 @@ async def lifespan(app: FastAPI):
 # ---------------------------------------------------------------------------
 
 app = FastAPI(
-    title="Metosis-OASIS API",
+    title="Mitosis-OASIS API",
     description="REST API for OASIS social simulation platform",
     version="0.4.0",
     lifespan=lifespan,

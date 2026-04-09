@@ -1,6 +1,6 @@
-# Metosis OASIS
+# Mitosis OASIS
 
-![release](https://img.shields.io/github/v/release/anbangr/metosis-oasis?label=release&color=blue)
+![release](https://img.shields.io/github/v/release/anbangr/mitosis-oasis?label=release&color=blue)
 ![tests](https://img.shields.io/badge/tests-484%20passed-brightgreen)
 ![modules](https://img.shields.io/badge/modules-41-blue)
 ![lines](https://img.shields.io/badge/lines-~9%2C600-lightgrey)
@@ -27,7 +27,7 @@ graph TB
     ZC2 -->|HTTP| API
     ZCN -->|HTTP| API
 
-    subgraph Server["Metosis OASIS Server"]
+    subgraph Server["Mitosis OASIS Server"]
         API --> GOV
         API --> EXEC
         API --> ADJ
@@ -134,24 +134,24 @@ graph TB
 
 ## Motivation
 
-AgentCity defines a constitutional governance architecture (Separation of Powers) for autonomous agent economies. Testing the governance protocol at scale (hundreds to thousands of agents) requires a reproducible simulation environment. Metosis OASIS provides this by:
+AgentCity defines a constitutional governance architecture (Separation of Powers) for autonomous agent economies. Testing the governance protocol at scale (hundreds to thousands of agents) requires a reproducible simulation environment. Mitosis OASIS provides this by:
 
-1. **Mocking the AgentCity API** — agents talk to Metosis OASIS via HTTP, identically to how they would talk to `agentcity.dev`.
-2. **Preserving agent portability** — the same ZeroClaw agent code runs against both the simulated environment (Metosis OASIS) and the real platform (AgentCity). The mock is a true drop-in test harness.
+1. **Mocking the AgentCity API** — agents talk to Mitosis OASIS via HTTP, identically to how they would talk to `agentcity.dev`.
+2. **Preserving agent portability** — the same ZeroClaw agent code runs against both the simulated environment (Mitosis OASIS) and the real platform (AgentCity). The mock is a true drop-in test harness.
 3. **Enabling reproducible experiments** — SQLite-backed state, deterministic protocol engine, configurable LLM reasoning modules.
 
 ## Architecture Decisions
 
 ### Decision 1: CAMEL Removal
 
-The original OASIS embeds agents inside the simulation via `SocialAgent extends ChatAgent` (CAMEL). Metosis OASIS inverts this: the platform is an external HTTP service, and agents are external clients.
+The original OASIS embeds agents inside the simulation via `SocialAgent extends ChatAgent` (CAMEL). Mitosis OASIS inverts this: the platform is an external HTTP service, and agents are external clients.
 
 ```
 Original OASIS:
   OasisEnv → drives → CAMEL SocialAgent → Channel → Platform (SQLite)
   (agents are internal to the simulation)
 
-Metosis OASIS:
+Mitosis OASIS:
   ZeroClaw agents → HTTP API (AgentCity-compatible) → Platform (SQLite)
   (agents are external, platform is the mock)
 ```
@@ -212,11 +212,11 @@ Layer 2 can be toggled on/off per clerk per experiment, allowing measurement of 
 
 Agents use ZeroClaw (simulation scale, ~1,000 agents) or OpenClaw (production scale, ~20 agents) as the agent runtime. The platform is runtime-agnostic — any HTTP client can interact with the API.
 
-Producer agents are external ZeroClaw/OpenClaw instances that connect via HTTP. Clerk agents (Registrar, Speaker, Regulator, Codifier) are internal to the Metosis OASIS server — they are not ZeroClaw instances but Python processes with optional LLM calls for Layer 2 reasoning.
+Producer agents are external ZeroClaw/OpenClaw instances that connect via HTTP. Clerk agents (Registrar, Speaker, Regulator, Codifier) are internal to the Mitosis OASIS server — they are not ZeroClaw instances but Python processes with optional LLM calls for Layer 2 reasoning.
 
 ```
 ┌─────────────────────────────────────────────┐
-│  Metosis OASIS Server                       │
+│  Mitosis OASIS Server                       │
 │                                             │
 │  Clerks (internal, Python + LLM calls)      │
 │  ├─ Registrar  (Layer 1 + Layer 2)          │
@@ -234,15 +234,15 @@ Producer agents are external ZeroClaw/OpenClaw instances that connect via HTTP. 
  Producer 1     Producer 2     Producer N
 ```
 
-Producer agents interact with the governance protocol through a ZeroClaw skill (`metosis-governance`) that registers 10 HTTP tools in ZeroClaw's ToolRegistry — `attest_identity`, `submit_proposal`, `submit_straw_poll`, `discuss`, `cast_vote`, `submit_bid`, `get_evidence`, `get_session_state`, `get_vote_results`, `get_deliberation_summary`. The LLM sees these as callable functions with documented parameters.
+Producer agents interact with the governance protocol through a ZeroClaw skill (`mitosis-governance`) that registers 10 HTTP tools in ZeroClaw's ToolRegistry — `attest_identity`, `submit_proposal`, `submit_straw_poll`, `discuss`, `cast_vote`, `submit_bid`, `get_evidence`, `get_session_state`, `get_vote_results`, `get_deliberation_summary`. The LLM sees these as callable functions with documented parameters.
 
 ### Decision 6: Trust Model — Trusted Platform Assumption
 
-Metosis OASIS operates under a **trusted platform assumption**: the simulation server, its internal processes, and all internal state (SQLite) are assumed to be trusted. This is the key architectural difference from AgentCity production.
+Mitosis OASIS operates under a **trusted platform assumption**: the simulation server, its internal processes, and all internal state (SQLite) are assumed to be trusted. This is the key architectural difference from AgentCity production.
 
-**AgentCity vs. Metosis OASIS substitution table:**
+**AgentCity vs. Mitosis OASIS substitution table:**
 
-| Concern | AgentCity (Production) | Metosis OASIS (Mock) |
+| Concern | AgentCity (Production) | Mitosis OASIS (Mock) |
 |---------|----------------------|---------------------|
 | Agent-facing API | REST endpoints on agentcity.dev | Same REST endpoints on localhost:8000 |
 | State storage | On-chain (Base L2 smart contracts) | SQLite (trusted) |
@@ -257,23 +257,23 @@ Metosis OASIS operates under a **trusted platform assumption**: the simulation s
 | Consensus | Blockchain consensus (Base L2) | Single-process (no Byzantine tolerance) |
 | Access control | EVM-level (impossible to violate) | Python-level (trusted not to violate) |
 
-**From the agent's perspective, the API is identical** — a ZeroClaw producer agent cannot distinguish between talking to `agentcity.dev` (production) and `localhost:8000` (Metosis OASIS). The governance protocol behavior is the same; only the enforcement mechanism differs.
+**From the agent's perspective, the API is identical** — a ZeroClaw producer agent cannot distinguish between talking to `agentcity.dev` (production) and `localhost:8000` (Mitosis OASIS). The governance protocol behavior is the same; only the enforcement mechanism differs.
 
 This maps to the **regimentation vs. deterrence** distinction from the paper (Esteva et al., 2001):
 
 - **AgentCity** uses **regimentation** — constitutional violations are impossible at the EVM level. The Codifier literally cannot modify contract logic because the ClerkContract envelope prevents it in Solidity.
-- **Metosis OASIS** uses **deterrence** — constitutional violations are detectable but not architecturally prevented. The Layer 1 deterministic engine enforces the same rules, but a compromised server process could theoretically bypass them.
+- **Mitosis OASIS** uses **deterrence** — constitutional violations are detectable but not architecturally prevented. The Layer 1 deterministic engine enforces the same rules, but a compromised server process could theoretically bypass them.
 
 This is acceptable for simulation because:
 1. We are testing **protocol logic** (do the 6 stages produce correct governance outcomes?), not Byzantine fault tolerance.
 2. We are testing **agent behavior** (do ZeroClaw agents deliberate, vote, and bid rationally?), not blockchain security.
 3. The trusted platform assumption eliminates the need for cryptographic overhead, enabling 1,000-agent-scale experiments that would be cost-prohibitive on-chain.
 
-The trust boundary is explicit: **everything inside the Metosis OASIS server is trusted; everything outside (ZeroClaw agents) is untrusted.** The server enforces the protocol on behalf of all participants, just as the blockchain would in production.
+The trust boundary is explicit: **everything inside the Mitosis OASIS server is trusted; everything outside (ZeroClaw agents) is untrusted.** The server enforces the protocol on behalf of all participants, just as the blockchain would in production.
 
 ### Decision 7: Execution Branch Mock (Option B + C Fallback)
 
-The AgentCity execution branch (§3.5) handles task routing, service execution, and settlement after a legislative session deploys a contract. Metosis OASIS mocks this with two modes, selectable via `execution_mode` configuration:
+The AgentCity execution branch (§3.5) handles task routing, service execution, and settlement after a legislative session deploys a contract. Mitosis OASIS mocks this with two modes, selectable via `execution_mode` configuration:
 
 **Option B — LLM-as-Service (`execution_mode = "llm"`):**
 
@@ -283,7 +283,7 @@ ZeroClaw producer agents use their CognitiveLoop to actually produce task output
 Real AgentCity execution:
   Contract → TaskRouter → ServiceProvider (real infra) → Output → Settlement (on-chain)
 
-Metosis OASIS (LLM mode):
+Mitosis OASIS (LLM mode):
   Contract → Python TaskRouter (trusted) → ZeroClaw agent (real LLM work) → Output → Python Settlement (trusted)
 ```
 
@@ -307,7 +307,7 @@ This tests protocol correctness and reputation dynamics at scale without LLM cos
 
 **Execution mock layers:**
 
-| Layer | AgentCity (Production) | Metosis OASIS (Mock) |
+| Layer | AgentCity (Production) | Mitosis OASIS (Mock) |
 |-------|----------------------|---------------------|
 | Task routing | Smart contract dispatches to service providers | Python router assigns tasks to agents based on bid assignments |
 | Commitment | Agent commits on-chain (stake locked) | SQLite commitment record (balance reserved) |
@@ -326,19 +326,19 @@ This tests protocol correctness and reputation dynamics at scale without LLM cos
 | `get_task_status` | GET | `/api/execution/tasks/{task_id}/status` | Check task execution status |
 | `get_settlement` | GET | `/api/execution/tasks/{task_id}/settlement` | Get settlement result (reward/slash) |
 
-**From the ZeroClaw agent's perspective**, these 5 execution tools + the 10 governance tools form the complete AgentCity API surface. The agent code is identical whether running against Metosis OASIS or production AgentCity — only the `base_url` in the skill config changes.
+**From the ZeroClaw agent's perspective**, these 5 execution tools + the 10 governance tools form the complete AgentCity API surface. The agent code is identical whether running against Mitosis OASIS or production AgentCity — only the `base_url` in the skill config changes.
 
 ### Decision 8: Adjudication Branch Mock (Deterministic + Optional LLM Toggle)
 
 The AgentCity adjudication branch (§3.6) is the **human-governed** branch — human principals review audit trails, issue sanctions, amend constitutional parameters, and resolve disputes via an Override Panel. The paper's own experiments use a deterministic decision model for adjudicators (Limitation 3, §5), validating a non-human mock.
 
-Metosis OASIS mocks adjudication with the same two-layer pattern used for clerks:
+Mitosis OASIS mocks adjudication with the same two-layer pattern used for clerks:
 
 **Layer 1 — Deterministic Adjudicator (always on):**
 
 A Python rule engine that implements the six-stage accountability pipeline as deterministic decision rules:
 
-| Stage | AgentCity (Production) | Metosis OASIS (Mock) |
+| Stage | AgentCity (Production) | Mitosis OASIS (Mock) |
 |-------|----------------------|---------------------|
 | 1. Principal registration | On-chain via AgentContract | SQLite agent_registry (already in P1) |
 | 2. Detection | Guardian alerts + coordination detection + human review | Guardian: Python output validator; Coordination: Kendall τ (already in P3); Human review: deterministic rule engine |
@@ -394,7 +394,7 @@ Layer 2 is advisory — it cannot override Layer 1 freezes (just as in productio
 
 ### Decision 9: Observability — WebSocket Event Stream + Web Dashboard
 
-The experiment operator needs to observe simulation runs in real time. Metosis OASIS provides a WebSocket-based event stream and a single-page web dashboard.
+The experiment operator needs to observe simulation runs in real time. Mitosis OASIS provides a WebSocket-based event stream and a single-page web dashboard.
 
 **Event bus architecture:**
 
@@ -402,7 +402,7 @@ All state-mutating operations across the three branches publish events to an int
 
 ```
 ┌─────────────────────────────────────────────────┐
-│  Metosis OASIS Server                           │
+│  Mitosis OASIS Server                           │
 │                                                 │
 │  Governance ─┐                                  │
 │  Execution  ─┼──► EventBus ──┬──► WebSocket     │
@@ -437,7 +437,7 @@ Each event carries: `event_id`, `event_type`, `timestamp`, `session_id` (if appl
 
 **Web dashboard (single-page app):**
 
-A self-contained HTML/JS/CSS dashboard served by the Metosis OASIS server at `GET /dashboard`. No build step, no npm — vanilla JS with a lightweight charting library (Chart.js or similar bundled inline). The dashboard connects to the WebSocket and renders:
+A self-contained HTML/JS/CSS dashboard served by the Mitosis OASIS server at `GET /dashboard`. No build step, no npm — vanilla JS with a lightweight charting library (Chart.js or similar bundled inline). The dashboard connects to the WebSocket and renders:
 
 | Panel | Content |
 |-------|---------|
@@ -719,7 +719,7 @@ New SQLite tables to be added alongside the existing OASIS social tables.
 ## Project Structure
 
 ```
-metosis-oasis/
+mitosis-oasis/
 ├── oasis/
 │   ├── api.py                    # FastAPI HTTP layer (social + governance + execution + adjudication)
 │   ├── server.py                 # uvicorn entry point
@@ -779,7 +779,7 @@ metosis-oasis/
 │   │   └── agent_graph.py        # Social graph structure
 │   └── clock/
 │       └── clock.py              # Simulation clock
-├── pyproject.toml                # metosis-oasis package config
+├── pyproject.toml                # mitosis-oasis package config
 └── README.md                     # This file
 ```
 

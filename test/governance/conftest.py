@@ -64,7 +64,7 @@ SAMPLE_CLERK_AGENTS = [
         "agent_did": f"did:mock:clerk-{role}",
         "agent_type": "clerk",
         "display_name": f"Clerk ({role.title()})",
-        "human_principal": "platform@metosis.dev",
+        "human_principal": "platform@mitosis.dev",
         "clerk_role": role,
         "authority_envelope": json.dumps({
             "role": role,

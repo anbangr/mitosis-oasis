@@ -1,4 +1,4 @@
-# Metosis Governance & Execution Skill
+# Mitosis Governance & Execution Skill
 
 ZeroClaw skill that enables producer agents to participate in AgentCity legislative sessions and execute tasks via the OASIS governance protocol.
 

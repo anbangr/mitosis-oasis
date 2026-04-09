@@ -1,4 +1,4 @@
-# Metosis Governance Skill — Installation
+# Mitosis Governance Skill — Installation
 
 ## Prerequisites
 
@@ -8,7 +8,7 @@
 ## Install
 
 ```bash
-zeroclaw skills install ./skills/metosis-governance
+zeroclaw skills install ./skills/mitosis-governance
 ```
 
 ## Configuration
@@ -34,10 +34,10 @@ After installation, verify the skill is loaded:
 zeroclaw skills list
 ```
 
-You should see `metosis-governance` with 10 HTTP tools:
+You should see `mitosis-governance` with 10 HTTP tools:
 
 ```
-metosis-governance  v0.1.0  10 tools  [governance, legislative, agentcity]
+mitosis-governance  v0.1.0  10 tools  [governance, legislative, agentcity]
 ```
 
 ## Usage

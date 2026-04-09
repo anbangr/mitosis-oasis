@@ -1,8 +1,8 @@
-# Metosis OASIS — ZeroClaw Governance & Execution Skill
+# Mitosis OASIS — ZeroClaw Governance & Execution Skill
 # Enables producer agents to participate in legislative sessions and execute tasks via HTTP tools.
 
 [skill]
-name = "metosis-governance"
+name = "mitosis-governance"
 description = "Governance and execution protocol tools for AgentCity — identity, proposals, deliberation, voting, bidding, task commitment, execution, and settlement"
 version = "0.2.0"
 tags = ["governance", "legislative", "execution", "agentcity"]

@@ -4,11 +4,15 @@ Implements the task-DAG data model from the AgentCity paper (SS3.5):
 - DAGSpec / DAGNode / DAGEdge dataclasses
 - Acyclicity verification via topological sort (Kahn's algorithm)
 - Structural validation (roots, terminals, orphans, budgets, I/O schemas)
+- Recursive decomposition: child sessions, budget conservation, depth tracking
 """
 from __future__ import annotations
 
+import sqlite3
+import uuid
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Set
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Set, Union
 
 
 # ---------------------------------------------------------------------------
@@ -233,3 +237,292 @@ def validate_dag(dag: DAGSpec) -> DAGValidationResult:
         errors=errors,
         topological_order=topo_order if not errors else [],
     )
+
+
+# ---------------------------------------------------------------------------
+# Recursive decomposition exceptions
+# ---------------------------------------------------------------------------
+
+class RecursionDepthError(Exception):
+    """Raised when recursive child session creation exceeds max depth."""
+
+
+class BudgetConservationError(Exception):
+    """Raised when child session budget exceeds parent node budget."""
+
+
+class LeafNodeError(Exception):
+    """Raised when attempting to trigger a child session on a leaf node."""
+
+
+# ---------------------------------------------------------------------------
+# Recursive decomposition helpers
+# ---------------------------------------------------------------------------
+
+DEFAULT_MAX_DEPTH = 3
+
+
+def _connect(db_path: Union[str, Path]) -> sqlite3.Connection:
+    """Open a connection with foreign keys enabled."""
+    conn = sqlite3.connect(str(db_path))
+    conn.execute("PRAGMA foreign_keys = ON")
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+def get_session_depth(session_id: str, db_path: Union[str, Path]) -> int:
+    """Return the depth of a session by traversing the parent_session_id chain.
+
+    A root session (no parent) has depth 0.
+    """
+    conn = _connect(db_path)
+    try:
+        depth = 0
+        current = session_id
+        while True:
+            row = conn.execute(
+                "SELECT parent_session_id FROM legislative_session "
+                "WHERE session_id = ?",
+                (current,),
+            ).fetchone()
+            if row is None:
+                raise ValueError(f"Session {current} not found")
+            parent = row["parent_session_id"]
+            if parent is None:
+                return depth
+            depth += 1
+            current = parent
+    finally:
+        conn.close()
+
+
+def _is_leaf_node(node_id: str, proposal_id: str,
+                  conn: sqlite3.Connection) -> bool:
+    """Check whether a DAG node is a leaf (no outgoing edges)."""
+    row = conn.execute(
+        "SELECT COUNT(*) AS cnt FROM dag_edge "
+        "WHERE proposal_id = ? AND from_node_id = ?",
+        (proposal_id, node_id),
+    ).fetchone()
+    return row["cnt"] == 0
+
+
+def _get_node_budget(node_id: str, conn: sqlite3.Connection) -> float:
+    """Return the token_budget of a DAG node."""
+    row = conn.execute(
+        "SELECT token_budget FROM dag_node WHERE node_id = ?",
+        (node_id,),
+    ).fetchone()
+    if row is None:
+        raise ValueError(f"DAG node {node_id} not found")
+    return float(row["token_budget"])
+
+
+def _get_proposal_for_node(node_id: str,
+                           conn: sqlite3.Connection) -> str:
+    """Return the proposal_id that owns a given DAG node."""
+    row = conn.execute(
+        "SELECT proposal_id FROM dag_node WHERE node_id = ?",
+        (node_id,),
+    ).fetchone()
+    if row is None:
+        raise ValueError(f"DAG node {node_id} not found")
+    return row["proposal_id"]
+
+
+def _sum_child_budgets(parent_session_id: str, parent_node_id: str,
+                       conn: sqlite3.Connection) -> float:
+    """Sum the mission_budget_cap of all existing children of a parent node."""
+    row = conn.execute(
+        "SELECT COALESCE(SUM(mission_budget_cap), 0) AS total "
+        "FROM legislative_session "
+        "WHERE parent_session_id = ? AND parent_node_id = ?",
+        (parent_session_id, parent_node_id),
+    ).fetchone()
+    return float(row["total"])
+
+
+# ---------------------------------------------------------------------------
+# Public API — recursive decomposition
+# ---------------------------------------------------------------------------
+
+def trigger_child_session(
+    parent_session_id: str,
+    parent_node_id: str,
+    db_path: Union[str, Path],
+    *,
+    child_budget: Optional[float] = None,
+    max_depth: int = DEFAULT_MAX_DEPTH,
+) -> str:
+    """Create a new legislative session linked to *parent_session_id*.
+
+    The child session:
+    - Is linked via ``parent_session_id`` and ``parent_node_id`` FKs.
+    - Starts in ``SESSION_INIT`` state.
+    - Inherits quorum rules from the constitution (same rules at all depths).
+    - Has ``mission_budget_cap ≤ parent node's token_budget``.
+    - Respects the configurable ``max_depth`` (default 3).
+
+    Parameters
+    ----------
+    parent_session_id:
+        The session ID of the parent session.
+    parent_node_id:
+        The DAG node ID in the parent session that triggers decomposition.
+        Must be a non-leaf node.
+    db_path:
+        Path to the governance SQLite database.
+    child_budget:
+        Budget for the child session. Defaults to the parent node's
+        ``token_budget``. Must not exceed it.
+    max_depth:
+        Maximum allowed session depth (default 3). Depth 0 is root.
+
+    Returns
+    -------
+    str
+        The session_id of the newly created child session.
+
+    Raises
+    ------
+    LeafNodeError
+        If *parent_node_id* is a leaf node in its proposal's DAG.
+    BudgetConservationError
+        If *child_budget* exceeds the parent node's token_budget or the
+        cumulative child budgets exceed the parent node budget.
+    RecursionDepthError
+        If creating the child would exceed *max_depth*.
+    """
+    conn = _connect(db_path)
+    try:
+        # 1. Validate parent session exists
+        parent_row = conn.execute(
+            "SELECT session_id FROM legislative_session WHERE session_id = ?",
+            (parent_session_id,),
+        ).fetchone()
+        if parent_row is None:
+            raise ValueError(f"Parent session {parent_session_id} not found")
+
+        # 2. Find the proposal that owns the node
+        proposal_id = _get_proposal_for_node(parent_node_id, conn)
+
+        # 3. Validate the node is NOT a leaf
+        if _is_leaf_node(parent_node_id, proposal_id, conn):
+            raise LeafNodeError(
+                f"Node {parent_node_id} is a leaf node and cannot "
+                f"trigger a child session"
+            )
+
+        # 4. Depth check
+        parent_depth = get_session_depth(parent_session_id, db_path)
+        child_depth = parent_depth + 1
+        if child_depth >= max_depth:
+            raise RecursionDepthError(
+                f"Child session would be at depth {child_depth}, "
+                f"exceeding max depth {max_depth}"
+            )
+
+        # 5. Budget conservation
+        node_budget = _get_node_budget(parent_node_id, conn)
+        if child_budget is None:
+            child_budget = node_budget
+        if child_budget > node_budget + 1e-9:
+            raise BudgetConservationError(
+                f"Child budget {child_budget} exceeds parent node "
+                f"budget {node_budget}"
+            )
+        # Check cumulative children budgets
+        existing_child_sum = _sum_child_budgets(
+            parent_session_id, parent_node_id, conn
+        )
+        if existing_child_sum + child_budget > node_budget + 1e-9:
+            raise BudgetConservationError(
+                f"Cumulative child budgets ({existing_child_sum} + "
+                f"{child_budget} = {existing_child_sum + child_budget}) "
+                f"exceed parent node budget {node_budget}"
+            )
+
+        # 6. Create the child session
+        child_session_id = f"session-{uuid.uuid4().hex[:12]}"
+        conn.execute(
+            "INSERT INTO legislative_session "
+            "(session_id, state, epoch, parent_session_id, parent_node_id, "
+            " mission_budget_cap) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (
+                child_session_id,
+                "SESSION_INIT",
+                0,
+                parent_session_id,
+                parent_node_id,
+                child_budget,
+            ),
+        )
+        conn.commit()
+        return child_session_id
+    finally:
+        conn.close()
+
+
+def get_session_tree(
+    root_session_id: str,
+    db_path: Union[str, Path],
+) -> Dict[str, Any]:
+    """Return the full session hierarchy rooted at *root_session_id*.
+
+    Returns a nested dict of the form::
+
+        {
+            "session_id": "...",
+            "state": "...",
+            "parent_session_id": None,
+            "parent_node_id": None,
+            "mission_budget_cap": ...,
+            "children": [
+                { "session_id": "...", "children": [...] },
+                ...
+            ],
+        }
+    """
+    conn = _connect(db_path)
+    try:
+        # Fetch all sessions
+        rows = conn.execute(
+            "SELECT session_id, state, parent_session_id, parent_node_id, "
+            "       mission_budget_cap "
+            "FROM legislative_session"
+        ).fetchall()
+
+        # Build a lookup and children map
+        nodes: Dict[str, Dict[str, Any]] = {}
+        children_map: Dict[str, List[str]] = {}
+
+        for row in rows:
+            sid = row["session_id"]
+            nodes[sid] = {
+                "session_id": sid,
+                "state": row["state"],
+                "parent_session_id": row["parent_session_id"],
+                "parent_node_id": row["parent_node_id"],
+                "mission_budget_cap": row["mission_budget_cap"],
+                "children": [],
+            }
+            parent = row["parent_session_id"]
+            if parent is not None:
+                children_map.setdefault(parent, []).append(sid)
+
+        if root_session_id not in nodes:
+            raise ValueError(f"Session {root_session_id} not found")
+
+        # Build tree recursively
+        def _build(sid: str) -> Dict[str, Any]:
+            node = dict(nodes[sid])
+            node["children"] = [
+                _build(child_id)
+                for child_id in sorted(children_map.get(sid, []))
+            ]
+            return node
+
+        return _build(root_session_id)
+    finally:
+        conn.close()

@@ -11,7 +11,7 @@ def test_health_endpoint(client: TestClient):
     assert data["status"] == "ok"
 
 
-def test_governance_stub_returns_501(client: TestClient):
-    """Governance stubs return 501 until implemented."""
-    resp = client.post("/api/governance/proposals")
-    assert resp.status_code == 501
+def test_governance_endpoints_available(client: TestClient):
+    """Governance endpoints are now live (P8 replaced 501 stubs)."""
+    resp = client.get("/api/governance/constitution")
+    assert resp.status_code == 200

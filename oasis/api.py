@@ -15,6 +15,7 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
+from oasis.governance.endpoints import init_governance_db, router as governance_router
 from oasis.social_platform.channel import Channel
 from oasis.social_platform.platform import Platform
 from oasis.social_platform.typing import ActionType
@@ -47,6 +48,12 @@ async def lifespan(app: FastAPI):
         channel=channel,
     )
     _platform_task = asyncio.create_task(platform.running())
+
+    # Initialise governance database (in-memory, colocated with platform DB)
+    import tempfile, os
+    _gov_db = os.path.join(tempfile.gettempdir(), f"oasis_gov_{os.getpid()}.db")
+    init_governance_db(_gov_db)
+
     logger.info("Metosis-OASIS platform started")
 
     yield  # Server is now running
@@ -71,9 +78,12 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Metosis-OASIS API",
     description="REST API for OASIS social simulation platform",
-    version="0.2.5",
+    version="0.3.0",
     lifespan=lifespan,
 )
+
+# Include governance API router (P8)
+app.include_router(governance_router)
 
 
 # ---------------------------------------------------------------------------
@@ -448,33 +458,6 @@ async def purchase_product(product_name: str, body: PurchaseProductBody):
 
 
 # ---------------------------------------------------------------------------
-# Governance (stubs for AgentCity protocol)
+# Governance endpoints are now served by oasis.governance.endpoints router
+# (included via app.include_router above — replaces previous 501 stubs)
 # ---------------------------------------------------------------------------
-
-
-@app.post("/api/governance/proposals", tags=["Governance"])
-async def submit_proposal():
-    """Submit a governance proposal. (Not yet implemented)"""
-    return JSONResponse(status_code=501,
-                        content={"detail": "Governance proposals not yet implemented"})
-
-
-@app.post("/api/governance/proposals/{proposal_id}/vote", tags=["Governance"])
-async def cast_vote(proposal_id: str):
-    """Cast a vote on a governance proposal. (Not yet implemented)"""
-    return JSONResponse(status_code=501,
-                        content={"detail": "Governance voting not yet implemented"})
-
-
-@app.get("/api/governance/rules", tags=["Governance"])
-async def list_rules():
-    """List governance rules. (Not yet implemented)"""
-    return JSONResponse(status_code=501,
-                        content={"detail": "Governance rules not yet implemented"})
-
-
-@app.post("/api/governance/contracts", tags=["Governance"])
-async def codify_contract():
-    """Codify a governance contract. (Not yet implemented)"""
-    return JSONResponse(status_code=501,
-                        content={"detail": "Governance contracts not yet implemented"})

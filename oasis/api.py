@@ -7,7 +7,11 @@ embedded CAMEL agents.
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
+import sqlite3
+import time
+import uuid
 from contextlib import asynccontextmanager
 from typing import Any, Optional
 
@@ -17,9 +21,15 @@ from pydantic import BaseModel
 
 from fastapi import WebSocket
 
+from oasis.governance import endpoints as gov_ep
+from oasis.execution import endpoints as exec_ep
+from oasis.adjudication import endpoints as adj_ep
+from oasis.observatory import endpoints as obs_ep
 from oasis.governance.endpoints import init_governance_db, router as governance_router
 from oasis.execution.endpoints import init_execution_db, router as execution_router
+from oasis.execution.schema import create_execution_tables
 from oasis.adjudication.endpoints import init_adjudication_db, router as adjudication_router
+from oasis.adjudication.schema import create_adjudication_tables
 from oasis.observatory.endpoints import init_observatory_db, router as observatory_router
 from oasis.observatory.dashboard import router as dashboard_router
 from oasis.observatory.event_bus import EventBus
@@ -61,6 +71,20 @@ async def lifespan(app: FastAPI):
     import tempfile, os
     _gov_db = os.path.join(tempfile.gettempdir(), f"oasis_gov_{os.getpid()}.db")
     init_governance_db(_gov_db)
+
+    _exec_db = os.path.join(tempfile.gettempdir(), f"oasis_exec_{os.getpid()}.db")
+    create_execution_tables(_exec_db)
+    init_execution_db(_exec_db)
+
+    _adj_db = os.path.join(tempfile.gettempdir(), f"oasis_adj_{os.getpid()}.db")
+    create_adjudication_tables(_adj_db)
+    init_adjudication_db(_adj_db)
+
+    _obs_db = os.path.join(tempfile.gettempdir(), f"oasis_obs_{os.getpid()}.db")
+    init_observatory_db(_obs_db)
+
+    # Also initialize the EventBus singleton with the observatory DB
+    EventBus.get_instance(_obs_db)
 
     logger.info("Metosis-OASIS platform started")
 
@@ -202,6 +226,381 @@ class PurchaseProductBody(BaseModel):
 async def health():
     """Health check endpoint."""
     return {"status": "ok", "platform_running": platform is not None}
+
+
+# ---------------------------------------------------------------------------
+# Seed demo data
+# ---------------------------------------------------------------------------
+
+
+@app.post("/api/seed-demo", tags=["Meta"])
+async def seed_demo():
+    """Populate realistic demo data across all branches.
+
+    Idempotent — skips seeding if data already exists.
+    """
+    gov_db = gov_ep._db_path
+    exec_db = exec_ep._db_path
+    adj_db = adj_ep._db_path
+    obs_db = obs_ep._db_path
+
+    if not all([gov_db, exec_db, adj_db, obs_db]):
+        raise HTTPException(503, "Not all databases are initialised")
+
+    summary: dict[str, Any] = {}
+
+    # --- Governance seed ------------------------------------------------
+    conn = sqlite3.connect(gov_db)
+    conn.execute("PRAGMA foreign_keys = ON")
+    row = conn.execute("SELECT COUNT(*) as c FROM agent_registry WHERE agent_type != 'clerk'").fetchone()
+    if row[0] > 0:
+        summary["governance"] = "already seeded"
+    else:
+        agents = [
+            ("did:demo:legislator-1", "producer", "Alice Legislator",  "alice@demo.dev",  0.85),
+            ("did:demo:legislator-2", "producer", "Bob Legislator",    "bob@demo.dev",    0.72),
+            ("did:demo:executor-1",   "producer", "Carol Executor",    "carol@demo.dev",  0.90),
+            ("did:demo:executor-2",   "producer", "Dave Executor",     "dave@demo.dev",   0.65),
+            ("did:demo:adjudicator-1","producer", "Eve Adjudicator",   "eve@demo.dev",    0.78),
+            ("did:demo:adjudicator-2","producer", "Frank Adjudicator", "frank@demo.dev",  0.60),
+            ("did:demo:observer-1",   "producer", "Grace Observer",    "grace@demo.dev",  0.88),
+            ("did:demo:observer-2",   "producer", "Hank Observer",     "hank@demo.dev",   0.55),
+        ]
+        conn.executemany(
+            "INSERT OR IGNORE INTO agent_registry "
+            "(agent_did, agent_type, display_name, human_principal, reputation_score) "
+            "VALUES (?, ?, ?, ?, ?)",
+            agents,
+        )
+
+        sessions = [
+            ("sess-demo-draft",   "SESSION_INIT", 5000.0),
+            ("sess-demo-voting",  "BIDDING_OPEN", 8000.0),
+            ("sess-demo-enacted", "DEPLOYED",     12000.0),
+        ]
+        for sid, state, budget in sessions:
+            conn.execute(
+                "INSERT OR IGNORE INTO legislative_session "
+                "(session_id, state, mission_budget_cap) VALUES (?, ?, ?)",
+                (sid, state, budget),
+            )
+
+        rep_entries = [
+            ("did:demo:legislator-1", 0.50, 0.70, 0.80, "Initial assessment"),
+            ("did:demo:legislator-1", 0.70, 0.85, 0.90, "Task completion bonus"),
+            ("did:demo:executor-1",   0.50, 0.75, 0.85, "Initial assessment"),
+            ("did:demo:executor-1",   0.75, 0.90, 0.95, "Excellent output quality"),
+            ("did:demo:adjudicator-1",0.50, 0.65, 0.70, "Initial assessment"),
+            ("did:demo:adjudicator-1",0.65, 0.78, 0.80, "Fair adjudication record"),
+            ("did:demo:observer-1",   0.50, 0.80, 0.88, "Initial assessment"),
+            ("did:demo:observer-2",   0.50, 0.55, 0.50, "Initial assessment"),
+        ]
+        conn.executemany(
+            "INSERT INTO reputation_ledger "
+            "(agent_did, old_score, new_score, performance_score, reason) "
+            "VALUES (?, ?, ?, ?, ?)",
+            rep_entries,
+        )
+        conn.commit()
+        summary["governance"] = {"agents": len(agents), "sessions": len(sessions), "reputation_entries": len(rep_entries)}
+    conn.close()
+
+    # --- Execution seed -------------------------------------------------
+    conn = sqlite3.connect(exec_db)
+    conn.execute("PRAGMA foreign_keys = OFF")
+    row = conn.execute("SELECT COUNT(*) as c FROM task_assignment").fetchone()
+    if row[0] > 0:
+        summary["execution"] = "already seeded"
+    else:
+        tasks = [
+            (str(uuid.uuid4()), "sess-demo-enacted", "n1", "did:demo:executor-1", "assigned"),
+            (str(uuid.uuid4()), "sess-demo-enacted", "n2", "did:demo:executor-1", "running"),
+            (str(uuid.uuid4()), "sess-demo-enacted", "n3", "did:demo:executor-2", "completed"),
+            (str(uuid.uuid4()), "sess-demo-enacted", "n4", "did:demo:executor-2", "settled"),
+            (str(uuid.uuid4()), "sess-demo-voting",  "n5", "did:demo:executor-1", "failed"),
+        ]
+        conn.executemany(
+            "INSERT OR IGNORE INTO task_assignment "
+            "(task_id, session_id, node_id, agent_did, status) VALUES (?, ?, ?, ?, ?)",
+            tasks,
+        )
+        conn.commit()
+        summary["execution"] = {"task_assignments": len(tasks)}
+    conn.close()
+
+    # --- Adjudication seed ----------------------------------------------
+    conn = sqlite3.connect(adj_db)
+    conn.execute("PRAGMA foreign_keys = OFF")
+    row = conn.execute("SELECT COUNT(*) as c FROM treasury").fetchone()
+    if row[0] > 0:
+        summary["adjudication"] = "already seeded"
+    else:
+        # Create stub tables needed for FK references and guardian alerts
+        conn.executescript("""
+            CREATE TABLE IF NOT EXISTS task_assignment (
+                task_id TEXT PRIMARY KEY,
+                session_id TEXT, node_id TEXT, agent_did TEXT, status TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE TABLE IF NOT EXISTS agent_registry (
+                agent_did TEXT PRIMARY KEY,
+                agent_type TEXT, display_name TEXT, human_principal TEXT,
+                reputation_score REAL DEFAULT 0.5,
+                registered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, active BOOLEAN DEFAULT 1
+            );
+            CREATE TABLE IF NOT EXISTS guardian_alert (
+                alert_id TEXT PRIMARY KEY, task_id TEXT NOT NULL,
+                alert_type TEXT NOT NULL, severity TEXT NOT NULL,
+                details TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
+        # Insert stub tasks for FK references
+        conn.execute(
+            "INSERT OR IGNORE INTO task_assignment (task_id, session_id, node_id, agent_did, status) "
+            "VALUES ('task-alert-1', 'sess-demo-enacted', 'n1', 'did:demo:executor-1', 'running')"
+        )
+        conn.execute(
+            "INSERT OR IGNORE INTO task_assignment (task_id, session_id, node_id, agent_did, status) "
+            "VALUES ('task-alert-2', 'sess-demo-enacted', 'n2', 'did:demo:executor-2', 'failed')"
+        )
+        # Insert stub agents for FK
+        conn.execute(
+            "INSERT OR IGNORE INTO agent_registry (agent_did, agent_type, display_name) "
+            "VALUES ('did:demo:executor-1', 'producer', 'Carol Executor')"
+        )
+        conn.execute(
+            "INSERT OR IGNORE INTO agent_registry (agent_did, agent_type, display_name) "
+            "VALUES ('did:demo:executor-2', 'producer', 'Dave Executor')"
+        )
+
+        alerts = [
+            ("alert-demo-1", "task-alert-1", "timeout", "high", "Task exceeded timeout by 200%"),
+            ("alert-demo-2", "task-alert-2", "schema_violation", "critical", "Output schema mismatch"),
+        ]
+        conn.executemany(
+            "INSERT OR IGNORE INTO guardian_alert "
+            "(alert_id, task_id, alert_type, severity, details) VALUES (?, ?, ?, ?, ?)",
+            alerts,
+        )
+
+        decisions = [
+            (str(uuid.uuid4()), "alert-demo-1", None, "did:demo:executor-1", "warning",  "medium", "First offence — warning issued"),
+            (str(uuid.uuid4()), "alert-demo-2", None, "did:demo:executor-2", "slash",    "high",   "Repeated schema violations"),
+            (str(uuid.uuid4()), None,           None, "did:demo:executor-2", "freeze",   "critical","Frozen pending investigation"),
+        ]
+        conn.executemany(
+            "INSERT OR IGNORE INTO adjudication_decision "
+            "(decision_id, alert_id, flag_id, agent_did, decision_type, severity, reason) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            decisions,
+        )
+
+        treasury_entries = [
+            (None, None,                  "seed",   10000.0, 10000.0),
+            ("task-alert-1", "did:demo:executor-1", "reward",  500.0, 10500.0),
+            ("task-alert-2", "did:demo:executor-2", "slash",  -200.0, 10300.0),
+            (None, None,                  "fee",    -50.0,   10250.0),
+            (None, "did:demo:executor-1", "reward",  300.0, 10550.0),
+        ]
+        conn.executemany(
+            "INSERT INTO treasury "
+            "(task_id, agent_did, entry_type, amount, balance_after) VALUES (?, ?, ?, ?, ?)",
+            treasury_entries,
+        )
+        conn.commit()
+        summary["adjudication"] = {
+            "guardian_alerts": len(alerts),
+            "adjudication_decisions": len(decisions),
+            "treasury_entries": len(treasury_entries),
+        }
+    conn.close()
+
+    # --- Observatory seed (event_log + cross-branch tables for summary) --
+    conn = sqlite3.connect(obs_db)
+    conn.execute("PRAGMA foreign_keys = OFF")
+    row = conn.execute("SELECT COUNT(*) as c FROM event_log").fetchone()
+    if row[0] > 0:
+        summary["observatory"] = "already seeded"
+    else:
+        # Create governance/execution/adjudication tables in observatory DB
+        # so that summary/leaderboard/heatmap queries work
+        conn.executescript("""
+            CREATE TABLE IF NOT EXISTS agent_registry (
+                agent_did TEXT PRIMARY KEY, agent_type TEXT NOT NULL,
+                display_name TEXT NOT NULL, human_principal TEXT,
+                reputation_score REAL NOT NULL DEFAULT 0.5,
+                registered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                active BOOLEAN DEFAULT 1
+            );
+            CREATE TABLE IF NOT EXISTS agent_balance (
+                agent_did TEXT PRIMARY KEY, total_balance REAL DEFAULT 100.0,
+                locked_stake REAL DEFAULT 0.0, available_balance REAL DEFAULT 100.0
+            );
+            CREATE TABLE IF NOT EXISTS legislative_session (
+                session_id TEXT PRIMARY KEY, state TEXT NOT NULL DEFAULT 'SESSION_INIT',
+                epoch INTEGER DEFAULT 0, parent_session_id TEXT, parent_node_id TEXT,
+                mission_budget_cap REAL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, failed_reason TEXT
+            );
+            CREATE TABLE IF NOT EXISTS task_assignment (
+                task_id TEXT PRIMARY KEY, session_id TEXT NOT NULL,
+                node_id TEXT NOT NULL, agent_did TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'pending',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE TABLE IF NOT EXISTS guardian_alert (
+                alert_id TEXT PRIMARY KEY, task_id TEXT NOT NULL,
+                alert_type TEXT NOT NULL, severity TEXT NOT NULL,
+                details TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE TABLE IF NOT EXISTS treasury (
+                entry_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                task_id TEXT, agent_did TEXT, entry_type TEXT NOT NULL,
+                amount REAL NOT NULL, balance_after REAL NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE TABLE IF NOT EXISTS reputation_ledger (
+                entry_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                agent_did TEXT NOT NULL, old_score REAL NOT NULL,
+                new_score REAL NOT NULL, performance_score REAL,
+                lambda REAL, reason TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
+
+        # Agents
+        obs_agents = [
+            ("did:demo:legislator-1", "producer", "Alice Legislator",  "alice@demo.dev",  0.85),
+            ("did:demo:legislator-2", "producer", "Bob Legislator",    "bob@demo.dev",    0.72),
+            ("did:demo:executor-1",   "producer", "Carol Executor",    "carol@demo.dev",  0.90),
+            ("did:demo:executor-2",   "producer", "Dave Executor",     "dave@demo.dev",   0.65),
+            ("did:demo:adjudicator-1","producer", "Eve Adjudicator",   "eve@demo.dev",    0.78),
+            ("did:demo:adjudicator-2","producer", "Frank Adjudicator", "frank@demo.dev",  0.60),
+            ("did:demo:observer-1",   "producer", "Grace Observer",    "grace@demo.dev",  0.88),
+            ("did:demo:observer-2",   "producer", "Hank Observer",     "hank@demo.dev",   0.55),
+        ]
+        conn.executemany(
+            "INSERT OR IGNORE INTO agent_registry "
+            "(agent_did, agent_type, display_name, human_principal, reputation_score) "
+            "VALUES (?, ?, ?, ?, ?)",
+            obs_agents,
+        )
+        # Agent balances
+        balances = [
+            ("did:demo:legislator-1", 150.0, 10.0, 140.0),
+            ("did:demo:legislator-2", 100.0,  0.0, 100.0),
+            ("did:demo:executor-1",   200.0, 25.0, 175.0),
+            ("did:demo:executor-2",    80.0,  5.0,  75.0),
+            ("did:demo:adjudicator-1",120.0,  0.0, 120.0),
+            ("did:demo:adjudicator-2", 95.0,  0.0,  95.0),
+            ("did:demo:observer-1",   110.0,  0.0, 110.0),
+            ("did:demo:observer-2",    90.0,  0.0,  90.0),
+        ]
+        conn.executemany(
+            "INSERT OR IGNORE INTO agent_balance "
+            "(agent_did, total_balance, locked_stake, available_balance) "
+            "VALUES (?, ?, ?, ?)",
+            balances,
+        )
+        # Sessions
+        conn.execute("INSERT OR IGNORE INTO legislative_session (session_id, state, mission_budget_cap) VALUES (?, ?, ?)",
+                     ("sess-demo-draft", "SESSION_INIT", 5000.0))
+        conn.execute("INSERT OR IGNORE INTO legislative_session (session_id, state, mission_budget_cap) VALUES (?, ?, ?)",
+                     ("sess-demo-voting", "BIDDING_OPEN", 8000.0))
+        conn.execute("INSERT OR IGNORE INTO legislative_session (session_id, state, mission_budget_cap) VALUES (?, ?, ?)",
+                     ("sess-demo-enacted", "DEPLOYED", 12000.0))
+        # Task assignments
+        obs_tasks = [
+            ("task-obs-1", "sess-demo-enacted", "n1", "did:demo:executor-1", "assigned"),
+            ("task-obs-2", "sess-demo-enacted", "n2", "did:demo:executor-1", "running"),
+            ("task-obs-3", "sess-demo-enacted", "n3", "did:demo:executor-2", "completed"),
+            ("task-obs-4", "sess-demo-enacted", "n4", "did:demo:executor-2", "settled"),
+            ("task-obs-5", "sess-demo-voting",  "n5", "did:demo:executor-1", "failed"),
+        ]
+        conn.executemany(
+            "INSERT OR IGNORE INTO task_assignment "
+            "(task_id, session_id, node_id, agent_did, status) VALUES (?, ?, ?, ?, ?)",
+            obs_tasks,
+        )
+        # Guardian alerts
+        conn.execute(
+            "INSERT OR IGNORE INTO guardian_alert (alert_id, task_id, alert_type, severity, details) "
+            "VALUES (?, ?, ?, ?, ?)",
+            ("alert-obs-1", "task-obs-2", "timeout", "high", "Task exceeded timeout"),
+        )
+        conn.execute(
+            "INSERT OR IGNORE INTO guardian_alert (alert_id, task_id, alert_type, severity, details) "
+            "VALUES (?, ?, ?, ?, ?)",
+            ("alert-obs-2", "task-obs-5", "schema_violation", "critical", "Output mismatch"),
+        )
+        # Treasury
+        obs_treasury = [
+            (None, None, "seed", 10000.0, 10000.0),
+            ("task-obs-3", "did:demo:executor-2", "reward", 500.0, 10500.0),
+            ("task-obs-5", "did:demo:executor-1", "slash", -200.0, 10300.0),
+            (None, None, "fee", -50.0, 10250.0),
+        ]
+        conn.executemany(
+            "INSERT INTO treasury (task_id, agent_did, entry_type, amount, balance_after) "
+            "VALUES (?, ?, ?, ?, ?)",
+            obs_treasury,
+        )
+        # Reputation ledger
+        obs_rep = [
+            ("did:demo:legislator-1", 0.50, 0.85, 0.90, "Consistent legislation quality"),
+            ("did:demo:executor-1",   0.50, 0.90, 0.95, "Excellent task execution"),
+            ("did:demo:adjudicator-1",0.50, 0.78, 0.80, "Fair adjudication"),
+            ("did:demo:observer-1",   0.50, 0.88, 0.88, "Active monitoring"),
+        ]
+        conn.executemany(
+            "INSERT INTO reputation_ledger "
+            "(agent_did, old_score, new_score, performance_score, reason) "
+            "VALUES (?, ?, ?, ?, ?)",
+            obs_rep,
+        )
+
+        # Event log — spread over 24 hours
+        now = time.time()
+        hour = 3600.0
+        events = [
+            (str(uuid.uuid4()), "SESSION_CREATED",         now - 23*hour, "sess-demo-draft",   "did:demo:legislator-1", json.dumps({"budget": 5000}),  1),
+            (str(uuid.uuid4()), "SESSION_CREATED",         now - 22*hour, "sess-demo-voting",  "did:demo:legislator-2", json.dumps({"budget": 8000}),  2),
+            (str(uuid.uuid4()), "SESSION_CREATED",         now - 21*hour, "sess-demo-enacted", "did:demo:legislator-1", json.dumps({"budget": 12000}), 3),
+            (str(uuid.uuid4()), "SESSION_STATE_CHANGED",   now - 20*hour, "sess-demo-voting",  None,                    json.dumps({"from": "SESSION_INIT", "to": "BIDDING_OPEN"}), 4),
+            (str(uuid.uuid4()), "SESSION_STATE_CHANGED",   now - 19*hour, "sess-demo-enacted", None,                    json.dumps({"from": "SESSION_INIT", "to": "DEPLOYED"}), 5),
+            (str(uuid.uuid4()), "IDENTITY_VERIFIED",       now - 18*hour, "sess-demo-enacted", "did:demo:executor-1",   json.dumps({"method": "DID"}), 6),
+            (str(uuid.uuid4()), "PROPOSAL_SUBMITTED",      now - 17*hour, "sess-demo-enacted", "did:demo:legislator-1", json.dumps({"nodes": 4}), 7),
+            (str(uuid.uuid4()), "VOTE_CAST",               now - 16*hour, "sess-demo-voting",  "did:demo:legislator-1", json.dumps({"preference": [1, 2]}), 8),
+            (str(uuid.uuid4()), "VOTE_CAST",               now - 15.5*hour,"sess-demo-voting", "did:demo:legislator-2", json.dumps({"preference": [2, 1]}), 9),
+            (str(uuid.uuid4()), "BID_SUBMITTED",           now - 15*hour, "sess-demo-voting",  "did:demo:executor-1",   json.dumps({"stake": 0.5}), 10),
+            (str(uuid.uuid4()), "TASK_ASSIGNED",           now - 14*hour, "sess-demo-enacted", "did:demo:executor-1",   json.dumps({"node_id": "n1"}), 11),
+            (str(uuid.uuid4()), "TASK_ASSIGNED",           now - 13.5*hour,"sess-demo-enacted","did:demo:executor-2",   json.dumps({"node_id": "n3"}), 12),
+            (str(uuid.uuid4()), "TASK_COMMITTED",          now - 13*hour, "sess-demo-enacted", "did:demo:executor-1",   json.dumps({"stake": 25.0}), 13),
+            (str(uuid.uuid4()), "TASK_EXECUTED",           now - 12*hour, "sess-demo-enacted", "did:demo:executor-2",   json.dumps({"latency_ms": 4500}), 14),
+            (str(uuid.uuid4()), "TASK_VALIDATED",          now - 11*hour, "sess-demo-enacted", "did:demo:executor-2",   json.dumps({"quality": 0.92}), 15),
+            (str(uuid.uuid4()), "TASK_SETTLED",            now - 10*hour, "sess-demo-enacted", "did:demo:executor-2",   json.dumps({"reward": 500.0}), 16),
+            (str(uuid.uuid4()), "GUARDIAN_ALERT_RAISED",   now - 9*hour,  "sess-demo-enacted", "did:demo:executor-1",   json.dumps({"alert_type": "timeout"}), 17),
+            (str(uuid.uuid4()), "STAKE_SLASHED",           now - 8*hour,  "sess-demo-enacted", "did:demo:executor-1",   json.dumps({"amount": 200.0}), 18),
+            (str(uuid.uuid4()), "REPUTATION_UPDATED",      now - 7*hour,  "sess-demo-enacted", "did:demo:executor-1",   json.dumps({"old": 0.90, "new": 0.85}), 19),
+            (str(uuid.uuid4()), "COORDINATION_FLAGGED",    now - 6*hour,  "sess-demo-voting",  "did:demo:legislator-1", json.dumps({"pair": "legislator-1/legislator-2", "score": 0.78}), 20),
+            (str(uuid.uuid4()), "TREASURY_ENTRY",          now - 5*hour,  None,                None,                    json.dumps({"type": "fee", "amount": -50.0}), 21),
+            (str(uuid.uuid4()), "DELIBERATION_ROUND",      now - 4*hour,  "sess-demo-voting",  "did:demo:legislator-1", json.dumps({"round": 1, "message": "Propose budget increase"}), 22),
+            (str(uuid.uuid4()), "REGULATORY_DECISION_MADE",now - 3*hour,  "sess-demo-enacted", "did:demo:adjudicator-1",json.dumps({"approved": True}), 23),
+            (str(uuid.uuid4()), "SPEC_COMPILED",           now - 2*hour,  "sess-demo-enacted", None,                    json.dumps({"spec_id": "spec-1"}), 24),
+            (str(uuid.uuid4()), "SESSION_DEPLOYED",        now - 1*hour,  "sess-demo-enacted", None,                    json.dumps({"deployed": True}), 25),
+        ]
+        conn.executemany(
+            "INSERT INTO event_log "
+            "(event_id, event_type, timestamp, session_id, agent_did, payload, sequence_number) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            events,
+        )
+        conn.commit()
+        summary["observatory"] = {"events": len(events)}
+    conn.close()
+
+    return {"status": "ok", "seeded": summary}
 
 
 # ---------------------------------------------------------------------------

@@ -1,0 +1,289 @@
+# Metosis OASIS — ZeroClaw Governance Skill
+# Enables producer agents to participate in legislative sessions via HTTP tools.
+
+[skill]
+name = "metosis-governance"
+description = "Governance protocol tools for AgentCity legislative sessions — identity, proposals, deliberation, voting, and bidding"
+version = "0.1.0"
+tags = ["governance", "legislative", "agentcity"]
+
+# ---------------------------------------------------------------------------
+# Config example (place in ZeroClaw config.toml):
+#   allowed_domains = ["localhost:8000"]
+# ---------------------------------------------------------------------------
+
+# ========================= Tool 1: attest_identity ========================
+
+[[tools]]
+name = "attest_identity"
+description = "Prove identity to the Registrar clerk by submitting an attestation with DID, signature, and reputation score."
+kind = "http"
+method = "POST"
+url_template = "/api/governance/sessions/{session_id}/identity/attest"
+
+[[tools.args]]
+name = "session_id"
+type = "string"
+required = true
+description = "Legislative session identifier (path parameter)"
+
+[[tools.args]]
+name = "agent_did"
+type = "string"
+required = true
+description = "Decentralised identifier of the attesting agent"
+
+[[tools.args]]
+name = "signature"
+type = "string"
+required = true
+description = "Cryptographic signature proving control of the DID"
+
+[[tools.args]]
+name = "reputation_score"
+type = "number"
+required = true
+description = "Agent's current reputation score (0.0 to 1.0)"
+
+[[tools.args]]
+name = "agent_type"
+type = "string"
+required = false
+description = "Type of agent — 'producer' or 'clerk' (default: 'producer')"
+
+# ========================= Tool 2: submit_proposal ========================
+
+[[tools]]
+name = "submit_proposal"
+description = "Propose a DAG decomposition for the session's mission. Includes task graph, budget, and deadline."
+kind = "http"
+method = "POST"
+url_template = "/api/governance/sessions/{session_id}/proposals"
+
+[[tools.args]]
+name = "session_id"
+type = "string"
+required = true
+description = "Legislative session identifier (path parameter)"
+
+[[tools.args]]
+name = "proposer_did"
+type = "string"
+required = true
+description = "DID of the agent submitting the proposal"
+
+[[tools.args]]
+name = "dag_spec"
+type = "object"
+required = true
+description = "DAG specification with nodes and edges defining the task decomposition"
+
+[[tools.args]]
+name = "rationale"
+type = "string"
+required = false
+description = "Free-text rationale explaining the proposed decomposition"
+
+[[tools.args]]
+name = "token_budget_total"
+type = "number"
+required = true
+description = "Total token budget requested for the proposal"
+
+[[tools.args]]
+name = "deadline_ms"
+type = "integer"
+required = true
+description = "Deadline in milliseconds for proposal execution"
+
+# ========================= Tool 3: get_evidence ===========================
+
+[[tools]]
+name = "get_evidence"
+description = "Read the Regulator's evidence briefing for the current session, including bid evaluations and compliance notes."
+kind = "http"
+method = "GET"
+url_template = "/api/governance/sessions/{session_id}/regulatory/evidence"
+
+[[tools.args]]
+name = "session_id"
+type = "string"
+required = true
+description = "Legislative session identifier (path parameter)"
+
+# ========================= Tool 4: submit_straw_poll ======================
+
+[[tools]]
+name = "submit_straw_poll"
+description = "Submit a pre-deliberation straw poll with ranked preferences from participating agents."
+kind = "http"
+method = "POST"
+url_template = "/api/governance/sessions/{session_id}/deliberation/straw-poll"
+
+[[tools.args]]
+name = "session_id"
+type = "string"
+required = true
+description = "Legislative session identifier (path parameter)"
+
+[[tools.args]]
+name = "ballots"
+type = "object"
+required = true
+description = "Map of agent_did to ordered list of proposal IDs representing ranked preferences"
+
+# ========================= Tool 5: discuss ================================
+
+[[tools]]
+name = "discuss"
+description = "Submit a structured debate message during a deliberation round."
+kind = "http"
+method = "POST"
+url_template = "/api/governance/sessions/{session_id}/deliberation/discuss"
+
+[[tools.args]]
+name = "session_id"
+type = "string"
+required = true
+description = "Legislative session identifier (path parameter)"
+
+[[tools.args]]
+name = "agent_did"
+type = "string"
+required = true
+description = "DID of the agent contributing to the discussion"
+
+[[tools.args]]
+name = "round_number"
+type = "integer"
+required = true
+description = "Deliberation round number (starts at 1, max defined by constitution)"
+
+[[tools.args]]
+name = "message"
+type = "string"
+required = true
+description = "Structured debate message content"
+
+# ========================= Tool 6: get_deliberation_summary ===============
+
+[[tools]]
+name = "get_deliberation_summary"
+description = "Read the Speaker's synthesis of all deliberation rounds, including messages grouped by round."
+kind = "http"
+method = "GET"
+url_template = "/api/governance/sessions/{session_id}/deliberation/summary"
+
+[[tools.args]]
+name = "session_id"
+type = "string"
+required = true
+description = "Legislative session identifier (path parameter)"
+
+# ========================= Tool 7: cast_vote ==============================
+
+[[tools]]
+name = "cast_vote"
+description = "Submit a full ordinal ranking of proposals via Copeland voting."
+kind = "http"
+method = "POST"
+url_template = "/api/governance/sessions/{session_id}/vote"
+
+[[tools.args]]
+name = "session_id"
+type = "string"
+required = true
+description = "Legislative session identifier (path parameter)"
+
+[[tools.args]]
+name = "ballots"
+type = "object"
+required = true
+description = "Map of agent_did to ordered list of proposal IDs representing final ranked vote"
+
+# ========================= Tool 8: submit_bid =============================
+
+[[tools]]
+name = "submit_bid"
+description = "Bid on a task node in the approved DAG — specifying stake, latency estimate, and PoP tier."
+kind = "http"
+method = "POST"
+url_template = "/api/governance/sessions/{session_id}/bids"
+
+[[tools.args]]
+name = "session_id"
+type = "string"
+required = true
+description = "Legislative session identifier (path parameter)"
+
+[[tools.args]]
+name = "task_node_id"
+type = "string"
+required = true
+description = "Identifier of the DAG task node to bid on"
+
+[[tools.args]]
+name = "bidder_did"
+type = "string"
+required = true
+description = "DID of the bidding agent"
+
+[[tools.args]]
+name = "service_id"
+type = "string"
+required = true
+description = "Service capability identifier offered by the bidder"
+
+[[tools.args]]
+name = "proposed_code_hash"
+type = "string"
+required = true
+description = "Hash of the proposed code or model to execute the task"
+
+[[tools.args]]
+name = "stake_amount"
+type = "number"
+required = true
+description = "Token stake the bidder is willing to lock (must be >= 0)"
+
+[[tools.args]]
+name = "estimated_latency_ms"
+type = "integer"
+required = true
+description = "Estimated task execution latency in milliseconds"
+
+[[tools.args]]
+name = "pop_tier_acceptance"
+type = "integer"
+required = true
+description = "Proof-of-Performance tier (1 = highest, 3 = lowest)"
+
+# ========================= Tool 9: get_session_state ======================
+
+[[tools]]
+name = "get_session_state"
+description = "Check the current state of a legislative session including epoch and budget."
+kind = "http"
+method = "GET"
+url_template = "/api/governance/sessions/{session_id}"
+
+[[tools.args]]
+name = "session_id"
+type = "string"
+required = true
+description = "Legislative session identifier (path parameter)"
+
+# ========================= Tool 10: get_vote_results ======================
+
+[[tools]]
+name = "get_vote_results"
+description = "Read the Copeland voting results for the session, including individual ballots and totals."
+kind = "http"
+method = "GET"
+url_template = "/api/governance/sessions/{session_id}/vote/results"
+
+[[tools.args]]
+name = "session_id"
+type = "string"
+required = true
+description = "Legislative session identifier (path parameter)"

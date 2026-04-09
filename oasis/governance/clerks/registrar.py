@@ -5,15 +5,18 @@ Handles:
 - Verifying agent identity attestations (MSG2)
 - Checking quorum (required roles present)
 - Admitting agents to sessions
+- Layer 2: Sybil pattern detection (burst registrations, similar profiles)
 """
 from __future__ import annotations
 
 import json
 import uuid
 from datetime import datetime, timezone
-from typing import Any
+from difflib import SequenceMatcher
+from typing import Any, Optional
 
 from oasis.governance.clerks.base import BaseClerk
+from oasis.governance.clerks.llm_interface import LLMError
 from oasis.governance.messages import (
     IdentityAttestation,
     IdentityVerificationRequest,
@@ -22,7 +25,12 @@ from oasis.governance.messages import (
 
 
 class Registrar(BaseClerk):
-    """Registrar clerk — Layer 1 identity and session management."""
+    """Registrar clerk — Layer 1 identity + Layer 2 Sybil detection."""
+
+    # Default burst detection parameters
+    BURST_WINDOW_SECONDS = 60  # registrations within this window trigger flag
+    BURST_THRESHOLD = 5  # number of registrations that constitutes a burst
+    SIMILARITY_THRESHOLD = 0.7  # profile name similarity threshold
 
     # ------------------------------------------------------------------
     # Layer 1 dispatch
@@ -249,3 +257,161 @@ class Registrar(BaseClerk):
             return attested > 0
         finally:
             conn.close()
+
+    # ------------------------------------------------------------------
+    # Layer 2: Sybil pattern detection
+    # ------------------------------------------------------------------
+
+    def layer2_reason(self, context: dict) -> Optional[dict]:
+        """Detect Sybil patterns: burst registrations and similar profiles.
+
+        Context keys:
+            session_id: current session
+            agent_did: agent under scrutiny
+            recent_registrations: list[dict] with keys (agent_did, timestamp, display_name)
+                If not provided, fetched from DB.
+            burst_threshold: override for BURST_THRESHOLD
+            burst_window_seconds: override for BURST_WINDOW_SECONDS
+
+        Returns:
+            dict with {flagged, reason, confidence} or None if LLM disabled.
+        """
+        if not self.llm_enabled or self.llm is None:
+            return None
+
+        session_id = context.get("session_id", "")
+        agent_did = context.get("agent_did", "")
+        registrations = context.get("recent_registrations", [])
+        burst_threshold = context.get("burst_threshold", self.BURST_THRESHOLD)
+        burst_window = context.get("burst_window_seconds", self.BURST_WINDOW_SECONDS)
+
+        # If no registrations provided, fetch from DB
+        if not registrations:
+            registrations = self._fetch_recent_registrations(session_id)
+
+        flags: list[str] = []
+        confidence = 0.0
+
+        # --- Heuristic 1: Burst detection ---
+        burst_count = self._check_burst(registrations, burst_window)
+        if burst_count >= burst_threshold:
+            flags.append(
+                f"Burst registration: {burst_count} agents within "
+                f"{burst_window}s window (threshold: {burst_threshold})"
+            )
+            confidence = max(confidence, min(burst_count / (burst_threshold * 2), 0.9))
+
+        # --- Heuristic 2: Similar profile names ---
+        similar_pairs = self._check_profile_similarity(registrations, agent_did)
+        if similar_pairs:
+            names = ", ".join(p[0] for p in similar_pairs[:3])
+            flags.append(f"Similar profile names detected: {names}")
+            confidence = max(confidence, 0.6)
+
+        # --- LLM enrichment (if heuristics flagged something) ---
+        if flags:
+            try:
+                prompt = (
+                    f"Sybil detection analysis for agent {agent_did} in session {session_id}.\n"
+                    f"Heuristic flags:\n" + "\n".join(f"- {f}" for f in flags) + "\n"
+                    f"Recent registrations: {len(registrations)} agents.\n"
+                    f"Assess whether this pattern indicates Sybil behavior."
+                )
+                llm_response = self.llm.query(prompt, context)
+                reason = f"Heuristic + LLM: {'; '.join(flags)}. LLM assessment: {llm_response}"
+            except LLMError:
+                reason = f"Heuristic only (LLM unavailable): {'; '.join(flags)}"
+        else:
+            reason = "No Sybil patterns detected."
+
+        return {
+            "flagged": len(flags) > 0,
+            "reason": reason,
+            "confidence": round(confidence, 2),
+        }
+
+    def _fetch_recent_registrations(self, session_id: str) -> list[dict]:
+        """Fetch recent attestations from message_log for this session."""
+        conn = self._connect()
+        try:
+            rows = conn.execute(
+                "SELECT sender_did, created_at, payload FROM message_log "
+                "WHERE session_id = ? AND msg_type = 'IDENTITY_ATTESTATION' "
+                "ORDER BY created_at ASC",
+                (session_id,),
+            ).fetchall()
+            results = []
+            for r in rows:
+                payload = json.loads(r["payload"]) if r["payload"] else {}
+                results.append({
+                    "agent_did": r["sender_did"],
+                    "timestamp": r["created_at"],
+                    "display_name": payload.get("display_name", r["sender_did"]),
+                })
+            return results
+        finally:
+            conn.close()
+
+    @staticmethod
+    def _check_burst(registrations: list[dict], window_seconds: int) -> int:
+        """Count max registrations within a sliding window."""
+        if len(registrations) < 2:
+            return len(registrations)
+
+        timestamps = []
+        for reg in registrations:
+            ts = reg.get("timestamp", "")
+            if isinstance(ts, str) and ts:
+                try:
+                    dt = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+                    timestamps.append(dt)
+                except (ValueError, TypeError):
+                    continue
+            elif isinstance(ts, (int, float)):
+                timestamps.append(datetime.fromtimestamp(ts, tz=timezone.utc))
+
+        if not timestamps:
+            # Fall back to count-based detection
+            return len(registrations)
+
+        timestamps.sort()
+        max_in_window = 0
+        for i, t in enumerate(timestamps):
+            count = 0
+            for j in range(i, len(timestamps)):
+                diff = (timestamps[j] - t).total_seconds()
+                if diff <= window_seconds:
+                    count += 1
+                else:
+                    break
+            max_in_window = max(max_in_window, count)
+
+        return max_in_window
+
+    @staticmethod
+    def _check_profile_similarity(
+        registrations: list[dict], target_did: str
+    ) -> list[tuple[str, float]]:
+        """Find profiles with suspiciously similar display names."""
+        target_name = ""
+        names: dict[str, str] = {}
+        for reg in registrations:
+            did = reg.get("agent_did", "")
+            name = reg.get("display_name", did)
+            if did == target_did:
+                target_name = name
+            names[did] = name
+
+        if not target_name:
+            return []
+
+        similar: list[tuple[str, float]] = []
+        for did, name in names.items():
+            if did == target_did:
+                continue
+            ratio = SequenceMatcher(None, target_name.lower(), name.lower()).ratio()
+            if ratio >= Registrar.SIMILARITY_THRESHOLD:
+                similar.append((name, ratio))
+
+        similar.sort(key=lambda x: -x[1])
+        return similar

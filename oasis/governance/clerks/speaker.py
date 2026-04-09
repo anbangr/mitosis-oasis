@@ -7,6 +7,8 @@ Handles:
 - Formal voting via Copeland method
 - Coordination detection (Kendall tau)
 - Issuing approval signatures (MSG7 half)
+- Layer 2: deliberation summarization, convergence/deadlock detection,
+  minority position preservation
 """
 from __future__ import annotations
 
@@ -14,17 +16,23 @@ import hashlib
 import json
 import random
 import uuid
+from collections import Counter
 from datetime import datetime, timezone
 from typing import Any, Optional
 
 from oasis.governance.clerks.base import BaseClerk
+from oasis.governance.clerks.llm_interface import LLMError
 from oasis.governance.dag import DAGEdge, DAGNode, DAGSpec, CycleError, topological_sort, validate_dag
 from oasis.governance.messages import DAGProposal, log_message
 from oasis.governance.voting import CopelandVoting, coordination_detection, kendall_tau
 
 
 class Speaker(BaseClerk):
-    """Speaker clerk — Layer 1 proposal and voting management."""
+    """Speaker clerk — Layer 1 proposal/voting + Layer 2 deliberation analysis."""
+
+    # Convergence/deadlock thresholds
+    CONVERGENCE_THRESHOLD = 0.75  # fraction of participants agreeing
+    DEADLOCK_ROUND_THRESHOLD = 2  # rounds with no position change
 
     # ------------------------------------------------------------------
     # Layer 1 dispatch
@@ -471,4 +479,84 @@ class Speaker(BaseClerk):
             "speaker_signature": signature,
             "spec_id": spec_id,
             "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
+
+    # ------------------------------------------------------------------
+    # Layer 2: Deliberation analysis
+    # ------------------------------------------------------------------
+
+    def layer2_reason(self, context: dict) -> Optional[dict]:
+        """Summarize deliberation, detect convergence/deadlock, preserve minorities.
+
+        Context keys:
+            session_id: current session
+            round_num: deliberation round number
+            messages: list[dict] with keys (agent_did, content, position)
+            participant_dids: list[str] of participating agents
+
+        Returns:
+            dict with {summary, convergence, minority_positions, deadlock_detected}
+            or None if LLM disabled.
+        """
+        if not self.llm_enabled or self.llm is None:
+            return None
+
+        session_id = context.get("session_id", "")
+        round_num = context.get("round_num", 1)
+        messages = context.get("messages", [])
+        participant_dids = context.get("participant_dids", [])
+
+        # --- Heuristic analysis ---
+        positions = [m.get("position", "neutral") for m in messages if m.get("position")]
+        position_counts = Counter(positions)
+        total_positions = sum(position_counts.values()) or 1
+
+        # Convergence: dominant position exceeds threshold
+        max_position = position_counts.most_common(1)[0] if position_counts else ("neutral", 0)
+        convergence = max_position[1] / total_positions if total_positions > 0 else 0.0
+
+        # Minority positions: any position held by < 25% of participants
+        minority_positions: list[str] = []
+        for pos, count in position_counts.items():
+            if count / total_positions < 0.25 and pos != max_position[0]:
+                minority_positions.append(pos)
+
+        # Deadlock: multiple rounds with same position distribution
+        previous_rounds = context.get("previous_rounds", [])
+        deadlock_detected = False
+        if len(previous_rounds) >= self.DEADLOCK_ROUND_THRESHOLD:
+            recent = previous_rounds[-self.DEADLOCK_ROUND_THRESHOLD:]
+            if all(r.get("position_counts") == dict(position_counts) for r in recent):
+                deadlock_detected = True
+
+        # --- LLM enrichment ---
+        try:
+            message_text = "\n".join(
+                f"[{m.get('agent_did', '?')}] ({m.get('position', '?')}): "
+                f"{m.get('content', '')}"
+                for m in messages[:20]  # limit context size
+            )
+            prompt = (
+                f"Deliberation round {round_num} for session {session_id}.\n"
+                f"Participants: {len(participant_dids)}\n"
+                f"Position distribution: {dict(position_counts)}\n"
+                f"Messages:\n{message_text}\n\n"
+                f"Provide: 1) A concise summary of the deliberation. "
+                f"2) Whether positions are converging or deadlocked. "
+                f"3) Any minority positions that should be preserved."
+            )
+            llm_response = self.llm.query(prompt, context)
+            summary = llm_response
+        except LLMError:
+            summary = (
+                f"Round {round_num}: {len(messages)} messages from "
+                f"{len(participant_dids)} participants. "
+                f"Positions: {dict(position_counts)}."
+            )
+
+        return {
+            "summary": summary,
+            "convergence": round(convergence, 2),
+            "minority_positions": minority_positions,
+            "deadlock_detected": deadlock_detected,
         }

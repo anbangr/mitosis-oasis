@@ -7,16 +7,20 @@ Handles:
 - Fairness checking (HHI)
 - Re-proposal enforcement (max 2 per epoch)
 - Co-signing approvals (MSG7 half)
+- Layer 2: bid feasibility, coordinated bidding, compliance concerns,
+  evidence briefing enrichment
 """
 from __future__ import annotations
 
 import hashlib
 import json
 import uuid
+from collections import Counter
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Optional
 
 from oasis.governance.clerks.base import BaseClerk
+from oasis.governance.clerks.llm_interface import LLMError
 from oasis.governance.fairness import check_fairness
 from oasis.governance.messages import (
     RegulatoryDecision,
@@ -26,7 +30,11 @@ from oasis.governance.messages import (
 
 
 class Regulator(BaseClerk):
-    """Regulator clerk — Layer 1 fairness and bid management."""
+    """Regulator clerk — Layer 1 fairness + Layer 2 bid analysis."""
+
+    # Feasibility thresholds
+    MAX_REASONABLE_LATENCY_MS = 300_000  # 5 minutes
+    MIN_REASONABLE_STAKE = 0.05
 
     # ------------------------------------------------------------------
     # Layer 1 dispatch
@@ -389,3 +397,114 @@ class Regulator(BaseClerk):
         """Generate Regulator's co-signature for MSG7."""
         sig_data = f"{session_id}:{spec_id}:{self.clerk_did}"
         return hashlib.sha256(sig_data.encode()).hexdigest()
+
+    # ------------------------------------------------------------------
+    # Layer 2: Bid feasibility & coordination detection
+    # ------------------------------------------------------------------
+
+    def layer2_reason(self, context: dict) -> Optional[dict]:
+        """Assess bid feasibility, detect coordination, flag compliance concerns.
+
+        Context keys:
+            session_id: current session
+            bid_set: list[dict] with bid info (bidder_did, stake, latency, task_node_id)
+            bidder_histories: dict mapping bidder_did to performance records
+            fairness_score: float from HHI check
+
+        Returns:
+            dict with {feasibility_concerns, collusion_detected, compliance_flags}
+            or None if LLM disabled.
+        """
+        if not self.llm_enabled or self.llm is None:
+            return None
+
+        session_id = context.get("session_id", "")
+        bid_set = context.get("bid_set", [])
+        bidder_histories = context.get("bidder_histories", {})
+        fairness_score = context.get("fairness_score", 1.0)
+
+        feasibility_concerns: list[str] = []
+        compliance_flags: list[str] = []
+        collusion_detected = False
+
+        # --- Heuristic 1: Feasibility assessment ---
+        for bid in bid_set:
+            bidder = bid.get("bidder_did", "unknown")
+            latency = bid.get("estimated_latency_ms", 0)
+            stake = bid.get("stake_amount", 0)
+
+            if latency > self.MAX_REASONABLE_LATENCY_MS:
+                feasibility_concerns.append(
+                    f"{bidder}: latency {latency}ms exceeds {self.MAX_REASONABLE_LATENCY_MS}ms"
+                )
+
+            if stake < self.MIN_REASONABLE_STAKE:
+                feasibility_concerns.append(
+                    f"{bidder}: stake {stake:.3f} below minimum reasonable {self.MIN_REASONABLE_STAKE}"
+                )
+
+            # Check bidder history
+            history = bidder_histories.get(bidder, {})
+            if history.get("failure_rate", 0) > 0.5:
+                feasibility_concerns.append(
+                    f"{bidder}: high failure rate ({history['failure_rate']:.0%})"
+                )
+
+        # --- Heuristic 2: Coordinated bidding detection ---
+        if len(bid_set) >= 2:
+            # Check for identical stake amounts across different bidders on same node
+            node_bids: dict[str, list] = {}
+            for bid in bid_set:
+                nid = bid.get("task_node_id", "")
+                if nid not in node_bids:
+                    node_bids[nid] = []
+                node_bids[nid].append(bid)
+
+            for nid, bids in node_bids.items():
+                stakes = [b.get("stake_amount", 0) for b in bids]
+                bidders = [b.get("bidder_did", "") for b in bids]
+                unique_bidders = set(bidders)
+                # Same stake from different bidders = suspicious
+                if len(stakes) >= 2 and len(set(stakes)) == 1 and len(unique_bidders) > 1:
+                    collusion_detected = True
+                    compliance_flags.append(
+                        f"Identical stakes ({stakes[0]}) on node {nid} from "
+                        f"{len(unique_bidders)} different bidders"
+                    )
+
+            # Check for single bidder dominating across nodes
+            bidder_nodes = Counter(b.get("bidder_did", "") for b in bid_set)
+            total_bids = len(bid_set) or 1
+            for bidder, count in bidder_nodes.items():
+                if count / total_bids > 0.6:
+                    compliance_flags.append(
+                        f"Bidder {bidder} dominates {count}/{total_bids} bids"
+                    )
+
+        # --- Heuristic 3: Fairness concern ---
+        if fairness_score < 0.5:
+            compliance_flags.append(
+                f"Low fairness score ({fairness_score:.2f})"
+            )
+
+        # --- LLM enrichment ---
+        try:
+            prompt = (
+                f"Bid analysis for session {session_id}.\n"
+                f"Total bids: {len(bid_set)}\n"
+                f"Feasibility concerns: {feasibility_concerns or 'None'}\n"
+                f"Coordination flags: {compliance_flags or 'None'}\n"
+                f"Fairness score: {fairness_score}\n\n"
+                f"Assess overall bid health and any regulatory concerns."
+            )
+            llm_response = self.llm.query(prompt, context)
+            if "concern" in llm_response.lower() or "flag" in llm_response.lower():
+                compliance_flags.append(f"LLM advisory: {llm_response}")
+        except LLMError:
+            pass  # degrade gracefully — heuristics are sufficient
+
+        return {
+            "feasibility_concerns": feasibility_concerns,
+            "collusion_detected": collusion_detected,
+            "compliance_flags": compliance_flags,
+        }

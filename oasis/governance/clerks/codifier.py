@@ -4,21 +4,23 @@ Handles:
 - Compiling deployment specs from proposals + approved bids (MSG6)
 - Running constitutional validation (6 checks)
 - Verifying deployed contracts match specifications
+- Layer 2: semantic consistency validation between proposal and spec
 """
 from __future__ import annotations
 
 import json
 import uuid
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Optional
 
 from oasis.governance.clerks.base import BaseClerk
+from oasis.governance.clerks.llm_interface import LLMError
 from oasis.governance.constitutional import ConstitutionalValidator, ValidationResult
 from oasis.governance.messages import CodedContractSpec, DAGProposal, log_message
 
 
 class Codifier(BaseClerk):
-    """Codifier clerk — Layer 1 spec compilation and validation."""
+    """Codifier clerk — Layer 1 spec compilation + Layer 2 semantic validation."""
 
     # ------------------------------------------------------------------
     # Layer 1 dispatch
@@ -228,4 +230,89 @@ class Codifier(BaseClerk):
         return {
             "passed": len(mismatches) == 0,
             "mismatches": mismatches,
+        }
+
+    # ------------------------------------------------------------------
+    # Layer 2: Semantic consistency validation
+    # ------------------------------------------------------------------
+
+    def layer2_reason(self, context: dict) -> Optional[dict]:
+        """Validate semantic consistency between proposal rationale and spec.
+
+        Context keys:
+            proposal_rationale: str describing what the proposal intends
+            spec: dict of CodedContractSpec fields
+            service_specs: list[dict] of service assignments
+
+        Returns:
+            dict with {semantically_consistent, issues} or None if LLM disabled.
+        """
+        if not self.llm_enabled or self.llm is None:
+            return None
+
+        rationale = context.get("proposal_rationale", "")
+        spec = context.get("spec", {})
+        service_specs = context.get("service_specs", [])
+
+        issues: list[str] = []
+
+        # --- Heuristic 1: Check that spec has services matching rationale keywords ---
+        if rationale and service_specs:
+            # Basic keyword extraction from rationale
+            rationale_lower = rationale.lower()
+            service_labels = [
+                s.get("service_id", "") or s.get("label", "")
+                for s in service_specs
+            ]
+            service_text = " ".join(service_labels).lower()
+
+            # If rationale mentions specific actions but no matching service exists
+            action_keywords = ["collect", "analyze", "process", "validate", "transform"]
+            mentioned_actions = [kw for kw in action_keywords if kw in rationale_lower]
+            unmatched = [a for a in mentioned_actions if a not in service_text]
+            if unmatched and len(unmatched) > len(mentioned_actions) / 2:
+                issues.append(
+                    f"Rationale mentions actions ({', '.join(unmatched)}) "
+                    f"not reflected in service specs"
+                )
+
+        # --- Heuristic 2: Budget sanity check ---
+        collab = spec.get("collaboration_contract_spec", {})
+        total_budget = collab.get("total_budget", 0)
+        service_budget_sum = sum(s.get("token_budget", 0) for s in service_specs)
+        if total_budget > 0 and service_budget_sum > total_budget:
+            issues.append(
+                f"Service budgets ({service_budget_sum}) exceed "
+                f"total budget ({total_budget})"
+            )
+
+        # --- Heuristic 3: Empty or missing fields ---
+        if not rationale or not rationale.strip():
+            issues.append("Proposal rationale is empty")
+
+        if not service_specs:
+            issues.append("No service specs provided")
+
+        # --- LLM semantic validation ---
+        try:
+            prompt = (
+                f"Semantic consistency check.\n"
+                f"Proposal rationale: {rationale}\n"
+                f"Service specs: {json.dumps(service_specs[:5], default=str)}\n"
+                f"Collaboration spec: {json.dumps(collab, default=str)}\n\n"
+                f"Does the spec faithfully implement the proposal's intent? "
+                f"Flag any semantic mismatches or ambiguities."
+            )
+            llm_response = self.llm.query(prompt, context)
+
+            # Parse LLM response for issues
+            response_lower = llm_response.lower()
+            if any(kw in response_lower for kw in ["mismatch", "inconsisten", "conflict", "ambig"]):
+                issues.append(f"LLM semantic check: {llm_response}")
+        except LLMError:
+            pass  # degrade gracefully
+
+        return {
+            "semantically_consistent": len(issues) == 0,
+            "issues": issues,
         }

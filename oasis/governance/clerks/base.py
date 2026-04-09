@@ -3,7 +3,7 @@
 Provides:
 - DB connection management
 - Authority envelope checking
-- Layer 1 (deterministic) / Layer 2 (LLM advisory, P7) interface
+- Layer 1 (deterministic) / Layer 2 (LLM advisory) interface
 """
 from __future__ import annotations
 
@@ -12,6 +12,8 @@ import sqlite3
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Optional, Union
+
+from oasis.governance.clerks.llm_interface import LLMInterface
 
 
 class BaseClerk(ABC):
@@ -22,10 +24,12 @@ class BaseClerk(ABC):
         db_path: Union[str, Path],
         clerk_did: str,
         llm_enabled: bool = False,
+        llm: LLMInterface | None = None,
     ) -> None:
         self.db_path = str(db_path)
         self.clerk_did = clerk_did
         self.llm_enabled = llm_enabled
+        self.llm = llm
         self._authority_envelope: Optional[dict] = None
 
     # ------------------------------------------------------------------
@@ -101,11 +105,11 @@ class BaseClerk(ABC):
     # ------------------------------------------------------------------
 
     def layer2_reason(self, context: dict) -> Optional[dict]:
-        """LLM advisory reasoning (deferred to P7).
+        """LLM advisory reasoning.
 
-        Returns None when ``llm_enabled=False``.
+        Returns None when ``llm_enabled=False`` or no LLM is configured.
+        Subclasses override this to provide clerk-specific reasoning.
         """
-        if not self.llm_enabled:
+        if not self.llm_enabled or self.llm is None:
             return None
-        # P7 placeholder — would call LLM here
         return None

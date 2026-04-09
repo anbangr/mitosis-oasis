@@ -1,11 +1,13 @@
 # Metosis OASIS
 
 ![release](https://img.shields.io/github/v/release/anbangr/metosis-oasis?label=release&color=blue)
-![tests](https://img.shields.io/badge/tests-479%20passed-brightgreen)
+![tests](https://img.shields.io/badge/tests-484%20passed-brightgreen)
 ![modules](https://img.shields.io/badge/modules-41-blue)
 ![lines](https://img.shields.io/badge/lines-~9%2C600-lightgrey)
 ![python](https://img.shields.io/badge/python-3.10%E2%80%933.11-blue)
 ![license](https://img.shields.io/badge/license-Apache%202.0-green)
+
+> **Live Demo:** [Observatory Dashboard](http://157.245.48.133:8100/dashboard) · [API Health](http://157.245.48.133:8100/api/health) · [API Docs](http://157.245.48.133:8100/docs)
 
 A simulation platform for mocking the [AgentCity](https://agentcity.dev) governance protocol using the [OASIS](https://github.com/camel-ai/oasis) social simulation engine. Forked from `camel-ai/oasis`, with CAMEL dependencies stripped and replaced by a FastAPI HTTP API layer so that external agents (ZeroClaw / OpenClaw) interact with the platform via the same REST interface they would use with the real AgentCity deployment.
 

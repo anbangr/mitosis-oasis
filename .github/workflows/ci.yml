@@ -8,6 +8,10 @@ name: CI
 # unusable here. Until that changes, the python-ci / docker-ghcr / deploy-ssh
 # bodies are inlined below. Keep in sync manually with mitosis-cicd if those
 # evolve.
+#
+# All jobs run on the dedicated CI droplet's `ci-oasis` runner (4 vCPU /
+# 8 GB / 160 GB), which is registered against this repo with both `build`
+# and `test` labels. Self-hosted to avoid GitHub Actions billed minutes.
 
 on:
   push:
@@ -38,7 +42,7 @@ jobs:
   # ── Python CI (pytest with system deps) ────────────────────────────────────
   python-ci:
     name: Python 3.10
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, build]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -67,7 +71,7 @@ jobs:
     name: Build & push Docker image
     needs: [python-ci]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, build]
     timeout-minutes: 15
     permissions:
       contents: read
@@ -103,7 +107,7 @@ jobs:
     name: Deploy to droplet
     needs: [docker]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, build]
     timeout-minutes: 10
     concurrency:
       # Production deploys must NEVER be cancelled mid-flight: a SIGTERM after

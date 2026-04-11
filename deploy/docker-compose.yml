@@ -18,5 +18,17 @@ services:
       retries: 3
       start_period: 10s
 
+  agent-fleet:
+    image: ghcr.io/anbangr/mitosis-prototype:latest
+    container_name: agent-fleet
+    depends_on:
+      mitosis-oasis:
+        condition: service_healthy
+    environment:
+      - OASIS_BASE_URL=http://mitosis-oasis:8000
+    volumes:
+      - agent-results:/app/experiments/results
+
 volumes:
   mitosis-data:
+  agent-results:

@@ -42,7 +42,6 @@ class PlatformConfig:
     # System scaling & modules
     max_agents: int = 1000
     active_modules: list[str] = field(default_factory=lambda: ["reputation", "treasury"])
-    clerk_layer2_enabled: bool = False
 
     def __post_init__(self) -> None:
         if self.execution_mode not in ("llm", "synthetic"):

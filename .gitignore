@@ -99,3 +99,9 @@ models/
 *.sqlite
 
 tmp
+
+# Runtime logs
+log/
+
+# Claude Code local settings
+.claude/settings.local.json

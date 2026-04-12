@@ -344,7 +344,9 @@ async def seed_demo():
             );
             CREATE TABLE IF NOT EXISTS agent_registry (
                 agent_did TEXT PRIMARY KEY,
-                agent_type TEXT, display_name TEXT, human_principal TEXT,
+                agent_type TEXT, 
+                capability_tier TEXT CHECK(capability_tier IN ('t1', 't3', 't5')),
+                display_name TEXT, human_principal TEXT,
                 reputation_score REAL DEFAULT 0.5,
                 registered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, active BOOLEAN DEFAULT 1
             );
@@ -427,6 +429,7 @@ async def seed_demo():
         conn.executescript("""
             CREATE TABLE IF NOT EXISTS agent_registry (
                 agent_did TEXT PRIMARY KEY, agent_type TEXT NOT NULL,
+                capability_tier TEXT CHECK(capability_tier IN ('t1', 't3', 't5')),
                 display_name TEXT NOT NULL, human_principal TEXT,
                 reputation_score REAL NOT NULL DEFAULT 0.5,
                 registered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

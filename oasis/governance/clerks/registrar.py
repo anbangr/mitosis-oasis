@@ -24,6 +24,34 @@ from oasis.governance.messages import (
 )
 
 
+def derive_capability_tier(profile: dict[str, Any] | None) -> str:
+    """Derive the storage label for capability_tier from a capability profile.
+
+    Maps paper-level preset names to the t1/t3/t5 schema label.
+    Falls back to 't1' for unknown profiles.
+
+    Args:
+        profile: Capability profile dict. May contain 'reference_preset'
+                 or be one of the known preset names directly.
+
+    Returns:
+        One of: 't1' (lightweight), 't3' (worker), 't5' (autonomous).
+    """
+    if not profile:
+        return "t1"
+
+    preset = profile.get("reference_preset") or profile.get("preset_name", "")
+    preset = preset.lower().replace("governance_", "")
+
+    if preset in ("lightweight", "minimal", "t1"):
+        return "t1"
+    if preset in ("worker", "standard", "t3"):
+        return "t3"
+    if preset in ("autonomous", "full", "t5"):
+        return "t5"
+    return "t1"
+
+
 class Registrar(BaseClerk):
     """Registrar clerk — Layer 1 identity + Layer 2 Sybil detection."""
 
@@ -237,8 +265,34 @@ class Registrar(BaseClerk):
             conn.close()
 
     # ------------------------------------------------------------------
-    # Agent admission
+    # Agent Registration
     # ------------------------------------------------------------------
+
+    def register_agent(
+        self,
+        agent_did: str,
+        agent_type: str,
+        display_name: str,
+        human_principal: str = "",
+        profile: dict[str, Any] | None = None,
+    ) -> None:
+        """Register a new agent in the global agent_registry.
+        
+        Derives the correct capability tier from the provided capability profile.
+        """
+        tier = derive_capability_tier(profile)
+        
+        conn = self._connect()
+        try:
+            conn.execute(
+                "INSERT OR IGNORE INTO agent_registry "
+                "(agent_did, agent_type, capability_tier, display_name, human_principal) "
+                "VALUES (?, ?, ?, ?, ?)",
+                (agent_did, agent_type, tier, display_name, human_principal),
+            )
+            conn.commit()
+        finally:
+            conn.close()
 
     def admit_agent(self, session_id: str, agent_did: str) -> bool:
         """Admit an agent to a session after identity verification.

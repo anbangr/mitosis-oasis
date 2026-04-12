@@ -18,5 +18,32 @@ services:
       retries: 3
       start_period: 10s
 
+  agent-fleet:
+    image: ghcr.io/anbangr/mitosis-prototype:latest
+    depends_on:
+      mitosis-oasis:
+        condition: service_healthy
+    environment:
+      OASIS_BASE_URL: "http://mitosis-oasis:8000"
+      AGENT_COUNT: "${AGENT_COUNT:-10}"
+      TIER_MIX: "${TIER_MIX:-5,3,2}"
+      N_SESSIONS: "${N_SESSIONS:-5}"
+      REPLICATE_ID: "${REPLICATE_ID:-0}"
+    command: >
+      python -m src.experiments.governance_orchestrator
+      --n ${AGENT_COUNT:-10}
+      --tiers ${TIER_MIX:-5,3,2}
+      --sessions ${N_SESSIONS:-5}
+      --replicate ${REPLICATE_ID:-0}
+      --oasis-url http://mitosis-oasis:8000
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+          cpus: "4.0"
+    volumes:
+      - agent-results:/app/experiments/results
+
 volumes:
   mitosis-data:
+  agent-results:

@@ -44,6 +44,7 @@ CREATE TABLE IF NOT EXISTS constitution (
 CREATE TABLE IF NOT EXISTS agent_registry (
     agent_did         TEXT PRIMARY KEY,
     agent_type        TEXT NOT NULL CHECK(agent_type IN ('producer', 'clerk')),
+    capability_tier   TEXT NOT NULL DEFAULT 't1' CHECK(capability_tier IN ('t1', 't3', 't5')),
     display_name      TEXT NOT NULL,
     human_principal   TEXT,
     reputation_score  REAL NOT NULL DEFAULT 0.5,

@@ -154,6 +154,8 @@ jobs:
             volumes:
               mitosis-data:
             COMPOSE
+            # Remove legacy mis-named container if present (was "metosis-oasis" — typo)
+            docker rm -f metosis-oasis 2>/dev/null || true
             docker compose up -d --force-recreate
 
       - name: Health check

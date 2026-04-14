@@ -128,6 +128,7 @@ async def get_summary():
 async def get_leaderboard(
     sort_by: str = Query("reputation_score", description="Sort metric"),
     limit: int = Query(20, ge=1, le=100),
+    type: str | None = Query(None, description="Filter by agent type"),
 ):
     """Agent leaderboard ranked by configurable metric."""
     conn = _connect()
@@ -139,6 +140,9 @@ async def get_leaderboard(
         }
         order_col = allowed_sorts.get(sort_by, "ar.reputation_score")
 
+        where_clause = "WHERE ar.agent_type = ? " if type is not None else ""
+        params: list = ([type, limit] if type is not None else [limit])
+
         query = (
             "SELECT ar.agent_did, ar.display_name, ar.agent_type, "
             "ar.reputation_score, "
@@ -147,10 +151,11 @@ async def get_leaderboard(
             "COALESCE(ab.locked_stake, 0) as locked_stake "
             "FROM agent_registry ar "
             "LEFT JOIN agent_balance ab ON ar.agent_did = ab.agent_did "
+            f"{where_clause}"
             f"ORDER BY {order_col} DESC "
             "LIMIT ?"
         )
-        rows = conn.execute(query, (limit,)).fetchall()
+        rows = conn.execute(query, params).fetchall()
         return [
             {
                 "rank": i + 1,

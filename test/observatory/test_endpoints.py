@@ -131,15 +131,13 @@ def test_get_execution_heatmap(db_path):
     assert len(data["rows"]) == 2
 
 def test_db_not_initialized_returns_503():
-    # If we call without db_path fixture, it uses the global / default paths or errors depending on logic
-    # But effectively we can mock internal state or just patch the DB path to None
     import oasis.observatory.endpoints as endpoints
-    old_path = endpoints.DB_PATH
-    endpoints.DB_PATH = "/tmp/does-not-exist.sqlite.xyz"
-    response = client.get("/api/observatory/summary")
-    endpoints.DB_PATH = old_path
-    
-    # The endpoints file likely returns 503 if DB is not found
+    old_path = endpoints._db_path
+    endpoints._db_path = None
+    try:
+        response = client.get("/api/observatory/summary")
+    finally:
+        endpoints._db_path = old_path
     assert response.status_code == 503
 
 def test_get_events_pagination(db_path):

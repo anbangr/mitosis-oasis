@@ -106,7 +106,9 @@ jobs:
   deploy:
     name: Deploy to droplet
     needs: [docker]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    # Disabled: production droplet (do-droplet-1) was deleted 2026-04-12.
+    # OASIS has no active deploy target until migrated to GKE or a new host.
+    if: false
     runs-on: [self-hosted, build]
     timeout-minutes: 10
     concurrency:

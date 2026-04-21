@@ -42,8 +42,9 @@ requests_oauthlib = "2.0.0"
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["test"]
-# Exclude recsys tests (need external TwHIN model) and removed agent tests
-norecursedirs = ["test/infra/recsys", "test/agent"]
+# Exclude legacy CAMEL-AI infra tests (need social_platform schema files removed in Mitosis fork)
+# and removed agent tests
+norecursedirs = ["test/infra", "test/agent"]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

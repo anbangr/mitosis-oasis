@@ -240,9 +240,9 @@ async def seed_demo():
     Idempotent — skips seeding if data already exists.
     """
     gov_db = gov_ep._db_path
-    exec_db = exec_ep._db_path
+    exec_db = exec_ep._service._db_path if exec_ep._service is not None else None
     adj_db = adj_ep._db_path
-    obs_db = obs_ep._db_path
+    obs_db = obs_ep._service._db_path if obs_ep._service is not None else None
 
     if not all([gov_db, exec_db, adj_db, obs_db]):
         raise HTTPException(503, "Not all databases are initialised")

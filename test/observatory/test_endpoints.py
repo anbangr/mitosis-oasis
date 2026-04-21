@@ -132,12 +132,12 @@ def test_get_execution_heatmap(db_path):
 
 def test_db_not_initialized_returns_503():
     import oasis.observatory.endpoints as endpoints
-    old_path = endpoints._db_path
-    endpoints._db_path = None
+    old_service = endpoints._service
+    endpoints._service = None
     try:
         response = client.get("/api/observatory/summary")
     finally:
-        endpoints._db_path = old_path
+        endpoints._service = old_service
     assert response.status_code == 503
 
 def test_get_events_pagination(db_path):

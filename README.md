@@ -11,6 +11,29 @@
 
 A simulation platform for mocking the [AgentCity](https://agentcity.dev) governance protocol using the [OASIS](https://github.com/camel-ai/oasis) social simulation engine. Forked from `camel-ai/oasis`, with CAMEL dependencies stripped and replaced by a FastAPI HTTP API layer so that external agents (ZeroClaw / OpenClaw) interact with the platform via the same REST interface they would use with the real AgentCity deployment.
 
+## Fork origin
+
+Mitosis-oasis is a **hard fork** of CAMEL-AI's [OASIS](https://github.com/camel-ai/oasis) social simulation framework. The repository diverged from upstream in mid-2024 (initial fork commit `4baafad`). This fork represents a fundamental architectural departure and is maintained as a standalone project with no pathway for re-merging upstream.
+
+### Architectural Inversion
+The primary divergence is the inversion of agent integration. While the original OASIS embeds CAMEL agents directly within the simulation runtime (`SocialAgent` extends `ChatAgent`), Mitosis-oasis externalizes all agents. The simulation engine has been transformed into a FastAPI-based HTTP service where external agents (ZeroClaw / OpenClaw) communicate via the standardized Interface C REST API.
+
+### Major Divergences
+*   **External-agent architecture:** Replaced embedded CAMEL dependencies with a FastAPI HTTP layer.
+*   **Four APIRouter split:** Organized the platform into distinct Governance, Execution, Adjudication, and Observatory branches, each with dedicated API routers.
+*   **Governance-focused extensions:** Implemented a full 7-message governance protocol including treasury management, reputation systems, and capability verification.
+*   **SQLite-backed state:** Replaced pure in-memory simulation state with a persistent SQLite coordinator to support cross-process consistency and auditability.
+
+### Upstream Legacy
+Selected upstream modules are retained for their foundational async primitives (notably the `Channel` and `Platform` dispatchers) but are otherwise unmaintained or treated as ballast:
+*   `oasis/social_platform/recsys.py` (and related recommendation system logic)
+*   `oasis/social_agent/agent_graph.py`
+*   `oasis/social_platform/config/neo4j.py` and `user.py`
+*   `oasis/testing/show_db.py`
+
+This documentation serves as a guide for external adopters and reviewers to understand the implementation provenance of the AgentCity simulation. Understanding this fork point is critical for assessing the platform's fidelity and its departure from traditional embedded social simulation models.
+
+
 ## Architecture
 
 ```mermaid

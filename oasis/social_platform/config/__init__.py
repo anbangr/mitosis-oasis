@@ -11,10 +11,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-from .neo4j import Neo4jConfig
-from .user import UserInfo
-
-__all__ = [
-    "UserInfo",
-    "Neo4jConfig",
-]
+__all__: list[str] = []

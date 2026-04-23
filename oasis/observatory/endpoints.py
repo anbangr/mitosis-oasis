@@ -24,6 +24,8 @@ Provides FastAPI routes for real-time observability:
 """
 from __future__ import annotations
 
+from typing import Any
+
 from fastapi import APIRouter, HTTPException, Query
 
 from oasis.observatory.service import ObservatoryService
@@ -48,16 +50,20 @@ def _get_service() -> ObservatoryService:
 
 
 # ---------------------------------------------------------------------------
-# Router
+# Shared route definitions
 # ---------------------------------------------------------------------------
 
+_routes = APIRouter(tags=["Observatory"])
+
+# Public router aliases
 router = APIRouter(prefix="/api/observatory", tags=["Observatory"])
+v1_router = APIRouter(prefix="/api/v1/observatory", tags=["Observatory"])
 
 
 # ========================= Summary ==========================================
 
 
-@router.get("/summary")
+@_routes.get("/summary", response_model=dict[str, Any])
 async def get_summary():
     """Aggregate summary: sessions by state, agents by status, tasks, treasury, alerts."""
     return _get_service().get_summary()
@@ -66,7 +72,7 @@ async def get_summary():
 # ========================= Leaderboard ======================================
 
 
-@router.get("/agents/leaderboard")
+@_routes.get("/agents/leaderboard", response_model=list[dict[str, Any]])
 async def get_leaderboard(
     sort_by: str = Query("reputation_score", description="Sort metric"),
     limit: int = Query(20, ge=1, le=100),
@@ -79,7 +85,7 @@ async def get_leaderboard(
 # ========================= Reputation timeseries =============================
 
 
-@router.get("/reputation/timeseries")
+@_routes.get("/reputation/timeseries", response_model=list[dict[str, Any]])
 async def get_reputation_timeseries(
     agent_did: str | None = Query(None),
     since: str | None = Query(None, description="ISO timestamp lower bound"),
@@ -94,7 +100,7 @@ async def get_reputation_timeseries(
 # ========================= Treasury timeseries ===============================
 
 
-@router.get("/treasury/timeseries")
+@_routes.get("/treasury/timeseries", response_model=list[dict[str, Any]])
 async def get_treasury_timeseries():
     """Running balance over time from the treasury table."""
     return _get_service().get_treasury_timeseries()
@@ -103,7 +109,7 @@ async def get_treasury_timeseries():
 # ========================= Events (paginated) ================================
 
 
-@router.get("/events")
+@_routes.get("/events", response_model=list[dict[str, Any]])
 async def get_events(
     event_type: str | None = Query(None, description="Filter by event type"),
     session_id: str | None = Query(None),
@@ -126,7 +132,7 @@ async def get_events(
 # ========================= Session timeline ==================================
 
 
-@router.get("/sessions/timeline")
+@_routes.get("/sessions/timeline", response_model=list[dict[str, Any]])
 async def get_sessions_timeline():
     """Session state history for Gantt rendering."""
     return _get_service().get_sessions_timeline()
@@ -135,7 +141,11 @@ async def get_sessions_timeline():
 # ========================= Execution heatmap =================================
 
 
-@router.get("/execution/heatmap")
+@_routes.get("/execution/heatmap", response_model=dict[str, Any])
 async def get_execution_heatmap():
     """Pivot task_assignment by agent x task — status matrix for heatmap rendering."""
     return _get_service().get_execution_heatmap()
+
+
+router.include_router(_routes)
+v1_router.include_router(_routes)

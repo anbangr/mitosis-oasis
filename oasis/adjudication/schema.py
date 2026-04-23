@@ -1,13 +1,8 @@
-"""Adjudication SQLite schema — 3 new tables for the adjudication layer.
+"""Adjudication SQLite schema for the adjudication layer.
 
-Tables (new)
-------------
-1. coordination_flag    — detected coordination patterns between agents
-2. adjudication_decision — guardian/sanction decisions with audit trail
-3. treasury             — platform treasury accounting ledger
-
-NOTE: guardian_alert and agent_balance tables already exist from P12/P13
-execution schema and are NOT recreated here.
+The live HTTP server initialises adjudication in a branch-local SQLite DB, so
+it cannot rely on execution tables existing elsewhere. We therefore recreate
+the small subset of cross-branch tables adjudication reads directly.
 """
 from __future__ import annotations
 
@@ -16,6 +11,14 @@ from pathlib import Path
 from typing import Union
 
 _DDL = """
+-- Cross-branch tables adjudication reads directly in the standalone HTTP path.
+CREATE TABLE IF NOT EXISTS agent_balance (
+    agent_did          TEXT PRIMARY KEY,
+    total_balance      REAL NOT NULL DEFAULT 100.0,
+    locked_stake       REAL NOT NULL DEFAULT 0.0,
+    available_balance  REAL NOT NULL DEFAULT 100.0
+);
+
 -- 1. Coordination flags (detected collusion / coordination patterns)
 CREATE TABLE IF NOT EXISTS coordination_flag (
     flag_id      TEXT PRIMARY KEY,

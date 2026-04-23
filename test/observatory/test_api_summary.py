@@ -50,3 +50,18 @@ def test_empty_db_returns_zeros(observatory_db):
     assert data["tasks_in_progress"] == 0
     assert data["treasury_balance"] == 0.0
     assert data["active_alerts"] == 0
+
+
+def test_v1_summary_correct_aggregates(observatory_db, seeded_session):
+    """Versioned summary route returns the same aggregate data."""
+    from oasis.observatory.endpoints import v1_router
+
+    app = FastAPI()
+    app.include_router(v1_router)
+    init_observatory_db(str(observatory_db))
+    client = TestClient(app)
+
+    resp = client.get("/api/v1/observatory/summary")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["sessions_by_state"]["DEPLOYED"] >= 1

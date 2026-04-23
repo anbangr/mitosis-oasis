@@ -9,8 +9,7 @@ from __future__ import annotations
 import json
 import sqlite3
 import uuid
-from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
@@ -20,7 +19,6 @@ from oasis.governance.clerks.registrar import Registrar
 from oasis.governance.clerks.regulator import Regulator
 from oasis.governance.clerks.speaker import Speaker
 from oasis.governance.messages import (
-    CodedContractSpec,
     DAGProposal,
     IdentityAttestation,
     LegislativeApproval,
@@ -177,18 +175,21 @@ class ApprovalBody(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Router
+# Shared route definitions
 # ---------------------------------------------------------------------------
 
+_routes = APIRouter(tags=["Governance"])
+
+# Public router aliases
 router = APIRouter(prefix="/api/governance", tags=["Governance"])
+v1_router = APIRouter(prefix="/api/v1/governance", tags=["Governance"])
 
 
 # ========================= P8.1 Session management =========================
 
-@router.post("/sessions", status_code=201)
+@_routes.post("/sessions", status_code=201, response_model=dict[str, Any])
 async def create_session(body: CreateSessionBody):
     """Create a new legislative session."""
-    db = _get_db()
     session_id = f"sess-{uuid.uuid4().hex[:12]}"
     conn = _connect()
     try:
@@ -204,7 +205,7 @@ async def create_session(body: CreateSessionBody):
     return {"session_id": session_id, "state": LegislativeState.SESSION_INIT.value}
 
 
-@router.get("/sessions/{session_id}")
+@_routes.get("/sessions/{session_id}", response_model=dict[str, Any])
 async def get_session(session_id: str):
     """Get session state."""
     conn = _connect()
@@ -228,7 +229,7 @@ async def get_session(session_id: str):
     }
 
 
-@router.get("/sessions/{session_id}/messages")
+@_routes.get("/sessions/{session_id}/messages", response_model=dict[str, Any])
 async def get_messages(session_id: str):
     """Get protocol messages for a session."""
     conn = _connect()
@@ -247,7 +248,7 @@ async def get_messages(session_id: str):
 
 # ========================= P8.2 Identity ===================================
 
-@router.post("/sessions/{session_id}/identity/request", status_code=200)
+@_routes.post("/sessions/{session_id}/identity/request", status_code=200, response_model=dict[str, Any])
 async def request_identity_verification(session_id: str, body: IdentityRequestBody):
     """Registrar opens identity-verification phase (MSG1)."""
     _require_state(session_id, LegislativeState.SESSION_INIT)
@@ -264,7 +265,7 @@ async def request_identity_verification(session_id: str, body: IdentityRequestBo
     if producers == 0:
         raise HTTPException(400, "No producer agents registered")
 
-    msg1 = registrar.open_session(session_id, body.min_reputation)
+    registrar.open_session(session_id, body.min_reputation)
 
     # Transition to IDENTITY_VERIFICATION
     sm = LegislativeStateMachine(session_id, _get_db())
@@ -279,7 +280,7 @@ async def request_identity_verification(session_id: str, body: IdentityRequestBo
     }
 
 
-@router.post("/sessions/{session_id}/identity/attest", status_code=200)
+@_routes.post("/sessions/{session_id}/identity/attest", status_code=200, response_model=dict[str, Any])
 async def submit_attestation(session_id: str, body: AttestationBody):
     """Agent submits identity attestation (MSG2)."""
     _require_state(session_id, LegislativeState.IDENTITY_VERIFICATION)
@@ -300,7 +301,7 @@ async def submit_attestation(session_id: str, body: AttestationBody):
 
 # ========================= P8.3 Proposal ===================================
 
-@router.post("/sessions/{session_id}/proposals", status_code=201)
+@_routes.post("/sessions/{session_id}/proposals", status_code=201, response_model=dict[str, Any])
 async def submit_proposal(session_id: str, body: ProposalBody):
     """Submit a DAG proposal (MSG3)."""
     _require_state(session_id, LegislativeState.PROPOSAL_OPEN)
@@ -320,7 +321,7 @@ async def submit_proposal(session_id: str, body: ProposalBody):
     return result
 
 
-@router.get("/sessions/{session_id}/proposals/{proposal_id}")
+@_routes.get("/sessions/{session_id}/proposals/{proposal_id}", response_model=dict[str, Any])
 async def get_proposal(session_id: str, proposal_id: str):
     """Get proposal details."""
     conn = _connect()
@@ -348,7 +349,7 @@ async def get_proposal(session_id: str, proposal_id: str):
 
 # ========================= P8.4 Deliberation ================================
 
-@router.post("/sessions/{session_id}/deliberation/straw-poll", status_code=200)
+@_routes.post("/sessions/{session_id}/deliberation/straw-poll", status_code=200, response_model=dict[str, Any])
 async def submit_straw_poll(session_id: str, body: StrawPollBody):
     """Submit straw poll ballots."""
     _require_state(
@@ -361,7 +362,7 @@ async def submit_straw_poll(session_id: str, body: StrawPollBody):
     return result
 
 
-@router.post("/sessions/{session_id}/deliberation/discuss", status_code=200)
+@_routes.post("/sessions/{session_id}/deliberation/discuss", status_code=200, response_model=dict[str, Any])
 async def submit_discussion(session_id: str, body: DiscussBody):
     """Submit a deliberation message."""
     _require_state(
@@ -402,7 +403,7 @@ async def submit_discussion(session_id: str, body: DiscussBody):
     }
 
 
-@router.get("/sessions/{session_id}/deliberation/summary")
+@_routes.get("/sessions/{session_id}/deliberation/summary", response_model=dict[str, Any])
 async def get_deliberation_summary(session_id: str):
     """Get deliberation summary for all rounds."""
     conn = _connect()
@@ -443,7 +444,7 @@ async def get_deliberation_summary(session_id: str):
 
 # ========================= P8.5 Voting =====================================
 
-@router.post("/sessions/{session_id}/vote", status_code=200)
+@_routes.post("/sessions/{session_id}/vote", status_code=200, response_model=dict[str, Any])
 async def submit_vote(session_id: str, body: VoteBody):
     """Submit formal vote rankings."""
     _require_state(
@@ -470,7 +471,7 @@ async def submit_vote(session_id: str, body: VoteBody):
     return result
 
 
-@router.get("/sessions/{session_id}/vote/results")
+@_routes.get("/sessions/{session_id}/vote/results", response_model=dict[str, Any])
 async def get_vote_results(session_id: str):
     """Get voting results for a session."""
     conn = _connect()
@@ -506,7 +507,7 @@ async def get_vote_results(session_id: str):
 
 # ========================= P8.6 Bidding ====================================
 
-@router.post("/sessions/{session_id}/bids", status_code=201)
+@_routes.post("/sessions/{session_id}/bids", status_code=201, response_model=dict[str, Any])
 async def submit_bid(session_id: str, body: BidBody):
     """Submit a bid on a task node (MSG4)."""
     _require_state(session_id, LegislativeState.BIDDING_OPEN)
@@ -528,7 +529,7 @@ async def submit_bid(session_id: str, body: BidBody):
     return result
 
 
-@router.get("/sessions/{session_id}/bids")
+@_routes.get("/sessions/{session_id}/bids", response_model=dict[str, Any])
 async def list_bids(session_id: str):
     """List all bids for a session."""
     conn = _connect()
@@ -568,7 +569,7 @@ async def list_bids(session_id: str):
 
 # ========================= P8.7 Regulatory =================================
 
-@router.post("/sessions/{session_id}/regulatory/decision", status_code=200)
+@_routes.post("/sessions/{session_id}/regulatory/decision", status_code=200, response_model=dict[str, Any])
 async def submit_regulatory_decision(session_id: str, body: RegulatoryDecisionBody):
     """Regulator evaluates bids and produces MSG5."""
     _require_state(session_id, LegislativeState.REGULATORY_REVIEW)
@@ -582,7 +583,7 @@ async def submit_regulatory_decision(session_id: str, body: RegulatoryDecisionBo
     return result
 
 
-@router.get("/sessions/{session_id}/regulatory/evidence")
+@_routes.get("/sessions/{session_id}/regulatory/evidence", response_model=dict[str, Any])
 async def get_evidence(session_id: str):
     """Get evidence briefing for deliberation."""
     conn = _connect()
@@ -601,7 +602,7 @@ async def get_evidence(session_id: str):
 
 # ========================= P8.8 Codification ===============================
 
-@router.post("/sessions/{session_id}/codification/spec", status_code=201)
+@_routes.post("/sessions/{session_id}/codification/spec", status_code=201, response_model=dict[str, Any])
 async def submit_spec(session_id: str, body: SpecBody):
     """Codifier compiles deployment spec (MSG6)."""
     _require_state(session_id, LegislativeState.CODIFICATION)
@@ -653,7 +654,7 @@ async def submit_spec(session_id: str, body: SpecBody):
     }
 
 
-@router.get("/sessions/{session_id}/codification/spec")
+@_routes.get("/sessions/{session_id}/codification/spec", response_model=dict[str, Any])
 async def get_spec(session_id: str):
     """Get the contract spec for a session."""
     conn = _connect()
@@ -691,7 +692,7 @@ async def get_spec(session_id: str):
 
 # ========================= P8.9 Approval & deployment ======================
 
-@router.post("/sessions/{session_id}/approval", status_code=200)
+@_routes.post("/sessions/{session_id}/approval", status_code=200, response_model=dict[str, Any])
 async def submit_approval(session_id: str, body: ApprovalBody):
     """Dual sign-off approval (MSG7)."""
     _require_state(session_id, LegislativeState.AWAITING_APPROVAL)
@@ -734,7 +735,7 @@ async def submit_approval(session_id: str, body: ApprovalBody):
     }
 
 
-@router.get("/sessions/{session_id}/deployment")
+@_routes.get("/sessions/{session_id}/deployment", response_model=dict[str, Any])
 async def get_deployment_status(session_id: str):
     """Get deployment status for a session."""
     conn = _connect()
@@ -772,7 +773,7 @@ async def get_deployment_status(session_id: str):
 
 # ========================= P8.10 Constitution & agents ======================
 
-@router.get("/constitution")
+@_routes.get("/constitution", response_model=dict[str, Any])
 async def get_constitution():
     """Get constitutional parameters."""
     conn = _connect()
@@ -796,7 +797,7 @@ async def get_constitution():
     }
 
 
-@router.get("/agents")
+@_routes.get("/agents", response_model=dict[str, Any])
 async def list_agents():
     """List all registered agents."""
     conn = _connect()
@@ -821,7 +822,7 @@ async def list_agents():
     }
 
 
-@router.get("/agents/{agent_did}/reputation")
+@_routes.get("/agents/{agent_did}/reputation", response_model=dict[str, Any])
 async def get_reputation(agent_did: str):
     """Get reputation history for an agent."""
     conn = _connect()
@@ -855,3 +856,7 @@ async def get_reputation(agent_did: str):
             for h in history
         ],
     }
+
+
+router.include_router(_routes)
+v1_router.include_router(_routes)

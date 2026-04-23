@@ -10,7 +10,6 @@ from fastapi.testclient import TestClient
 from oasis.api import app
 from oasis.config import PlatformConfig
 from oasis.execution import endpoints as exec_ep
-from oasis.execution.commitment import commit_to_task
 from oasis.execution.router import route_tasks
 from oasis.execution.schema import create_execution_tables
 from oasis.governance.schema import (
@@ -147,3 +146,11 @@ class TestExecutionAPI:
         """Unknown task_id returns 404."""
         resp = client.get("/api/execution/tasks/nonexistent-task-id")
         assert resp.status_code == 404
+
+    def test_v1_get_task_details(self, client, routed_tasks):
+        """GET /api/v1/execution/tasks/{task_id} returns task details."""
+        tasks, _ = routed_tasks
+        task = tasks[0]
+        resp = client.get(f"/api/v1/execution/tasks/{task['task_id']}")
+        assert resp.status_code == 200
+        assert resp.json()["task_id"] == task["task_id"]

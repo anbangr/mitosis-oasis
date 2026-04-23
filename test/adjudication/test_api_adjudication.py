@@ -215,6 +215,16 @@ class TestAdjudicationAPI:
         assert data["total_balance"] == 100.0
         assert data["locked_stake"] == 10.0
 
+    def test_get_agent_balance_initializes_missing_balance(self, client, seeded_data):
+        """GET /api/adjudication/agents/{agent_did}/balance creates the default row."""
+        agent_did = "did:adj-api:new-agent"
+        resp = client.get(f"/api/adjudication/agents/{agent_did}/balance")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["agent_did"] == agent_did
+        assert data["total_balance"] == 100.0
+        assert data["available_balance"] == 100.0
+
     def test_get_treasury(self, client, seeded_data):
         """GET /api/adjudication/treasury returns summary."""
         resp = client.get("/api/adjudication/treasury")
@@ -229,3 +239,10 @@ class TestAdjudicationAPI:
         assert resp.status_code == 200
         data = resp.json()
         assert len(data) >= 2
+
+    def test_v1_list_alerts(self, client, seeded_data):
+        """GET /api/v1/adjudication/alerts returns alerts."""
+        resp = client.get("/api/v1/adjudication/alerts")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert len(data) >= 1

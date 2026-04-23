@@ -10,8 +10,7 @@ Provides FastAPI routes for the adjudication branch:
 from __future__ import annotations
 
 import sqlite3
-from pathlib import Path
-from typing import Union
+from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query
 
@@ -46,16 +45,40 @@ def _connect() -> sqlite3.Connection:
     return conn
 
 
+def _ensure_agent_balance(conn: sqlite3.Connection, agent_did: str) -> None:
+    try:
+        conn.execute(
+            "INSERT OR IGNORE INTO agent_registry "
+            "(agent_did, agent_type, display_name) "
+            "VALUES (?, 'producer', ?)",
+            (agent_did, agent_did),
+        )
+    except sqlite3.OperationalError:
+        # The live adjudication-only DB may not carry the full governance schema.
+        pass
+    conn.execute(
+        "INSERT OR IGNORE INTO agent_balance "
+        "(agent_did, total_balance, locked_stake, available_balance) "
+        "VALUES (?, 100.0, 0.0, 100.0)",
+        (agent_did,),
+    )
+    conn.commit()
+
+
 # ---------------------------------------------------------------------------
-# Router
+# Shared route definitions
 # ---------------------------------------------------------------------------
 
+_routes = APIRouter(tags=["Adjudication"])
+
+# Public router aliases
 router = APIRouter(prefix="/api/adjudication", tags=["Adjudication"])
+v1_router = APIRouter(prefix="/api/v1/adjudication", tags=["Adjudication"])
 
 
 # ========================= Alerts ==========================================
 
-@router.get("/alerts")
+@_routes.get("/alerts", response_model=list[dict[str, Any]])
 async def list_alerts(
     severity: str | None = Query(None, description="Filter by severity"),
     agent_did: str | None = Query(None, description="Filter by agent DID"),
@@ -102,7 +125,7 @@ async def list_alerts(
         conn.close()
 
 
-@router.get("/alerts/{alert_id}")
+@_routes.get("/alerts/{alert_id}", response_model=dict[str, Any])
 async def get_alert(alert_id: str):
     """Get details for a specific guardian alert."""
     conn = _connect()
@@ -127,7 +150,7 @@ async def get_alert(alert_id: str):
 
 # ========================= Flags ===========================================
 
-@router.get("/flags")
+@_routes.get("/flags", response_model=list[dict[str, Any]])
 async def list_flags(
     session_id: str | None = Query(None, description="Filter by session ID"),
     agent_did: str | None = Query(None, description="Filter by agent DID"),
@@ -171,7 +194,7 @@ async def list_flags(
 
 # ========================= Decisions =======================================
 
-@router.get("/decisions")
+@_routes.get("/decisions", response_model=list[dict[str, Any]])
 async def list_decisions(
     agent_did: str | None = Query(None, description="Filter by agent DID"),
     decision_type: str | None = Query(None, description="Filter by decision type"),
@@ -216,7 +239,7 @@ async def list_decisions(
         conn.close()
 
 
-@router.get("/decisions/{decision_id}")
+@_routes.get("/decisions/{decision_id}", response_model=dict[str, Any])
 async def get_decision(decision_id: str):
     """Get details for a specific adjudication decision."""
     conn = _connect()
@@ -245,17 +268,16 @@ async def get_decision(decision_id: str):
 
 # ========================= Agent balance & sanctions ========================
 
-@router.get("/agents/{agent_did}/balance")
+@_routes.get("/agents/{agent_did}/balance", response_model=dict[str, Any])
 async def get_agent_balance(agent_did: str):
     """Get agent balance details."""
     conn = _connect()
     try:
+        _ensure_agent_balance(conn, agent_did)
         row = conn.execute(
             "SELECT * FROM agent_balance WHERE agent_did = ?",
             (agent_did,),
         ).fetchone()
-        if row is None:
-            raise HTTPException(404, f"Balance not found for agent: {agent_did}")
         return {
             "agent_did": row["agent_did"],
             "total_balance": row["total_balance"],
@@ -266,7 +288,7 @@ async def get_agent_balance(agent_did: str):
         conn.close()
 
 
-@router.get("/agents/{agent_did}/sanctions")
+@_routes.get("/agents/{agent_did}/sanctions", response_model=list[dict[str, Any]])
 async def get_agent_sanctions(agent_did: str):
     """Get sanction history for an agent."""
     conn = _connect()
@@ -297,7 +319,7 @@ async def get_agent_sanctions(agent_did: str):
 
 # ========================= Treasury ========================================
 
-@router.get("/treasury")
+@_routes.get("/treasury", response_model=dict[str, Any])
 async def get_treasury():
     """Get treasury summary (inflows, outflows, net balance)."""
     conn = _connect()
@@ -329,7 +351,7 @@ async def get_treasury():
         conn.close()
 
 
-@router.get("/treasury/ledger")
+@_routes.get("/treasury/ledger", response_model=list[dict[str, Any]])
 async def get_treasury_ledger(
     entry_type: str | None = Query(None, description="Filter by entry type"),
     task_id: str | None = Query(None, description="Filter by task ID"),
@@ -371,3 +393,7 @@ async def get_treasury_ledger(
         ]
     finally:
         conn.close()
+
+
+router.include_router(_routes)
+v1_router.include_router(_routes)

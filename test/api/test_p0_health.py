@@ -1,5 +1,4 @@
 """P0 — Validate API TestClient fixture can hit the health endpoint."""
-import pytest
 from fastapi.testclient import TestClient
 
 
@@ -15,3 +14,29 @@ def test_governance_endpoints_available(client: TestClient):
     """Governance endpoints are now live (P8 replaced 501 stubs)."""
     resp = client.get("/api/governance/constitution")
     assert resp.status_code == 200
+
+
+def test_governance_v1_endpoints_available(client: TestClient):
+    """Versioned governance endpoints are live under /api/v1."""
+    resp = client.get("/api/v1/governance/constitution")
+    assert resp.status_code == 200
+
+
+def test_openapi_exposes_v1_contracts(client: TestClient):
+    """OpenAPI contains the versioned paper-facing routes with response schemas."""
+    schema = client.get("/openapi.json").json()
+    paths = schema["paths"]
+
+    assert "/api/v1/governance/constitution" in paths
+    assert "/api/v1/execution/tasks/{task_id}" in paths
+    assert "/api/v1/adjudication/alerts" in paths
+    assert "/api/v1/observatory/summary" in paths
+
+    for path, method in [
+        ("/api/v1/governance/constitution", "get"),
+        ("/api/v1/execution/tasks/{task_id}", "get"),
+        ("/api/v1/adjudication/alerts", "get"),
+        ("/api/v1/observatory/summary", "get"),
+    ]:
+        response_schema = paths[path][method]["responses"]["200"]["content"]["application/json"]["schema"]
+        assert response_schema["type"] in {"object", "array"}

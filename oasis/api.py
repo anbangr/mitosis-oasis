@@ -9,28 +9,28 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import os
 import sqlite3
+import tempfile
 import time
 import uuid
 from contextlib import asynccontextmanager
-from typing import Any, Optional
+from typing import Any
 
 from fastapi import FastAPI, HTTPException, Query
-from fastapi.responses import JSONResponse
-from pydantic import BaseModel
-
 from fastapi import WebSocket
+from pydantic import BaseModel
 
 from oasis.governance import endpoints as gov_ep
 from oasis.execution import endpoints as exec_ep
 from oasis.adjudication import endpoints as adj_ep
 from oasis.observatory import endpoints as obs_ep
-from oasis.governance.endpoints import init_governance_db, router as governance_router
-from oasis.execution.endpoints import init_execution_db, router as execution_router
+from oasis.governance.endpoints import init_governance_db, router as governance_router, v1_router as governance_v1_router
+from oasis.execution.endpoints import init_execution_db, router as execution_router, v1_router as execution_v1_router
 from oasis.execution.schema import create_execution_tables
-from oasis.adjudication.endpoints import init_adjudication_db, router as adjudication_router
+from oasis.adjudication.endpoints import init_adjudication_db, router as adjudication_router, v1_router as adjudication_v1_router
 from oasis.adjudication.schema import create_adjudication_tables
-from oasis.observatory.endpoints import init_observatory_db, router as observatory_router
+from oasis.observatory.endpoints import init_observatory_db, router as observatory_router, v1_router as observatory_v1_router
 from oasis.observatory.dashboard import router as dashboard_router
 from oasis.observatory.event_bus import EventBus
 from oasis.observatory.websocket import websocket_events
@@ -68,7 +68,6 @@ async def lifespan(app: FastAPI):
     _platform_task = asyncio.create_task(platform.running())
 
     # Initialise governance database (in-memory, colocated with platform DB)
-    import tempfile, os
     _gov_db = os.path.join(tempfile.gettempdir(), f"oasis_gov_{os.getpid()}.db")
     init_governance_db(_gov_db)
 
@@ -116,15 +115,19 @@ app = FastAPI(
 
 # Include governance API router (P8)
 app.include_router(governance_router)
+app.include_router(governance_v1_router)
 
 # Include execution API router (P13)
 app.include_router(execution_router)
+app.include_router(execution_v1_router)
 
 # Include adjudication API router (P15)
 app.include_router(adjudication_router)
+app.include_router(adjudication_v1_router)
 
 # Include observatory API router + dashboard (P17)
 app.include_router(observatory_router)
+app.include_router(observatory_v1_router)
 app.include_router(dashboard_router)
 
 

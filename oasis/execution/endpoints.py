@@ -23,6 +23,8 @@ Provides FastAPI routes for the execution branch:
 """
 from __future__ import annotations
 
+from typing import Any
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
@@ -63,16 +65,20 @@ class OutputBody(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Router
+# Shared route definitions
 # ---------------------------------------------------------------------------
 
+_routes = APIRouter(tags=["Execution"])
+
+# Public router aliases
 router = APIRouter(prefix="/api/execution", tags=["Execution"])
+v1_router = APIRouter(prefix="/api/v1/execution", tags=["Execution"])
 
 
 # ========================= Task details ======================================
 
 
-@router.get("/tasks/{task_id}")
+@_routes.get("/tasks/{task_id}", response_model=dict[str, Any])
 async def get_task(task_id: str):
     """Get task details including input data from the DAG node."""
     svc = _get_service()
@@ -85,7 +91,7 @@ async def get_task(task_id: str):
 # ========================= Commit to task ====================================
 
 
-@router.post("/tasks/{task_id}/commit", status_code=200)
+@_routes.post("/tasks/{task_id}/commit", status_code=200, response_model=dict[str, Any])
 async def commit_task(task_id: str, body: CommitBody):
     """Commit to a task (lock stake)."""
     svc = _get_service()
@@ -98,7 +104,7 @@ async def commit_task(task_id: str, body: CommitBody):
 # ========================= Submit output =====================================
 
 
-@router.post("/tasks/{task_id}/output", status_code=200)
+@_routes.post("/tasks/{task_id}/output", status_code=200, response_model=dict[str, Any])
 async def submit_output(task_id: str, body: OutputBody):
     """Submit task output (LLM mode).
 
@@ -114,7 +120,7 @@ async def submit_output(task_id: str, body: OutputBody):
 # ========================= Task status =======================================
 
 
-@router.get("/tasks/{task_id}/status")
+@_routes.get("/tasks/{task_id}/status", response_model=dict[str, Any])
 async def get_task_status(task_id: str):
     """Get task status including output and validation state."""
     svc = _get_service()
@@ -127,7 +133,7 @@ async def get_task_status(task_id: str):
 # ========================= Settlement result =================================
 
 
-@router.get("/tasks/{task_id}/settlement")
+@_routes.get("/tasks/{task_id}/settlement", response_model=dict[str, Any])
 async def get_settlement(task_id: str):
     """Get settlement result for a completed task."""
     svc = _get_service()
@@ -140,7 +146,7 @@ async def get_settlement(task_id: str):
 # ========================= Session tasks =====================================
 
 
-@router.get("/sessions/{session_id}/tasks")
+@_routes.get("/sessions/{session_id}/tasks", response_model=dict[str, Any])
 async def list_session_tasks(session_id: str):
     """List all tasks for a deployed session."""
     return _get_service().list_session_tasks(session_id)
@@ -149,7 +155,11 @@ async def list_session_tasks(session_id: str):
 # ========================= Agent tasks =======================================
 
 
-@router.get("/agents/{agent_did}/tasks")
+@_routes.get("/agents/{agent_did}/tasks", response_model=dict[str, Any])
 async def list_agent_tasks(agent_did: str):
     """List all tasks assigned to an agent."""
     return _get_service().list_agent_tasks(agent_did)
+
+
+router.include_router(_routes)
+v1_router.include_router(_routes)

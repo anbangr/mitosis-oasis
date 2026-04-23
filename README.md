@@ -11,6 +11,16 @@
 
 A simulation platform for mocking the [AgentCity](https://agentcity.dev) governance protocol using the [OASIS](https://github.com/camel-ai/oasis) social simulation engine. Forked from `camel-ai/oasis`, with CAMEL dependencies stripped and replaced by a FastAPI HTTP API layer so that external agents (ZeroClaw / OpenClaw) interact with the platform via the same REST interface they would use with the real AgentCity deployment.
 
+## Canonical Engineering Docs
+
+- [Engineering index](docs/index.md)
+- [Architecture](docs/architecture.md)
+- [Development](docs/development.md)
+- [Testing](docs/testing.md)
+- [CI/CD](docs/cicd.md)
+- [Operations](docs/operations.md)
+- [Troubleshooting](docs/troubleshooting.md)
+
 ## Fork origin
 
 Mitosis-oasis is a **hard fork** of CAMEL-AI's [OASIS](https://github.com/camel-ai/oasis) social simulation framework. The repository diverged from upstream in mid-2024 (initial fork commit `4baafad`). This fork represents a fundamental architectural departure and is maintained as a standalone project with no pathway for re-merging upstream.

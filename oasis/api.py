@@ -16,7 +16,7 @@ import tempfile
 import time
 import uuid
 from contextlib import asynccontextmanager
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from fastapi import FastAPI, HTTPException, Query
@@ -681,7 +681,7 @@ async def _build_batch_observation(
     agent_dids: dict[str, str] | None = None,
 ) -> tuple[str, dict[str, Any]]:
     did = _agent_did_for(agent_id, agent_dids)
-    timestamp_utc = datetime.now(UTC).isoformat()
+    timestamp_utc = datetime.now(timezone.utc).isoformat()
 
     try:
         raw_feed = await _dispatch(ActionType.REFRESH, _agent_int_from_any(agent_id))

@@ -27,6 +27,7 @@ from oasis.governance import endpoints as gov_ep
 from oasis.execution import endpoints as exec_ep
 from oasis.adjudication import endpoints as adj_ep
 from oasis.observatory import endpoints as obs_ep
+from oasis.execution import endpoints as exec_ep
 from oasis.governance.endpoints import init_governance_db, router as governance_router, v1_router as governance_v1_router
 from oasis.execution.endpoints import init_execution_db, router as execution_router, v1_router as execution_v1_router
 from oasis.execution.schema import create_execution_tables
@@ -225,6 +226,16 @@ class PurchaseProductBody(BaseModel):
 class ObservationBatchBody(BaseModel):
     agent_ids: list[str]
     limit: int = 20
+    agent_dids: dict[str, str] | None = None
+
+
+class ActionBatchEntry(BaseModel):
+    action: dict[str, Any] | None = None
+    social_action: str | None = None
+
+
+class ActionBatchBody(BaseModel):
+    actions: dict[str, ActionBatchEntry]
     agent_dids: dict[str, str] | None = None
 
 
@@ -748,6 +759,54 @@ async def batch_observations(body: ObservationBatchBody):
         ]
     )
     return {"observations": {agent_id: observation for agent_id, observation in pairs}}
+
+
+@app.post("/api/mitosis/actions/batch", tags=["Feed"])
+async def batch_actions(body: ActionBatchBody):
+    """Apply a full round of actions with one request."""
+    results: dict[str, dict[str, Any]] = {}
+    agent_dids = body.agent_dids or {}
+
+    for agent_id in sorted(body.actions):
+        entry = body.actions[agent_id]
+        action = entry.action or {"type": "idle"}
+        action_type = action.get("type", "idle")
+        result: dict[str, Any]
+
+        if action_type == "submit_task_output":
+            task_id = action.get("task_id")
+            output = action.get("output", {})
+            if not isinstance(output, dict):
+                output = {"result": output}
+            if task_id:
+                try:
+                    result = exec_ep._get_service().submit_output(
+                        str(task_id),
+                        json.dumps(output),
+                        agent_dids.get(agent_id, f"did:mock:{agent_id}"),
+                    )
+                except HTTPException as exc:
+                    result = {"success": False, "error": str(exc.detail)}
+                except Exception as exc:
+                    result = {"success": False, "error": str(exc)}
+            else:
+                result = {"success": True, "action_type": action_type}
+        else:
+            result = {"success": True, "action_type": action_type}
+
+        if entry.social_action is not None:
+            try:
+                await _dispatch(
+                    ActionType.CREATE_POST,
+                    _agent_int_from_any(agent_id),
+                    entry.social_action,
+                )
+            except Exception:
+                pass
+
+        results[agent_id] = result
+
+    return {"results": results}
 
 
 @app.get("/api/trends", tags=["Feed"])

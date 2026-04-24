@@ -15,9 +15,13 @@ The repo also contains a public-facing Mintlify docs site. That site is useful f
 | `operations.md` | Service bring-up, health checks, and deployment posture |
 | `troubleshooting.md` | Common API, DB, and runner/deploy issues |
 | `api.md` | High-level HTTP and websocket surface map |
+| `interfaces.md` | Cross-repo HTTP and observability contracts exposed by OASIS |
 | `configuration.md` | Runtime variables and deploy-time knobs |
 | `fork-divergence.md` | What this repo keeps from upstream and what it intentionally replaces |
 | `observability.md` | Observatory routes, websocket stream, and runtime signals |
+| `components/README.md` | Component-level design documents for major subsystems |
+| `flows/README.md` | Sequence and flow documentation for key runtime paths |
+| `adr/` | Major architectural decisions for this repo |
 
 ## Reference Material
 

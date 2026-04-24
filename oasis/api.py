@@ -10,11 +10,13 @@ import asyncio
 import json
 import logging
 import os
+import re
 import sqlite3
 import tempfile
 import time
 import uuid
 from contextlib import asynccontextmanager
+from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import FastAPI, HTTPException, Query
@@ -218,6 +220,12 @@ class CreateGroupBody(BaseModel):
 class PurchaseProductBody(BaseModel):
     agent_id: int
     quantity: int = 1
+
+
+class ObservationBatchBody(BaseModel):
+    agent_ids: list[str]
+    limit: int = 20
+    agent_dids: dict[str, str] | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -630,11 +638,116 @@ async def sign_up(body: SignUpBody):
 # ---------------------------------------------------------------------------
 
 
+def _agent_int_from_any(agent_id: str | int) -> int:
+    if isinstance(agent_id, int):
+        return agent_id
+    match = re.search(r"(\d+)$", agent_id)
+    if match:
+        return int(match.group(1))
+    raise ValueError(f"Unsupported OASIS agent id: {agent_id!r}")
+
+
+def _agent_did_for(agent_id: str, agent_dids: dict[str, str] | None = None) -> str:
+    if agent_dids and agent_dids.get(agent_id):
+        return agent_dids[agent_id]
+    return f"did:mock:{agent_id}"
+
+
+def _normalize_feed_items(feed_result: Any) -> list[dict[str, Any]]:
+    if isinstance(feed_result, list):
+        return feed_result
+    if isinstance(feed_result, dict):
+        items = feed_result.get("items")
+        if isinstance(items, list):
+            return items
+    return []
+
+
+def _extract_balance(balance_payload: dict[str, Any]) -> float:
+    for key in ("balance", "total_balance", "available_balance"):
+        value = balance_payload.get(key)
+        if value is not None:
+            try:
+                return float(value)
+            except (TypeError, ValueError):
+                continue
+    return 0.0
+
+
+async def _build_batch_observation(
+    agent_id: str,
+    limit: int,
+    agent_count: int,
+    agent_dids: dict[str, str] | None = None,
+) -> tuple[str, dict[str, Any]]:
+    did = _agent_did_for(agent_id, agent_dids)
+    timestamp_utc = datetime.now(UTC).isoformat()
+
+    try:
+        raw_feed = await _dispatch(ActionType.REFRESH, _agent_int_from_any(agent_id))
+    except Exception:
+        raw_feed = {}
+
+    try:
+        mission_board = exec_ep._get_service().list_agent_tasks(did)
+    except Exception:
+        mission_board = {"agent_did": did, "tasks": []}
+
+    try:
+        balance_payload = await adj_ep.get_agent_balance(did)
+    except Exception:
+        balance_payload = {}
+
+    balance = _extract_balance(balance_payload)
+    observation = {
+        "schema_version": "2.0.0",
+        "round": 0,
+        "timestamp_utc": timestamp_utc,
+        "agent_id": agent_id,
+        "environment": {
+            "type": "oasis_social_simulation",
+            "state": {
+                "current_round": 0,
+                "agent_count": agent_count,
+                "agent_balance": balance,
+            },
+            "social_feed": _normalize_feed_items(raw_feed)[:limit],
+            "mission_board": mission_board,
+            "notifications": [],
+        },
+        "private_context": {"balance": balance},
+    }
+    return agent_id, observation
+
+
 @app.get("/api/feed", tags=["Feed"])
 async def refresh(agent_id: int = Query(..., description="Agent ID")):
     """Fetch the recommended post feed for the agent."""
     result = await _dispatch(ActionType.REFRESH, agent_id)
     return result
+
+
+@app.post("/api/mitosis/observations/batch", tags=["Feed"])
+async def batch_observations(body: ObservationBatchBody):
+    """Fetch observation payloads for many agents from one server-side snapshot."""
+    try:
+        summary = obs_ep._get_service().get_summary()
+    except Exception:
+        summary = {}
+
+    agent_count = sum((summary.get("agents_by_type") or {}).values())
+    pairs = await asyncio.gather(
+        *[
+            _build_batch_observation(
+                agent_id=agent_id,
+                limit=body.limit,
+                agent_count=agent_count,
+                agent_dids=body.agent_dids,
+            )
+            for agent_id in body.agent_ids
+        ]
+    )
+    return {"observations": {agent_id: observation for agent_id, observation in pairs}}
 
 
 @app.get("/api/trends", tags=["Feed"])

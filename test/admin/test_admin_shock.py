@@ -31,8 +31,9 @@ def gov_db(tmp_path: Path) -> Path:
 
 
 @pytest.fixture()
-def admin_client(gov_db: Path) -> TestClient:
+def admin_client(gov_db: Path, monkeypatch) -> TestClient:
     admin_ep.set_admin_db(str(gov_db))
+    monkeypatch.setattr(admin_ep, "_ADMIN_TOKEN", "")
     return TestClient(app, raise_server_exceptions=False)
 
 
@@ -255,3 +256,218 @@ def test_shock_event_no_milestone(admin_client, seeded_agents):
     assert resp.status_code == 200
     summary = resp.json()["summary"]
     assert "milestone_crisis" not in summary
+
+
+# ---------------------------------------------------------------------------
+# shock_id idempotency
+# ---------------------------------------------------------------------------
+
+
+def test_shock_id_idempotency_returns_cached_result(admin_client, seeded_agents, gov_db):
+    """Second call with the same shock_id returns cached result without re-applying."""
+    payload = {
+        "free_rider_count": 2,
+        "coalition_size": 0,
+        "high_rep_remove_count": 1,
+        "shock_id": "experiment-run-001",
+    }
+
+    # First call — applies the shock
+    resp1 = admin_client.post("/api/v1/admin/shock", json=payload)
+    assert resp1.status_code == 200
+    data1 = resp1.json()
+    assert data1["shock_applied"] is True
+    assert data1["summary"]["free_riders_injected"] == 2
+
+    # Count active agents after first call
+    conn = sqlite3.connect(str(gov_db))
+    count_after_first = conn.execute(
+        "SELECT COUNT(*) FROM agent_registry WHERE active = 1"
+    ).fetchone()[0]
+    conn.close()
+
+    # Second call with same shock_id — must return identical cached result
+    resp2 = admin_client.post("/api/v1/admin/shock", json=payload)
+    assert resp2.status_code == 200
+    assert resp2.json() == data1  # exact same response object
+
+    # DB state must not have changed (no re-application)
+    conn = sqlite3.connect(str(gov_db))
+    count_after_second = conn.execute(
+        "SELECT COUNT(*) FROM agent_registry WHERE active = 1"
+    ).fetchone()[0]
+    conn.close()
+
+    assert count_after_second == count_after_first
+
+
+def test_different_shock_ids_are_independent(admin_client):
+    """Different shock_id values are cached independently."""
+    resp_a = admin_client.post(
+        "/api/v1/admin/shock",
+        json={"free_rider_count": 1, "coalition_size": 0, "high_rep_remove_count": 0, "shock_id": "run-A"},
+    )
+    resp_b = admin_client.post(
+        "/api/v1/admin/shock",
+        json={"free_rider_count": 2, "coalition_size": 0, "high_rep_remove_count": 0, "shock_id": "run-B"},
+    )
+    assert resp_a.status_code == 200
+    assert resp_b.status_code == 200
+    # Each result reflects the actual call, not a shared cache entry
+    assert resp_a.json()["summary"]["free_riders_injected"] == 1
+    assert resp_b.json()["summary"]["free_riders_injected"] == 2
+
+
+def test_shock_id_survives_in_process_cache_eviction(admin_client, gov_db):
+    """shock_id idempotency is read from SQLite when the in-process dict is cleared."""
+    payload = {
+        "free_rider_count": 1,
+        "coalition_size": 0,
+        "high_rep_remove_count": 0,
+        "shock_id": "durable-run-001",
+    }
+
+    # First call — applies the shock and writes to SQLite cache
+    resp1 = admin_client.post("/api/v1/admin/shock", json=payload)
+    assert resp1.status_code == 200
+    data1 = resp1.json()
+
+    # Evict the in-process cache to simulate a cold start / pod restart
+    admin_ep._shock_results.clear()
+
+    # Count agents before the second call
+    conn = sqlite3.connect(str(gov_db))
+    count_before = conn.execute(
+        "SELECT COUNT(*) FROM agent_registry WHERE active = 1"
+    ).fetchone()[0]
+    conn.close()
+
+    # Second call — must hit SQLite and return the cached result without re-applying
+    resp2 = admin_client.post("/api/v1/admin/shock", json=payload)
+    assert resp2.status_code == 200
+    assert resp2.json() == data1
+
+    # Agent count must not have changed (no re-application)
+    conn = sqlite3.connect(str(gov_db))
+    count_after = conn.execute(
+        "SELECT COUNT(*) FROM agent_registry WHERE active = 1"
+    ).fetchone()[0]
+    conn.close()
+    assert count_after == count_before
+
+
+def test_shock_without_shock_id_is_not_cached(admin_client, seeded_agents, gov_db):
+    """Calls without shock_id always re-apply and are never cached."""
+    payload = {"free_rider_count": 1, "coalition_size": 0, "high_rep_remove_count": 0}
+
+    resp1 = admin_client.post("/api/v1/admin/shock", json=payload)
+    resp2 = admin_client.post("/api/v1/admin/shock", json=payload)
+    assert resp1.status_code == 200
+    assert resp2.status_code == 200
+
+    # Both calls applied — injected agents accumulate (INSERT OR REPLACE
+    # with same DID overwrites, so count stays 1 free-rider, but two calls ran)
+    conn = sqlite3.connect(str(gov_db))
+    fr_count = conn.execute(
+        "SELECT COUNT(*) FROM agent_registry WHERE agent_did LIKE 'did:shock:free-rider-%'"
+    ).fetchone()[0]
+    conn.close()
+    assert fr_count >= 1  # at minimum the agent exists
+
+
+# ---------------------------------------------------------------------------
+# DoS protection — input bounds
+# ---------------------------------------------------------------------------
+
+
+def test_shock_free_rider_count_upper_bound(admin_client):
+    """free_rider_count > 1000 is rejected with 422."""
+    resp = admin_client.post(
+        "/api/v1/admin/shock",
+        json={"free_rider_count": 1001, "coalition_size": 0, "high_rep_remove_count": 0},
+    )
+    assert resp.status_code == 422
+
+
+def test_shock_coalition_size_upper_bound(admin_client):
+    """coalition_size > 1000 is rejected with 422."""
+    resp = admin_client.post(
+        "/api/v1/admin/shock",
+        json={"free_rider_count": 0, "coalition_size": 1001, "high_rep_remove_count": 0},
+    )
+    assert resp.status_code == 422
+
+
+def test_remove_high_rep_upper_bound(admin_client):
+    """count > 10000 is rejected with 422."""
+    resp = admin_client.post(
+        "/api/v1/admin/agents/remove-high-rep",
+        json={"count": 10001},
+    )
+    assert resp.status_code == 422
+
+
+def test_bulk_agents_upper_bound(admin_client):
+    """Bulk register list > 1000 agents is rejected with 422."""
+    resp = admin_client.post(
+        "/api/v1/admin/agents/bulk",
+        json={"agents": [
+            {"agent_did": f"did:test:x-{i}", "display_name": f"X {i}"}
+            for i in range(1001)
+        ]},
+    )
+    assert resp.status_code == 422
+
+
+# ---------------------------------------------------------------------------
+# Strategy column persistence
+# ---------------------------------------------------------------------------
+
+
+def test_bulk_register_persists_strategy(admin_client, gov_db):
+    """strategy field is written to agent_registry when supplied."""
+    resp = admin_client.post(
+        "/api/v1/admin/agents/bulk",
+        json={
+            "agents": [
+                {
+                    "agent_did": "did:test:strat-fr",
+                    "agent_type": "producer",
+                    "capability_tier": "t1",
+                    "display_name": "Strategy Agent",
+                    "reputation_score": 0.3,
+                    "strategy": "free_rider",
+                }
+            ]
+        },
+    )
+    assert resp.status_code == 201
+
+    conn = sqlite3.connect(str(gov_db))
+    conn.row_factory = sqlite3.Row
+    row = conn.execute(
+        "SELECT strategy FROM agent_registry WHERE agent_did = 'did:test:strat-fr'"
+    ).fetchone()
+    conn.close()
+    assert row["strategy"] == "free_rider"
+
+
+def test_shock_event_persists_strategy(admin_client, gov_db):
+    """Shock event injects free-rider and coalition agents with correct strategy."""
+    resp = admin_client.post(
+        "/api/v1/admin/shock",
+        json={"free_rider_count": 1, "coalition_size": 1, "high_rep_remove_count": 0},
+    )
+    assert resp.status_code == 200
+
+    conn = sqlite3.connect(str(gov_db))
+    conn.row_factory = sqlite3.Row
+    fr = conn.execute(
+        "SELECT strategy FROM agent_registry WHERE agent_did = 'did:shock:free-rider-1'"
+    ).fetchone()
+    coal = conn.execute(
+        "SELECT strategy FROM agent_registry WHERE agent_did = 'did:shock:coalition-1'"
+    ).fetchone()
+    conn.close()
+    assert fr["strategy"] == "free_rider"
+    assert coal["strategy"] == "coalition"

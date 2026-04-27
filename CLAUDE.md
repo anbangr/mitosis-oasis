@@ -271,7 +271,7 @@ committing.
 | Legislative | 20 |
 | Execution | 7 |
 | Adjudication | 9 |
-| Observatory (REST) | 7 |
+| Observatory (REST) | 8 |
 | Observatory WebSocket | 1 (`/ws/events`) |
 | Health | 1 (`/api/health`) |
 

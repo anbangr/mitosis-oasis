@@ -55,13 +55,17 @@ def test_invalid_session_404(client):
 
 def test_create_session_with_governance_mode(client):
     """POST /sessions stores governance_mode and returns it in response."""
-    resp = client.post(
-        "/api/governance/sessions",
-        json={"mission_budget_cap": 500.0, "governance_mode": "structural"},
-    )
-    assert resp.status_code == 201
-    data = resp.json()
-    assert data["governance_mode"] == "structural"
+    gov_ep.set_platform_config(PlatformConfig(governance_mode="structural"))
+    try:
+        resp = client.post(
+            "/api/governance/sessions",
+            json={"mission_budget_cap": 500.0, "governance_mode": "structural"},
+        )
+        assert resp.status_code == 201
+        data = resp.json()
+        assert data["governance_mode"] == "structural"
+    finally:
+        gov_ep.set_platform_config(PlatformConfig())  # restore default
 
 
 def test_create_session_with_milestone_id(client):
@@ -97,17 +101,35 @@ def test_create_session_invalid_governance_mode_rejected(client):
     assert resp.status_code == 400
 
 
+def test_create_session_governance_mode_below_floor_rejected(client):
+    """POST /sessions with a governance_mode weaker than server minimum returns 409."""
+    gov_ep.set_platform_config(PlatformConfig(governance_mode="structural"))
+    try:
+        resp = client.post(
+            "/api/governance/sessions",
+            json={"mission_budget_cap": 500.0, "governance_mode": "emergent"},
+        )
+        assert resp.status_code == 409
+        assert "below the server minimum" in resp.json()["detail"]
+    finally:
+        gov_ep.set_platform_config(PlatformConfig())  # restore default
+
+
 def test_get_session_includes_governance_fields(client):
     """GET /sessions/{id} response includes governance_mode, milestone_id, quality_crisis."""
-    resp = client.post(
-        "/api/governance/sessions",
-        json={"mission_budget_cap": 500.0, "governance_mode": "emergent", "milestone_id": "milestone-01"},
-    )
-    session_id = resp.json()["session_id"]
+    gov_ep.set_platform_config(PlatformConfig(governance_mode="emergent"))
+    try:
+        resp = client.post(
+            "/api/governance/sessions",
+            json={"mission_budget_cap": 500.0, "governance_mode": "emergent", "milestone_id": "milestone-01"},
+        )
+        session_id = resp.json()["session_id"]
 
-    resp = client.get(f"/api/governance/sessions/{session_id}")
-    assert resp.status_code == 200
-    data = resp.json()
-    assert data["governance_mode"] == "emergent"
-    assert data["milestone_id"] == "milestone-01"
-    assert data["quality_crisis"] is False
+        resp = client.get(f"/api/governance/sessions/{session_id}")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["governance_mode"] == "emergent"
+        assert data["milestone_id"] == "milestone-01"
+        assert data["quality_crisis"] is False
+    finally:
+        gov_ep.set_platform_config(PlatformConfig())  # restore default

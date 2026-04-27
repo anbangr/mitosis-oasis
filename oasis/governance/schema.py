@@ -48,6 +48,7 @@ CREATE TABLE IF NOT EXISTS agent_registry (
     display_name      TEXT NOT NULL,
     human_principal   TEXT,
     reputation_score  REAL NOT NULL DEFAULT 0.5,
+    strategy          TEXT,
     registered_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     active            BOOLEAN NOT NULL DEFAULT 1
 );

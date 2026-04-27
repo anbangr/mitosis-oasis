@@ -14,6 +14,7 @@ from typing import Any
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
+from oasis.config import PlatformConfig
 from oasis.governance.clerks.codifier import Codifier
 from oasis.governance.clerks.registrar import Registrar
 from oasis.governance.clerks.regulator import Regulator
@@ -34,10 +35,11 @@ from oasis.governance.schema import (
 from oasis.governance.state_machine import LegislativeState, LegislativeStateMachine
 
 # ---------------------------------------------------------------------------
-# Module-level state: path to governance SQLite database
+# Module-level state: path to governance SQLite database + server config
 # ---------------------------------------------------------------------------
 
 _db_path: str | None = None
+_platform_config: PlatformConfig | None = None
 
 
 def init_governance_db(db_path: str) -> None:
@@ -47,6 +49,12 @@ def init_governance_db(db_path: str) -> None:
     create_governance_tables(db_path)
     seed_constitution(db_path)
     seed_clerks(db_path)
+
+
+def set_platform_config(config: PlatformConfig) -> None:
+    """Set the server-level platform configuration. Called during startup."""
+    global _platform_config
+    _platform_config = config
 
 
 def _get_db() -> str:
@@ -115,6 +123,8 @@ def _require_state(session_id: str, *allowed: LegislativeState) -> LegislativeSt
 class CreateSessionBody(BaseModel):
     mission_budget_cap: float = Field(1000.0, gt=0)
     min_reputation: float = Field(0.1, ge=0.0, le=1.0)
+    governance_mode: str | None = Field(None, description="Override server governance_mode for this session")
+    milestone_id: str | None = Field(None, description="Milestone identifier for milestone-scoped sessions")
 
 
 class IdentityRequestBody(BaseModel):
@@ -190,19 +200,40 @@ v1_router = APIRouter(prefix="/api/v1/governance", tags=["Governance"])
 @_routes.post("/sessions", status_code=201, response_model=dict[str, Any])
 async def create_session(body: CreateSessionBody):
     """Create a new legislative session."""
+    # Resolve effective governance_mode: body > server config > default "full"
+    server_mode = (_platform_config.governance_mode if _platform_config else "full")
+    effective_mode = body.governance_mode if body.governance_mode is not None else server_mode
+
+    _VALID_MODES = ("none", "emergent", "structural", "full")
+    if effective_mode not in _VALID_MODES:
+        raise HTTPException(400, f"Invalid governance_mode: {effective_mode!r}; must be one of {_VALID_MODES}")
+    if effective_mode == "none":
+        raise HTTPException(409, "Governance sessions are disabled in 'none' mode (Baseline configuration)")
+
     session_id = f"sess-{uuid.uuid4().hex[:12]}"
     conn = _connect()
     try:
         conn.execute(
             "INSERT INTO legislative_session "
-            "(session_id, state, epoch, mission_budget_cap) "
-            "VALUES (?, ?, 0, ?)",
-            (session_id, LegislativeState.SESSION_INIT.value, body.mission_budget_cap),
+            "(session_id, state, epoch, governance_mode, milestone_id, mission_budget_cap) "
+            "VALUES (?, ?, 0, ?, ?, ?)",
+            (
+                session_id,
+                LegislativeState.SESSION_INIT.value,
+                effective_mode,
+                body.milestone_id,
+                body.mission_budget_cap,
+            ),
         )
         conn.commit()
     finally:
         conn.close()
-    return {"session_id": session_id, "state": LegislativeState.SESSION_INIT.value}
+    return {
+        "session_id": session_id,
+        "state": LegislativeState.SESSION_INIT.value,
+        "governance_mode": effective_mode,
+        "milestone_id": body.milestone_id,
+    }
 
 
 @_routes.get("/sessions/{session_id}", response_model=dict[str, Any])
@@ -222,6 +253,9 @@ async def get_session(session_id: str):
         "session_id": row["session_id"],
         "state": row["state"],
         "epoch": row["epoch"],
+        "governance_mode": row["governance_mode"] if "governance_mode" in row.keys() else "full",
+        "milestone_id": row["milestone_id"] if "milestone_id" in row.keys() else None,
+        "quality_crisis": bool(row["quality_crisis"]) if "quality_crisis" in row.keys() else False,
         "mission_budget_cap": row["mission_budget_cap"],
         "created_at": row["created_at"],
         "updated_at": row["updated_at"],

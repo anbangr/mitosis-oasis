@@ -147,5 +147,18 @@ async def get_execution_heatmap():
     return _get_service().get_execution_heatmap()
 
 
+# ========================= Governance experiment metrics =====================
+
+
+@_routes.get("/governance/metrics", response_model=dict[str, Any])
+async def get_governance_metrics():
+    """AgentCity experiment metrics computed from cross-branch simulation data.
+
+    Returns PCR, PSR, CAU, SI, CDR, OPA, ECP as defined in the AgentCity
+    NeurIPS paper (agentcity_neurips_v1.0.md §4 / Appendix C).
+    """
+    return _get_service().get_governance_metrics()
+
+
 router.include_router(_routes)
 v1_router.include_router(_routes)

@@ -297,3 +297,119 @@ class ObservatoryService:
             return {"agents": {}, "rows": []}
         finally:
             conn.close()
+
+    # ── Governance experiment metrics (Gap 6) ─────────────────────────────────
+
+    def get_governance_metrics(self) -> dict[str, Any]:
+        """Compute AgentCity experiment metrics from available cross-branch data.
+
+        Metrics returned:
+        - pcr  (Project Completion Rate): DEPLOYED sessions / total sessions
+        - psr  (Pool Sustainability Rate): active producers / total producers
+        - cau  (Capability-Adjusted Utilization): T3+T5 completed tasks / all completed
+        - si   (Specialization Index): 1 - normalised HHI of completed tasks by tier
+        - cdr  (Coordination Detection Rate): ratio of coordination-flagged events
+        - opa  (Override Panel Activation count): guardian alerts raised
+        - ecp  (Endogenous Compliance Premium): mean reputation delta (new - old)
+        - session_count: total sessions in all states
+        - active_agent_count: number of currently active producer agents
+        """
+        conn = self._connect()
+        metrics: dict[str, Any] = {}
+        try:
+            # PCR — Project Completion Rate
+            try:
+                total_row = conn.execute(
+                    "SELECT COUNT(*) as cnt FROM legislative_session"
+                ).fetchone()
+                deployed_row = conn.execute(
+                    "SELECT COUNT(*) as cnt FROM legislative_session WHERE state = 'DEPLOYED'"
+                ).fetchone()
+                total_sessions = total_row["cnt"] if total_row else 0
+                deployed = deployed_row["cnt"] if deployed_row else 0
+                metrics["pcr"] = round(deployed / total_sessions, 4) if total_sessions > 0 else 0.0
+                metrics["session_count"] = total_sessions
+            except sqlite3.OperationalError:
+                metrics["pcr"] = 0.0
+                metrics["session_count"] = 0
+
+            # PSR — Pool Sustainability Rate
+            try:
+                total_prod = conn.execute(
+                    "SELECT COUNT(*) as cnt FROM agent_registry WHERE agent_type = 'producer'"
+                ).fetchone()
+                active_prod = conn.execute(
+                    "SELECT COUNT(*) as cnt FROM agent_registry "
+                    "WHERE agent_type = 'producer' AND active = 1"
+                ).fetchone()
+                total_p = total_prod["cnt"] if total_prod else 0
+                active_p = active_prod["cnt"] if active_prod else 0
+                metrics["psr"] = round(active_p / total_p, 4) if total_p > 0 else 1.0
+                metrics["active_agent_count"] = active_p
+            except sqlite3.OperationalError:
+                metrics["psr"] = 1.0
+                metrics["active_agent_count"] = 0
+
+            # CAU — Capability-Adjusted Utilization (T3+T5 completed / all completed)
+            # Requires capability_tier join from agent_registry to task_assignment
+            try:
+                completed_by_tier = conn.execute(
+                    "SELECT ar.capability_tier, COUNT(*) as cnt "
+                    "FROM task_assignment ta "
+                    "JOIN agent_registry ar ON ta.agent_did = ar.agent_did "
+                    "WHERE ta.status IN ('completed', 'settled') "
+                    "GROUP BY ar.capability_tier"
+                ).fetchall()
+                tier_counts: dict[str, int] = {r["capability_tier"]: r["cnt"] for r in completed_by_tier}
+                total_completed = sum(tier_counts.values())
+                high_tier = tier_counts.get("t3", 0) + tier_counts.get("t5", 0)
+                metrics["cau"] = round(high_tier / total_completed, 4) if total_completed > 0 else 0.0
+
+                # SI — Specialization Index (1 - normalised HHI)
+                if total_completed > 0:
+                    hhi = sum((c / total_completed) ** 2 for c in tier_counts.values())
+                    n = len(tier_counts)
+                    hhi_normalised = (hhi - 1 / n) / (1 - 1 / n) if n > 1 else 1.0
+                    metrics["si"] = round(1.0 - hhi_normalised, 4)
+                else:
+                    metrics["si"] = 0.0
+            except sqlite3.OperationalError:
+                metrics["cau"] = 0.0
+                metrics["si"] = 0.0
+
+            # CDR — Coordination Detection Rate (coordination events / total vote events)
+            try:
+                coord_events = conn.execute(
+                    "SELECT COUNT(*) as cnt FROM event_log WHERE event_type = 'COORDINATION_FLAGGED'"
+                ).fetchone()
+                vote_events = conn.execute(
+                    "SELECT COUNT(*) as cnt FROM event_log WHERE event_type = 'VOTE_CAST'"
+                ).fetchone()
+                coord_cnt = coord_events["cnt"] if coord_events else 0
+                vote_cnt = vote_events["cnt"] if vote_events else 0
+                metrics["cdr"] = round(coord_cnt / vote_cnt, 4) if vote_cnt > 0 else 0.0
+            except sqlite3.OperationalError:
+                metrics["cdr"] = 0.0
+
+            # OPA — Override Panel Activation count (guardian alerts raised)
+            try:
+                opa_row = conn.execute(
+                    "SELECT COUNT(*) as cnt FROM guardian_alert"
+                ).fetchone()
+                metrics["opa"] = opa_row["cnt"] if opa_row else 0
+            except sqlite3.OperationalError:
+                metrics["opa"] = 0
+
+            # ECP — Endogenous Compliance Premium (mean reputation improvement)
+            try:
+                rep_row = conn.execute(
+                    "SELECT AVG(new_score - old_score) as mean_delta FROM reputation_ledger"
+                ).fetchone()
+                delta = rep_row["mean_delta"] if rep_row and rep_row["mean_delta"] is not None else 0.0
+                metrics["ecp"] = round(float(delta), 4)
+            except sqlite3.OperationalError:
+                metrics["ecp"] = 0.0
+
+        finally:
+            conn.close()
+        return metrics

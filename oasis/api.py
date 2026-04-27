@@ -23,10 +23,12 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi import WebSocket
 from pydantic import BaseModel
 
+from oasis.config import PlatformConfig
 from oasis.governance import endpoints as gov_ep
 from oasis.execution import endpoints as exec_ep
 from oasis.adjudication import endpoints as adj_ep
 from oasis.observatory import endpoints as obs_ep
+from oasis.admin import endpoints as admin_ep
 from oasis.execution import endpoints as exec_ep
 from oasis.governance.endpoints import init_governance_db, router as governance_router, v1_router as governance_v1_router
 from oasis.execution.endpoints import init_execution_db, router as execution_router, v1_router as execution_v1_router
@@ -34,6 +36,7 @@ from oasis.execution.schema import create_execution_tables
 from oasis.adjudication.endpoints import init_adjudication_db, router as adjudication_router, v1_router as adjudication_v1_router
 from oasis.adjudication.schema import create_adjudication_tables
 from oasis.observatory.endpoints import init_observatory_db, router as observatory_router, v1_router as observatory_v1_router
+from oasis.admin.endpoints import set_admin_db, router as admin_router, v1_router as admin_v1_router
 from oasis.observatory.dashboard import router as dashboard_router
 from oasis.observatory.event_bus import EventBus
 from oasis.observatory.websocket import websocket_events
@@ -70,9 +73,19 @@ async def lifespan(app: FastAPI):
     )
     _platform_task = asyncio.create_task(platform.running())
 
+    # Build PlatformConfig from environment variables (all optional, defaults apply)
+    _cfg = PlatformConfig(
+        governance_mode=os.environ.get("GOVERNANCE_MODE", "full"),  # type: ignore[arg-type]
+        execution_mode=os.environ.get("EXECUTION_MODE", "synthetic"),  # type: ignore[arg-type]
+        adjudication_enabled=os.environ.get("ADJUDICATION_ENABLED", "true").lower() == "true",
+        economic_incentives_enabled=os.environ.get("ECONOMIC_INCENTIVES_ENABLED", "true").lower() == "true",
+    )
+    gov_ep.set_platform_config(_cfg)
+
     # Initialise governance database (in-memory, colocated with platform DB)
     _gov_db = os.path.join(tempfile.gettempdir(), f"oasis_gov_{os.getpid()}.db")
     init_governance_db(_gov_db)
+    set_admin_db(_gov_db)
 
     _exec_db = os.path.join(tempfile.gettempdir(), f"oasis_exec_{os.getpid()}.db")
     create_execution_tables(_exec_db)
@@ -132,6 +145,10 @@ app.include_router(adjudication_v1_router)
 app.include_router(observatory_router)
 app.include_router(observatory_v1_router)
 app.include_router(dashboard_router)
+
+# Include admin API router (shock events + experiment control)
+app.include_router(admin_router)
+app.include_router(admin_v1_router)
 
 
 # ---------------------------------------------------------------------------

@@ -5,6 +5,13 @@ from dataclasses import dataclass, field
 from typing import Literal, Tuple
 
 _VALID_GOVERNANCE_MODES = ("none", "emergent", "structural", "full")
+
+# Derived from the tuple above — maps each mode to its ordinal for floor comparisons.
+# Always kept in sync: adding a mode to _VALID_GOVERNANCE_MODES automatically orders it.
+_GOVERNANCE_MODE_ORDER: dict[str, int] = {
+    mode: i for i, mode in enumerate(_VALID_GOVERNANCE_MODES)
+}
+
 _VALID_HITL_MODES = ("simulated", "disabled")
 
 

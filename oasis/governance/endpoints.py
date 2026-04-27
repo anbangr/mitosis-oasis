@@ -12,9 +12,9 @@ import uuid
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
-from oasis.config import PlatformConfig
+from oasis.config import PlatformConfig, _GOVERNANCE_MODE_ORDER, _VALID_GOVERNANCE_MODES
 from oasis.governance.clerks.codifier import Codifier
 from oasis.governance.clerks.registrar import Registrar
 from oasis.governance.clerks.regulator import Regulator
@@ -126,6 +126,11 @@ class CreateSessionBody(BaseModel):
     governance_mode: str | None = Field(None, description="Override server governance_mode for this session")
     milestone_id: str | None = Field(None, description="Milestone identifier for milestone-scoped sessions")
 
+    @field_validator("milestone_id")
+    @classmethod
+    def strip_milestone_id(cls, v: str | None) -> str | None:
+        return v.strip() if v is not None else v
+
 
 class IdentityRequestBody(BaseModel):
     min_reputation: float = Field(0.1, ge=0.0, le=1.0)
@@ -204,11 +209,18 @@ async def create_session(body: CreateSessionBody):
     server_mode = (_platform_config.governance_mode if _platform_config else "full")
     effective_mode = body.governance_mode if body.governance_mode is not None else server_mode
 
-    _VALID_MODES = ("none", "emergent", "structural", "full")
-    if effective_mode not in _VALID_MODES:
-        raise HTTPException(400, f"Invalid governance_mode: {effective_mode!r}; must be one of {_VALID_MODES}")
+    if effective_mode not in _VALID_GOVERNANCE_MODES:
+        raise HTTPException(400, f"Invalid governance_mode: {effective_mode!r}; must be one of {_VALID_GOVERNANCE_MODES}")
+    if server_mode == "none":
+        raise HTTPException(409, "Governance sessions are disabled in 'none' mode (Baseline configuration)")
     if effective_mode == "none":
         raise HTTPException(409, "Governance sessions are disabled in 'none' mode (Baseline configuration)")
+    _full = _GOVERNANCE_MODE_ORDER["full"]
+    if _GOVERNANCE_MODE_ORDER.get(effective_mode, _full) < _GOVERNANCE_MODE_ORDER.get(server_mode, _full):
+        raise HTTPException(
+            409,
+            f"Session governance_mode '{effective_mode}' is below the server minimum '{server_mode}'",
+        )
 
     session_id = f"sess-{uuid.uuid4().hex[:12]}"
     conn = _connect()
@@ -253,9 +265,9 @@ async def get_session(session_id: str):
         "session_id": row["session_id"],
         "state": row["state"],
         "epoch": row["epoch"],
-        "governance_mode": row["governance_mode"] if "governance_mode" in row.keys() else "full",
-        "milestone_id": row["milestone_id"] if "milestone_id" in row.keys() else None,
-        "quality_crisis": bool(row["quality_crisis"]) if "quality_crisis" in row.keys() else False,
+        "governance_mode": row["governance_mode"],
+        "milestone_id": row["milestone_id"],
+        "quality_crisis": bool(row["quality_crisis"]),
         "mission_budget_cap": row["mission_budget_cap"],
         "created_at": row["created_at"],
         "updated_at": row["updated_at"],
@@ -329,7 +341,7 @@ async def submit_attestation(session_id: str, body: AttestationBody):
     )
     result = registrar.verify_identity(attestation)
     if not result["passed"]:
-        raise HTTPException(400, {"errors": result["errors"]})
+        raise HTTPException(400, "; ".join(result["errors"]))
     return result
 
 
@@ -351,7 +363,7 @@ async def submit_proposal(session_id: str, body: ProposalBody):
     )
     result = speaker.receive_proposal(session_id, proposal)
     if not result["passed"]:
-        raise HTTPException(400, {"errors": result["errors"]})
+        raise HTTPException(400, "; ".join(result["errors"]))
     return result
 
 
@@ -559,7 +571,7 @@ async def submit_bid(session_id: str, body: BidBody):
     )
     result = regulator.receive_bid(session_id, bid)
     if not result["passed"]:
-        raise HTTPException(400, {"errors": result["errors"]})
+        raise HTTPException(400, "; ".join(result["errors"]))
     return result
 
 
@@ -675,11 +687,10 @@ async def submit_spec(session_id: str, body: SpecBody):
     # Run constitutional validation
     val_result = codifier.run_constitutional_validation(spec)
     if not val_result.passed:
-        errors = [
-            {"check": e.check, "field": e.field, "message": e.message}
-            for e in val_result.errors
-        ]
-        raise HTTPException(400, {"errors": errors, "validation": "failed"})
+        detail = "Constitutional validation failed: " + "; ".join(
+            f"{e.check} ({e.field}): {e.message}" for e in val_result.errors
+        )
+        raise HTTPException(400, detail)
 
     return {
         "spec_id": spec.validation_proof,

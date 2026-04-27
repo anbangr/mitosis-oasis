@@ -37,10 +37,21 @@ from oasis.observatory.service import ObservatoryService
 _service: ObservatoryService | None = None
 
 
-def init_observatory_db(db_path: str) -> None:
+def init_observatory_db(
+    db_path: str,
+    *,
+    governance_db: str | None = None,
+    execution_db: str | None = None,
+    adjudication_db: str | None = None,
+) -> None:
     """Initialise the observatory service singleton."""
     global _service
-    _service = ObservatoryService(db_path)
+    _service = ObservatoryService(
+        db_path,
+        governance_db=governance_db,
+        execution_db=execution_db,
+        adjudication_db=adjudication_db,
+    )
 
 
 def _get_service() -> ObservatoryService:

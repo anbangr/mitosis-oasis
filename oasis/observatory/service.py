@@ -22,23 +22,49 @@ thin HTTP delegates and tests can instantiate with a temp DB.
 from __future__ import annotations
 
 import json
+import logging
 import sqlite3
 from typing import Any
 
 from oasis.observatory.schema import create_observatory_tables
 
+logger = logging.getLogger(__name__)
+
 
 class ObservatoryService:
     """Read-side query service for simulation observability data."""
 
-    def __init__(self, db_path: str) -> None:
+    def __init__(
+        self,
+        db_path: str,
+        *,
+        governance_db: str | None = None,
+        execution_db: str | None = None,
+        adjudication_db: str | None = None,
+    ) -> None:
         self._db_path = db_path
+        self._governance_db = governance_db
+        self._execution_db = execution_db
+        self._adjudication_db = adjudication_db
         create_observatory_tables(db_path)
 
     def _connect(self) -> sqlite3.Connection:
         conn = sqlite3.connect(self._db_path)
         conn.execute("PRAGMA foreign_keys = ON")
         conn.row_factory = sqlite3.Row
+        return conn
+
+    def _connect_for_metrics(self) -> sqlite3.Connection:
+        """Open observatory DB and ATTACH branch DBs for cross-branch metric queries."""
+        conn = sqlite3.connect(self._db_path)
+        conn.execute("PRAGMA foreign_keys = ON")
+        conn.row_factory = sqlite3.Row
+        if self._governance_db:
+            conn.execute("ATTACH DATABASE ? AS gov", (self._governance_db,))
+        if self._execution_db:
+            conn.execute("ATTACH DATABASE ? AS exec_db", (self._execution_db,))
+        if self._adjudication_db:
+            conn.execute("ATTACH DATABASE ? AS adj", (self._adjudication_db,))
         return conn
 
     # ── Summary ───────────────────────────────────────────────────────────────
@@ -314,51 +340,60 @@ class ObservatoryService:
         - session_count: total sessions in all states
         - active_agent_count: number of currently active producer agents
         """
-        conn = self._connect()
+        conn = self._connect_for_metrics()
+        # Table-name prefixes: use schema-qualified names when the branch DB is
+        # ATTACHed, otherwise fall back to unqualified names (works in tests where
+        # all tables are seeded directly into the observatory DB).
+        gov = "gov." if self._governance_db else ""
+        exc = "exec_db." if self._execution_db else ""
+        adj = "adj." if self._adjudication_db else ""
+
         metrics: dict[str, Any] = {}
         try:
             # PCR — Project Completion Rate
             try:
                 total_row = conn.execute(
-                    "SELECT COUNT(*) as cnt FROM legislative_session"
+                    f"SELECT COUNT(*) as cnt FROM {gov}legislative_session"
                 ).fetchone()
                 deployed_row = conn.execute(
-                    "SELECT COUNT(*) as cnt FROM legislative_session WHERE state = 'DEPLOYED'"
+                    f"SELECT COUNT(*) as cnt FROM {gov}legislative_session WHERE state = 'DEPLOYED'"
                 ).fetchone()
                 total_sessions = total_row["cnt"] if total_row else 0
                 deployed = deployed_row["cnt"] if deployed_row else 0
                 metrics["pcr"] = round(deployed / total_sessions, 4) if total_sessions > 0 else 0.0
                 metrics["session_count"] = total_sessions
-            except sqlite3.OperationalError:
+            except sqlite3.OperationalError as err:
+                logger.warning("PCR metric unavailable — governance tables missing or not yet created: %s", err)
                 metrics["pcr"] = 0.0
                 metrics["session_count"] = 0
 
             # PSR — Pool Sustainability Rate
             try:
                 total_prod = conn.execute(
-                    "SELECT COUNT(*) as cnt FROM agent_registry WHERE agent_type = 'producer'"
+                    f"SELECT COUNT(*) as cnt FROM {gov}agent_registry WHERE agent_type = 'producer'"
                 ).fetchone()
                 active_prod = conn.execute(
-                    "SELECT COUNT(*) as cnt FROM agent_registry "
-                    "WHERE agent_type = 'producer' AND active = 1"
+                    f"SELECT COUNT(*) as cnt FROM {gov}agent_registry "
+                    f"WHERE agent_type = 'producer' AND active = 1"
                 ).fetchone()
                 total_p = total_prod["cnt"] if total_prod else 0
                 active_p = active_prod["cnt"] if active_prod else 0
                 metrics["psr"] = round(active_p / total_p, 4) if total_p > 0 else 1.0
                 metrics["active_agent_count"] = active_p
-            except sqlite3.OperationalError:
+            except sqlite3.OperationalError as err:
+                logger.warning("PSR metric unavailable — governance tables missing or not yet created: %s", err)
                 metrics["psr"] = 1.0
                 metrics["active_agent_count"] = 0
 
             # CAU — Capability-Adjusted Utilization (T3+T5 completed / all completed)
-            # Requires capability_tier join from agent_registry to task_assignment
+            # Cross-DB join: execution task_assignment × governance agent_registry
             try:
                 completed_by_tier = conn.execute(
-                    "SELECT ar.capability_tier, COUNT(*) as cnt "
-                    "FROM task_assignment ta "
-                    "JOIN agent_registry ar ON ta.agent_did = ar.agent_did "
-                    "WHERE ta.status IN ('completed', 'settled') "
-                    "GROUP BY ar.capability_tier"
+                    f"SELECT ar.capability_tier, COUNT(*) as cnt "
+                    f"FROM {exc}task_assignment ta "
+                    f"JOIN {gov}agent_registry ar ON ta.agent_did = ar.agent_did "
+                    f"WHERE ta.status IN ('completed', 'settled') "
+                    f"GROUP BY ar.capability_tier"
                 ).fetchall()
                 tier_counts: dict[str, int] = {r["capability_tier"]: r["cnt"] for r in completed_by_tier}
                 total_completed = sum(tier_counts.values())
@@ -370,14 +405,16 @@ class ObservatoryService:
                     hhi = sum((c / total_completed) ** 2 for c in tier_counts.values())
                     n = len(tier_counts)
                     hhi_normalised = (hhi - 1 / n) / (1 - 1 / n) if n > 1 else 1.0
-                    metrics["si"] = round(1.0 - hhi_normalised, 4)
+                    metrics["si"] = round(max(0.0, min(1.0, 1.0 - hhi_normalised)), 4)
                 else:
                     metrics["si"] = 0.0
-            except sqlite3.OperationalError:
+            except sqlite3.OperationalError as err:
+                logger.warning("CAU/SI metrics unavailable — execution or governance tables missing: %s", err)
                 metrics["cau"] = 0.0
                 metrics["si"] = 0.0
 
             # CDR — Coordination Detection Rate (coordination events / total vote events)
+            # event_log lives in the observatory DB — no schema prefix needed
             try:
                 coord_events = conn.execute(
                     "SELECT COUNT(*) as cnt FROM event_log WHERE event_type = 'COORDINATION_FLAGGED'"
@@ -388,26 +425,30 @@ class ObservatoryService:
                 coord_cnt = coord_events["cnt"] if coord_events else 0
                 vote_cnt = vote_events["cnt"] if vote_events else 0
                 metrics["cdr"] = round(coord_cnt / vote_cnt, 4) if vote_cnt > 0 else 0.0
-            except sqlite3.OperationalError:
+            except sqlite3.OperationalError as err:
+                logger.warning("CDR metric unavailable — event_log table missing: %s", err)
                 metrics["cdr"] = 0.0
 
             # OPA — Override Panel Activation count (guardian alerts raised)
             try:
                 opa_row = conn.execute(
-                    "SELECT COUNT(*) as cnt FROM guardian_alert"
+                    f"SELECT COUNT(*) as cnt FROM {adj}guardian_alert"
                 ).fetchone()
                 metrics["opa"] = opa_row["cnt"] if opa_row else 0
-            except sqlite3.OperationalError:
+            except sqlite3.OperationalError as err:
+                logger.warning("OPA metric unavailable — adjudication tables missing: %s", err)
                 metrics["opa"] = 0
 
             # ECP — Endogenous Compliance Premium (mean reputation improvement)
+            # reputation_ledger is defined in the governance schema; query gov. prefix.
             try:
                 rep_row = conn.execute(
-                    "SELECT AVG(new_score - old_score) as mean_delta FROM reputation_ledger"
+                    f"SELECT AVG(new_score - old_score) as mean_delta FROM {gov}reputation_ledger"
                 ).fetchone()
                 delta = rep_row["mean_delta"] if rep_row and rep_row["mean_delta"] is not None else 0.0
                 metrics["ecp"] = round(float(delta), 4)
-            except sqlite3.OperationalError:
+            except sqlite3.OperationalError as err:
+                logger.warning("ECP metric unavailable — adjudication tables missing: %s", err)
                 metrics["ecp"] = 0.0
 
         finally:

@@ -28,8 +28,6 @@ from oasis.governance import endpoints as gov_ep
 from oasis.execution import endpoints as exec_ep
 from oasis.adjudication import endpoints as adj_ep
 from oasis.observatory import endpoints as obs_ep
-from oasis.admin import endpoints as admin_ep
-from oasis.execution import endpoints as exec_ep
 from oasis.governance.endpoints import init_governance_db, router as governance_router, v1_router as governance_v1_router
 from oasis.execution.endpoints import init_execution_db, router as execution_router, v1_router as execution_v1_router
 from oasis.execution.schema import create_execution_tables
@@ -73,13 +71,18 @@ async def lifespan(app: FastAPI):
     )
     _platform_task = asyncio.create_task(platform.running())
 
-    # Build PlatformConfig from environment variables (all optional, defaults apply)
-    _cfg = PlatformConfig(
-        governance_mode=os.environ.get("GOVERNANCE_MODE", "full"),  # type: ignore[arg-type]
-        execution_mode=os.environ.get("EXECUTION_MODE", "synthetic"),  # type: ignore[arg-type]
-        adjudication_enabled=os.environ.get("ADJUDICATION_ENABLED", "true").lower() == "true",
-        economic_incentives_enabled=os.environ.get("ECONOMIC_INCENTIVES_ENABLED", "true").lower() == "true",
-    )
+    # Build PlatformConfig from environment variables (all optional, defaults apply).
+    # Wrap in try/except so a bad GOVERNANCE_MODE value produces a clear startup error
+    # rather than a crash-loop with an opaque asyncio traceback.
+    try:
+        _cfg = PlatformConfig(
+            governance_mode=os.environ.get("GOVERNANCE_MODE", "full"),  # type: ignore[arg-type]
+            execution_mode=os.environ.get("EXECUTION_MODE", "synthetic"),  # type: ignore[arg-type]
+            adjudication_enabled=os.environ.get("ADJUDICATION_ENABLED", "true").lower() == "true",
+            economic_incentives_enabled=os.environ.get("ECONOMIC_INCENTIVES_ENABLED", "true").lower() == "true",
+        )
+    except ValueError as exc:
+        raise SystemExit(f"[oasis] Invalid environment configuration: {exc}") from exc
     gov_ep.set_platform_config(_cfg)
 
     # Initialise governance database (in-memory, colocated with platform DB)
@@ -96,7 +99,12 @@ async def lifespan(app: FastAPI):
     init_adjudication_db(_adj_db)
 
     _obs_db = os.path.join(tempfile.gettempdir(), f"oasis_obs_{os.getpid()}.db")
-    init_observatory_db(_obs_db)
+    init_observatory_db(
+        _obs_db,
+        governance_db=_gov_db,
+        execution_db=_exec_db,
+        adjudication_db=_adj_db,
+    )
 
     # Also initialize the EventBus singleton with the observatory DB
     EventBus.get_instance(_obs_db)

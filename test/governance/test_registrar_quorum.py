@@ -74,8 +74,9 @@ def test_exactly_minimum(governance_db: Path):
     _attest(reg, "did:oasis:clerk-regulator", "clerk")
     _attest(reg, "did:oasis:clerk-codifier", "clerk")
 
-    # quorum_threshold=0.51, 2 producers → need floor(0.51*2) = 1
+    # quorum_threshold=0.60, 2 producers → need ceil(0.60*2) = 2
     _attest(reg, "did:mock:prod-1")
+    _attest(reg, "did:mock:prod-2")
 
     assert reg.check_quorum("sess-q") is True
 

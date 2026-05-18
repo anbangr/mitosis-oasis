@@ -239,9 +239,9 @@ _DEFAULT_CONSTITUTION = [
     ("budget_cap_min", 1.0, "float", "Minimum mission budget cap (tokens)"),
     (
         "quorum_threshold",
-        0.51,
+        0.60,
         "float",
-        "Fraction of eligible voters needed for quorum",
+        "Fraction of eligible voters needed for quorum (spec §1.7)",
     ),
     (
         "max_deliberation_rounds",

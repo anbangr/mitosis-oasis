@@ -35,7 +35,7 @@ def test_sample_constitution_params(sample_constitution: dict):
         "voting_method", "max_dag_depth", "max_dag_nodes",
     }
     assert set(sample_constitution.keys()) == expected_keys
-    assert sample_constitution["quorum_threshold"] == 0.51
+    assert sample_constitution["quorum_threshold"] == 0.60
     assert sample_constitution["max_deliberation_rounds"] == 3
 
 

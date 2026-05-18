@@ -174,9 +174,9 @@ class TestGuardIdentityAttestation:
     def test_bid_submitted_rows_do_not_inflate_attestation_count(self, db_path: Path):
         """EC1: extra BID_SUBMITTED rows must not be counted as IDENTITY_ATTESTATION.
 
-        Setup: 6 producers send IDENTITY_ATTESTATION (≥ 51% quorum for 10 total).
-               4 remaining producers send BID_SUBMITTED.
-        Expected after fix: guard allows (only 6 IDENTITY_ATTESTATION rows counted).
+        Setup: 4 producers send IDENTITY_ATTESTATION (< 51% quorum for 10 total).
+               6 remaining producers send BID_SUBMITTED.
+        Expected after fix: guard rejects (only 4 IDENTITY_ATTESTATION rows counted).
         Before fix: guard finds 0 IdentityVerificationResponse → rejects → test FAILS (RED).
         """
         _init_db(db_path)
@@ -185,19 +185,16 @@ class TestGuardIdentityAttestation:
         _create_session(conn, session_id)
         dids = _register_producers(conn, 10)
 
-        # 6 real attestations — enough for 60% > 51% quorum
-        _insert_messages(conn, session_id, dids[:6], "IDENTITY_ATTESTATION")
-        # 4 noise rows that must not be counted
-        _insert_messages(conn, session_id, dids[6:], "BID_SUBMITTED")
+        # 4 real attestations — below the 51% quorum
+        _insert_messages(conn, session_id, dids[:4], "IDENTITY_ATTESTATION")
+        # 6 noise rows that must not be counted; counting them would incorrectly pass.
+        _insert_messages(conn, session_id, dids[4:], "BID_SUBMITTED")
 
         result = _guard_identity_to_proposal(session_id, conn)
         conn.close()
 
-        assert result.allowed is True, (
-            "Guard should allow when 6/10 producers sent IDENTITY_ATTESTATION. "
-            "BID_SUBMITTED rows must not inflate the count. "
-            f"Reason: {result.reason}"
-        )
+        assert result.allowed is False
+        assert "Quorum not met" in result.reason
 
     def test_duplicate_attestations_not_double_counted(self, db_path: Path):
         """EC2: COUNT DISTINCT — duplicate rows from same sender must not reach quorum.

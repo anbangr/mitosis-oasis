@@ -56,12 +56,12 @@ def _register_producers(db_path: Path, n: int = 5) -> list[str]:
 
 
 def _attest_agents(db_path: Path, session_id: str, dids: list[str]) -> None:
-    """Insert IdentityVerificationResponse messages for given agents."""
+    """Insert IDENTITY_ATTESTATION messages for given agents."""
     conn = _connect(db_path)
     for did in dids:
         conn.execute(
             "INSERT INTO message_log (session_id, msg_type, sender_did) "
-            "VALUES (?, 'IdentityVerificationResponse', ?)",
+            "VALUES (?, 'IDENTITY_ATTESTATION', ?)",
             (session_id, did),
         )
     conn.commit()

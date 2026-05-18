@@ -56,14 +56,14 @@ def _advance_to_identity(db_path, sid, producers, min_rep=0.1):
         )
         registrar.verify_identity(att)
 
-    # Guard: IdentityVerificationResponse
+    # Guard: IDENTITY_ATTESTATION
     conn = sqlite3.connect(db)
     conn.execute("PRAGMA foreign_keys = ON")
     for p in producers:
         conn.execute(
             "INSERT INTO message_log "
             "(session_id, msg_type, sender_did, payload) "
-            "VALUES (?, 'IdentityVerificationResponse', ?, '{}')",
+            "VALUES (?, 'IDENTITY_ATTESTATION', ?, '{}')",
             (sid, p["agent_did"]),
         )
     conn.commit()
@@ -315,7 +315,7 @@ class TestFailureModes:
         for p in producers:
             conn.execute(
                 "INSERT INTO message_log (session_id, msg_type, sender_did, payload) "
-                "VALUES (?, 'IdentityVerificationResponse', ?, '{}')",
+                "VALUES (?, 'IDENTITY_ATTESTATION', ?, '{}')",
                 (sid, p["agent_did"]),
             )
         conn.commit()

@@ -50,7 +50,7 @@ def test_chronological_ordering(db_path: Path):
     create_governance_tables(db_path)
     conn = _connect(db_path)
     _setup_session(conn)
-    types = ["IdentityVerificationRequest", "IdentityVerificationResponse", "ProposalSubmission"]
+    types = ["IdentityVerificationRequest", "IDENTITY_ATTESTATION", "ProposalSubmission"]
     for mt in types:
         conn.execute(
             "INSERT INTO message_log (session_id, msg_type, sender_did) "

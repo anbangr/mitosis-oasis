@@ -203,14 +203,14 @@ def drive_session_to_deployed(
         res = registrar.verify_identity(att)
         assert res["passed"], f"Identity failed for {p['agent_did']}: {res['errors']}"
 
-    # Insert IdentityVerificationResponse messages (guard requirement)
+    # Insert IDENTITY_ATTESTATION messages (guard requirement)
     conn = sqlite3.connect(db)
     conn.execute("PRAGMA foreign_keys = ON")
     for p in producers:
         conn.execute(
             "INSERT INTO message_log "
             "(session_id, msg_type, sender_did, payload) "
-            "VALUES (?, 'IdentityVerificationResponse', ?, '{}')",
+            "VALUES (?, 'IDENTITY_ATTESTATION', ?, '{}')",
             (sid, p["agent_did"]),
         )
     conn.commit()

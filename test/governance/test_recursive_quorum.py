@@ -72,14 +72,14 @@ def _register_producers(db_path, count=5):
 
 
 def _attest_identity(db_path, session_id, agent_dids):
-    """Log IdentityVerificationResponse for agents."""
+    """Log IDENTITY_ATTESTATION for agents."""
     conn = sqlite3.connect(str(db_path))
     conn.execute("PRAGMA foreign_keys = ON")
     for did in agent_dids:
         conn.execute(
             "INSERT INTO message_log "
             "(session_id, msg_type, sender_did, receiver, payload) "
-            "VALUES (?, 'IdentityVerificationResponse', ?, 'session', '{}')",
+            "VALUES (?, 'IDENTITY_ATTESTATION', ?, 'session', '{}')",
             (session_id, did),
         )
     conn.commit()

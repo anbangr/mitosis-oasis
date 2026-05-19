@@ -58,6 +58,7 @@ CREATE TABLE IF NOT EXISTS treasury (
     entry_type  TEXT NOT NULL,
     amount      REAL NOT NULL,
     balance_after REAL NOT NULL,
+    decision_id TEXT REFERENCES adjudication_decision(decision_id),
     created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -69,6 +70,7 @@ CREATE TABLE IF NOT EXISTS insurance_pool (
     entry_type  TEXT NOT NULL,
     amount      REAL NOT NULL,
     balance_after REAL NOT NULL,
+    decision_id TEXT REFERENCES adjudication_decision(decision_id),
     created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 """
@@ -81,7 +83,7 @@ def create_adjudication_tables(db_path: Union[str, Path]) -> None:
         conn.execute("PRAGMA foreign_keys = ON")
         conn.executescript(_DDL)
 
-        # Idempotent ALTER TABLE for decision_id (legacy tables pick up the column)
+        # Idempotent ALTER TABLE for decision_id (legacy tables pick up the column).
         for table in ("treasury", "insurance_pool"):
             try:
                 conn.execute(
@@ -90,7 +92,7 @@ def create_adjudication_tables(db_path: Union[str, Path]) -> None:
                 )
                 conn.commit()
             except sqlite3.OperationalError:
-                # Column already exists — second invocation is a no-op
+                # Column already exists; second invocation is a no-op.
                 pass
 
         conn.commit()

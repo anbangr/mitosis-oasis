@@ -10,7 +10,7 @@ from oasis.adjudication.schema import create_adjudication_tables
 
 
 def test_tables_created(adjudication_db: Path) -> None:
-    """All 3 adjudication tables exist after creation."""
+    """Core adjudication tables exist after creation."""
     conn = sqlite3.connect(str(adjudication_db))
     tables = {
         r[0]
@@ -19,6 +19,10 @@ def test_tables_created(adjudication_db: Path) -> None:
         ).fetchall()
     }
     conn.close()
+    assert "coordination_flag" in tables
+    assert "adjudication_decision" in tables
+    assert "treasury" in tables
+    assert "insurance_pool" in tables
 
 
 def test_insurance_pool_table_created(adjudication_db: Path) -> None:
@@ -56,6 +60,46 @@ def test_treasury_has_decision_id(adjudication_db: Path) -> None:
     }
     assert "decision_id" in cols
     conn.close()
+
+
+def test_legacy_ledgers_pick_up_decision_id(tmp_path: Path) -> None:
+    """Legacy treasury and insurance_pool ledgers are migrated in-place."""
+    db_path = tmp_path / "legacy-adjudication.db"
+    conn = sqlite3.connect(str(db_path))
+    conn.executescript(
+        """
+        CREATE TABLE treasury (
+            entry_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            task_id TEXT,
+            agent_did TEXT,
+            entry_type TEXT NOT NULL,
+            amount REAL NOT NULL,
+            balance_after REAL NOT NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE TABLE insurance_pool (
+            entry_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            task_id TEXT,
+            agent_did TEXT,
+            entry_type TEXT NOT NULL,
+            amount REAL NOT NULL,
+            balance_after REAL NOT NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+        """
+    )
+    conn.close()
+
+    create_adjudication_tables(db_path)
+
+    conn = sqlite3.connect(str(db_path))
+    treasury_cols = {r[1] for r in conn.execute("PRAGMA table_info(treasury)")}
+    insurance_cols = {
+        r[1] for r in conn.execute("PRAGMA table_info(insurance_pool)")
+    }
+    conn.close()
+    assert "decision_id" in treasury_cols
+    assert "decision_id" in insurance_cols
 
 
 def test_idempotent(adjudication_db: Path) -> None:

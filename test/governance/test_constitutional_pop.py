@@ -58,7 +58,7 @@ def test_tier_2_consensus_majority(governance_db: Path):
 
 
 def test_tier_3_timeout_minimum(governance_db: Path):
-    """Tier 3 requires timeout_ms >= 30000."""
+    """Tier 3 requires timeout_ms >= 300_000."""
     validator = ConstitutionalValidator(governance_db)
     spec = _make_spec([{
         "node_id": "A", "pop_tier": 3,
@@ -67,7 +67,7 @@ def test_tier_3_timeout_minimum(governance_db: Path):
     errors = validator._check_pop_tier(spec)
     assert len(errors) == 1
     assert "timeout_ms" in errors[0].field
-    assert "30000" in errors[0].message
+    assert "300000" in errors[0].message
 
 
 # ---------------------------------------------------------------------------

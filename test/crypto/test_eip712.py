@@ -114,7 +114,9 @@ def test_t3_verify_wrong_signer(acct, sanction_data):
         )
         is False
     )
-    assert verify(DOMAIN, "Sanction", message, sig, expected_signer=acct.address) is True
+    assert (
+        verify(DOMAIN, "Sanction", message, sig, expected_signer=acct.address) is True
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -186,7 +188,9 @@ def test_edge_domain_version_matches_pyproject():
 
 def test_edge_verify_swallows_exceptions(sanction_data):
     r"""verify returns False (never raises) on a garbage 65-byte signature."""
-    result = verify(DOMAIN, "Sanction", sanction_data.to_dict(), b"\x00" * 65, "0x" + "00" * 20)
+    result = verify(
+        DOMAIN, "Sanction", sanction_data.to_dict(), b"\x00" * 65, "0x" + "00" * 20
+    )
     assert result is False
 
 

@@ -32,7 +32,12 @@ from pathlib import Path
 
 
 def test_t1_package_collectable():
-    r"""T1: pytest --collect-only -q exits 0 and reports 4 tests collected."""
+    r"""T1: pytest --collect-only -q exits 0 and collects at least 4 tests.
+
+    The package starts with 4 sanity tests; later bundles add more spec_v097
+    cases (bid scoring, etc.). The lower bound stays at 4 so the gate keeps
+    catching empty-package regressions without breaking when new features land.
+    """
     project_root = Path(__file__).parent.parent.parent
     result = subprocess.run(
         [
@@ -50,8 +55,15 @@ def test_t1_package_collectable():
     assert result.returncode == 0, (
         f"Collection exited non-zero:\nSTDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
     )
-    assert "4 tests collected" in result.stdout, (
-        f"Expected '4 tests collected' in stdout:\n{result.stdout}"
+    import re
+
+    match = re.search(r"(\d+) tests? collected", result.stdout)
+    assert match, (
+        f"Expected pytest collection summary in stdout:\n{result.stdout}"
+    )
+    collected = int(match.group(1))
+    assert collected >= 4, (
+        f"Expected at least 4 tests collected, got {collected}:\n{result.stdout}"
     )
 
 

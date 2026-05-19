@@ -19,6 +19,43 @@ def test_tables_created(adjudication_db: Path) -> None:
         ).fetchall()
     }
     conn.close()
+
+
+def test_insurance_pool_table_created(adjudication_db: Path) -> None:
+    """T4: insurance_pool table exists after create_adjudication_tables with expected columns."""
+    conn = sqlite3.connect(str(adjudication_db))
+    conn.row_factory = sqlite3.Row
+    tables = {
+        r[0]
+        for r in conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table'"
+        ).fetchall()
+    }
+    assert "insurance_pool" in tables
+
+    cols = {
+        r["name"]
+        for r in conn.execute("PRAGMA table_info(insurance_pool)").fetchall()
+    }
+    assert "entry_id" in cols
+    assert "agent_did" in cols
+    assert "entry_type" in cols
+    assert "amount" in cols
+    assert "balance_after" in cols
+    assert "decision_id" in cols
+    conn.close()
+
+
+def test_treasury_has_decision_id(adjudication_db: Path) -> None:
+    """treasury table has decision_id column after idempotent schema setup."""
+    conn = sqlite3.connect(str(adjudication_db))
+    conn.row_factory = sqlite3.Row
+    cols = {
+        r["name"]
+        for r in conn.execute("PRAGMA table_info(treasury)").fetchall()
+    }
+    assert "decision_id" in cols
+    conn.close()
     assert "coordination_flag" in tables
     assert "adjudication_decision" in tables
     assert "treasury" in tables

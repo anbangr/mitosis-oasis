@@ -176,7 +176,7 @@ class ConstitutionalValidator:
         - All tiers must be in {1, 2, 3}
         - Tier 2: redundancy_factor >= 2, consensus_threshold must be
           majority (> redundancy_factor / 2)
-        - Tier 3: timeout_ms >= 30000 (30 seconds minimum)
+        - Tier 3: timeout_ms >= 300_000 (5 minutes minimum, spec §1.5)
         """
         errors: List[ValidationError] = []
         dag_spec_dict = spec.service_contract_specs.get("dag_spec", {})
@@ -219,13 +219,13 @@ class ConstitutionalValidator:
 
             if tier == 3:
                 timeout = n.get("timeout_ms", 0)
-                if timeout < 30000:
+                if timeout < 300_000:
                     errors.append(ValidationError(
                         check="pop_tier",
                         field=f"node.{nid}.timeout_ms",
                         message=(
-                            f"Tier 3 node {nid} requires timeout_ms >= 30000, "
-                            f"got {timeout}"
+                            f"Tier 3 node {nid} requires timeout_ms >= 300000 "
+                            f"(spec §1.5), got {timeout}"
                         ),
                     ))
 

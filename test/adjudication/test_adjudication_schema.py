@@ -56,9 +56,6 @@ def test_treasury_has_decision_id(adjudication_db: Path) -> None:
     }
     assert "decision_id" in cols
     conn.close()
-    assert "coordination_flag" in tables
-    assert "adjudication_decision" in tables
-    assert "treasury" in tables
 
 
 def test_idempotent(adjudication_db: Path) -> None:

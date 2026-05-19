@@ -48,8 +48,8 @@ def test_treasury_receives_slash_proceeds(
     conn.close()
 
     assert entry is not None
-    assert entry["amount"] == pytest.approx(5.0)
-    assert entry["balance_after"] == pytest.approx(5.0)
+    assert entry["amount"] == pytest.approx(2.5)  # 50/50 split (spec §8.5)
+    assert entry["balance_after"] == pytest.approx(2.5)
 
 
 def test_insufficient_stake_partial_slash(

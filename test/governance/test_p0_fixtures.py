@@ -4,6 +4,7 @@ These tests verify the fixture plumbing only.  They use ``db_path``
 (the lightweight fixture that does NOT call create_governance_tables)
 and the sample data fixtures, which are pure dicts with no DB dependency.
 """
+
 from pathlib import Path
 
 
@@ -29,10 +30,16 @@ def test_sample_agents_structure(sample_agents: dict):
 def test_sample_constitution_params(sample_constitution: dict):
     """sample_constitution has the expected parameter set."""
     expected_keys = {
-        "budget_cap_max", "budget_cap_min", "quorum_threshold",
-        "max_deliberation_rounds", "reputation_floor",
-        "fairness_hhi_threshold", "proposal_deadline_max_ms",
-        "voting_method", "max_dag_depth", "max_dag_nodes",
+        "budget_cap_max",
+        "budget_cap_min",
+        "quorum_threshold",
+        "max_deliberation_rounds",
+        "reputation_floor",
+        "fairness_hhi_threshold",
+        "proposal_deadline_max_ms",
+        "voting_method",
+        "max_dag_depth",
+        "max_dag_nodes",
     }
     assert set(sample_constitution.keys()) == expected_keys
     assert sample_constitution["quorum_threshold"] == 0.60

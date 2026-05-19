@@ -1,4 +1,5 @@
 """Tests for constitutional identity/stake validation."""
+
 import sqlite3
 from pathlib import Path
 

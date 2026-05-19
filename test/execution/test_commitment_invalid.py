@@ -1,4 +1,5 @@
 """Tests for invalid commitment scenarios — wrong agent, insufficient balance, etc."""
+
 from __future__ import annotations
 
 import sqlite3
@@ -20,7 +21,9 @@ def test_wrong_agent_rejected(execution_db: Path, deployed_session: dict) -> Non
         commit_to_task(task["task_id"], "did:exec:producer-999", execution_db)
 
 
-def test_insufficient_balance_rejected(execution_db: Path, deployed_session: dict) -> None:
+def test_insufficient_balance_rejected(
+    execution_db: Path, deployed_session: dict
+) -> None:
     """An agent with insufficient balance cannot commit."""
     sid = deployed_session["session_id"]
     assignments = route_tasks(sid, execution_db)

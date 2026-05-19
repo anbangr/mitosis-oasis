@@ -22,6 +22,7 @@ Provides FastAPI routes for real-time observability:
 - Session timeline for Gantt rendering
 - Execution heatmap (agent x task status matrix)
 """
+
 from __future__ import annotations
 
 from typing import Any

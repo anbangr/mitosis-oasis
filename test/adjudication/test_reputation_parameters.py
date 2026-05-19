@@ -20,6 +20,7 @@ Covers:
   T4 — legacy adjudication tests stay green (verified via conftest fixtures)
   Edge cases for _compute_ema boundary values and reputation_multiplier.
 """
+
 from __future__ import annotations
 
 import pytest

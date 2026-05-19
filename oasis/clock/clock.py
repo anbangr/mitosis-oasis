@@ -22,8 +22,7 @@ class Clock:
         self.k = k
         self.time_step = 0
 
-    def time_transfer(self, now_time: datetime,
-                      start_time: datetime) -> datetime:
+    def time_transfer(self, now_time: datetime, start_time: datetime) -> datetime:
         time_diff = now_time - self.real_start_time
         adjusted_diff = self.k * time_diff
         adjusted_time = start_time + adjusted_diff

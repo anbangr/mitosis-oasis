@@ -1,4 +1,5 @@
 """Tests for Guardian alert querying with filters."""
+
 from __future__ import annotations
 
 import sqlite3

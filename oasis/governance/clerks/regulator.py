@@ -10,6 +10,7 @@ Handles:
 - Layer 2: bid feasibility, coordinated bidding, compliance concerns,
   evidence briefing enrichment
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -202,10 +203,17 @@ class Regulator(BaseClerk):
                     "pop_tier_acceptance, status, quoted_price, capability_match) "
                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)",
                     (
-                        bid_id, session_id, bid.task_node_id, bid.bidder_did,
-                        bid.service_id, bid.proposed_code_hash, bid.stake_amount,
-                        bid.estimated_latency_ms, bid.pop_tier_acceptance,
-                        bid.quoted_price, bid.capability_match,
+                        bid_id,
+                        session_id,
+                        bid.task_node_id,
+                        bid.bidder_did,
+                        bid.service_id,
+                        bid.proposed_code_hash,
+                        bid.stake_amount,
+                        bid.estimated_latency_ms,
+                        bid.pop_tier_acceptance,
+                        bid.quoted_price,
+                        bid.capability_match,
                     ),
                 )
                 conn.commit()
@@ -301,15 +309,19 @@ class Regulator(BaseClerk):
             uncovered = all_node_ids - covered_nodes
             compliance_flags: list[dict] = []
             if uncovered:
-                compliance_flags.append({
-                    "severity": "CRITICAL",
-                    "flag": f"Uncovered task nodes: {sorted(uncovered)}",
-                })
+                compliance_flags.append(
+                    {
+                        "severity": "CRITICAL",
+                        "flag": f"Uncovered task nodes: {sorted(uncovered)}",
+                    }
+                )
 
             # Normalise bid_assignments to fractions
             total_assignments = sum(bid_assignments.values())
             if total_assignments > 0:
-                bid_shares = {k: v / total_assignments for k, v in bid_assignments.items()}
+                bid_shares = {
+                    k: v / total_assignments for k, v in bid_assignments.items()
+                }
             else:
                 bid_shares = {}
 
@@ -318,11 +330,13 @@ class Regulator(BaseClerk):
             fairness_score = fairness_result.score / 1000.0  # normalise to 0-1
 
             if not fairness_result.passed:
-                compliance_flags.append({
-                    "severity": "WARNING",
-                    "flag": f"Fairness score {fairness_result.score} below threshold; "
-                            f"violator: {fairness_result.violator}",
-                })
+                compliance_flags.append(
+                    {
+                        "severity": "WARNING",
+                        "flag": f"Fairness score {fairness_result.score} below threshold; "
+                        f"violator: {fairness_result.violator}",
+                    }
+                )
 
             # Update bid statuses
             for bid_id in approved:
@@ -344,11 +358,15 @@ class Regulator(BaseClerk):
                 "fairness_score, compliance_flags, regulatory_signature) "
                 "VALUES (?, ?, ?, ?, ?, ?, ?)",
                 (
-                    decision_id, session_id,
-                    json.dumps(approved), json.dumps(rejected),
+                    decision_id,
+                    session_id,
+                    json.dumps(approved),
+                    json.dumps(rejected),
                     fairness_score,
                     json.dumps(compliance_flags),
-                    hashlib.sha256(f"{session_id}:{self.clerk_did}".encode()).hexdigest(),
+                    hashlib.sha256(
+                        f"{session_id}:{self.clerk_did}".encode()
+                    ).hexdigest(),
                 ),
             )
             conn.commit()
@@ -525,7 +543,11 @@ class Regulator(BaseClerk):
                 bidders = [b.get("bidder_did", "") for b in bids]
                 unique_bidders = set(bidders)
                 # Same stake from different bidders = suspicious
-                if len(stakes) >= 2 and len(set(stakes)) == 1 and len(unique_bidders) > 1:
+                if (
+                    len(stakes) >= 2
+                    and len(set(stakes)) == 1
+                    and len(unique_bidders) > 1
+                ):
                     collusion_detected = True
                     compliance_flags.append(
                         f"Identical stakes ({stakes[0]}) on node {nid} from "
@@ -543,9 +565,7 @@ class Regulator(BaseClerk):
 
         # --- Heuristic 3: Fairness concern ---
         if fairness_score < 0.5:
-            compliance_flags.append(
-                f"Low fairness score ({fairness_score:.2f})"
-            )
+            compliance_flags.append(f"Low fairness score ({fairness_score:.2f})")
 
         # --- LLM enrichment ---
         try:

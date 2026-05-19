@@ -1,4 +1,5 @@
 """Tests for OutputValidator — failure cases."""
+
 from __future__ import annotations
 
 import json
@@ -38,12 +39,14 @@ class TestValidatorFail:
     def test_timeout_detected(self, validator, routed_task, execution_db):
         """Timeout is detected when latency exceeds node timeout."""
         output = {
-            "output_data": json.dumps({
-                "task_id": routed_task["task_id"],
-                "result": "late-result",
-                "status": "success",
-                "metrics": {"accuracy": 0.9, "completeness": 0.9},
-            }),
+            "output_data": json.dumps(
+                {
+                    "task_id": routed_task["task_id"],
+                    "result": "late-result",
+                    "status": "success",
+                    "metrics": {"accuracy": 0.9, "completeness": 0.9},
+                }
+            ),
             "latency_ms": 999999,  # Way over the 60000ms timeout
         }
         result = validator.validate(routed_task["task_id"], output, execution_db)
@@ -52,12 +55,14 @@ class TestValidatorFail:
     def test_quality_below_threshold(self, validator, routed_task, execution_db):
         """Quality below threshold is detected for anomalous metrics."""
         output = {
-            "output_data": json.dumps({
-                "task_id": routed_task["task_id"],
-                "result": "bad-quality",
-                "status": "success",
-                "metrics": {"accuracy": -5.0, "completeness": -5.0},
-            }),
+            "output_data": json.dumps(
+                {
+                    "task_id": routed_task["task_id"],
+                    "result": "bad-quality",
+                    "status": "success",
+                    "metrics": {"accuracy": -5.0, "completeness": -5.0},
+                }
+            ),
             "latency_ms": 100,
         }
         result = validator.validate(routed_task["task_id"], output, execution_db)

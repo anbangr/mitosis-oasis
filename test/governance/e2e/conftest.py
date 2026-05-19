@@ -4,13 +4,12 @@ Provides a ``drive_session_to_deployed`` helper that walks a fresh
 governance DB through the entire legislative pipeline using the real
 clerk modules and state machine — no mocks except MockLLM for Layer 2.
 """
+
 from __future__ import annotations
 
-import json
 import sqlite3
 import uuid
 from pathlib import Path
-from typing import Optional
 
 import pytest
 
@@ -37,6 +36,7 @@ from oasis.governance.state_machine import LegislativeState, LegislativeStateMac
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture()
 def e2e_db(tmp_path: Path) -> Path:
@@ -118,9 +118,11 @@ DEFAULT_DAG = {
 # Helper: drive a session through the full legislative pipeline
 # ---------------------------------------------------------------------------
 
+
 def _make_unique_dag(dag: dict, prefix: str) -> dict:
     """Return a copy of the DAG with node_ids prefixed to avoid PK collisions."""
     import copy
+
     d = copy.deepcopy(dag)
     id_map = {}
     for node in d["nodes"]:
@@ -161,14 +163,30 @@ def drive_session_to_deployed(
     dag = _make_unique_dag(raw_dag, sid) if unique_dag else raw_dag
 
     # Clerk instances
-    registrar = Registrar(db_path=db, clerk_did="did:oasis:clerk-registrar",
-                          llm_enabled=llm_enabled, llm=llm)
-    speaker = Speaker(db_path=db, clerk_did="did:oasis:clerk-speaker",
-                      llm_enabled=llm_enabled, llm=llm)
-    regulator = Regulator(db_path=db, clerk_did="did:oasis:clerk-regulator",
-                          llm_enabled=llm_enabled, llm=llm)
-    codifier = Codifier(db_path=db, clerk_did="did:oasis:clerk-codifier",
-                        llm_enabled=llm_enabled, llm=llm)
+    registrar = Registrar(
+        db_path=db,
+        clerk_did="did:oasis:clerk-registrar",
+        llm_enabled=llm_enabled,
+        llm=llm,
+    )
+    speaker = Speaker(
+        db_path=db,
+        clerk_did="did:oasis:clerk-speaker",
+        llm_enabled=llm_enabled,
+        llm=llm,
+    )
+    regulator = Regulator(
+        db_path=db,
+        clerk_did="did:oasis:clerk-regulator",
+        llm_enabled=llm_enabled,
+        llm=llm,
+    )
+    codifier = Codifier(
+        db_path=db,
+        clerk_did="did:oasis:clerk-codifier",
+        llm_enabled=llm_enabled,
+        llm=llm,
+    )
 
     # --- Create session ---
     conn = sqlite3.connect(db)
@@ -239,7 +257,6 @@ def drive_session_to_deployed(
 
     # --- 6. Submit bids — distribute across producers for fairness ---
     nodes = dag["nodes"]
-    approved_bids = []
     for idx, node in enumerate(nodes):
         bidder = producers[idx % len(producers)]
         bid = TaskBid(
@@ -255,7 +272,9 @@ def drive_session_to_deployed(
             pop_tier_acceptance=node.get("pop_tier", 1),
         )
         bid_result = regulator.receive_bid(sid, bid)
-        assert bid_result["passed"], f"Bid failed for {node['node_id']}: {bid_result['errors']}"
+        assert bid_result["passed"], (
+            f"Bid failed for {node['node_id']}: {bid_result['errors']}"
+        )
 
     # --- 7. BIDDING_OPEN → REGULATORY_REVIEW ---
     result = sm.transition(LegislativeState.REGULATORY_REVIEW)

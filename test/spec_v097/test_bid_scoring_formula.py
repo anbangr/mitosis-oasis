@@ -26,7 +26,6 @@ import pytest
 from oasis.governance.clerks.regulator import Regulator
 from oasis.governance.messages import TaskBid
 from oasis.governance.schema import create_governance_tables, seed_constitution
-from test.spec_v097.conftest import SPEC_BID_WEIGHT_P, SPEC_BID_WEIGHT_Q
 
 
 # ---------------------------------------------------------------------------
@@ -156,7 +155,9 @@ def test_pick_winner_tied_scores_falls_back_to_insertion_order():
         "quoted_price": 500.0,
     }
     # Both have identical quality and price_score, so identical spec score
-    winner = Regulator._pick_winner_by_score([bid_first, bid_second], node_budget=1000.0)
+    winner = Regulator._pick_winner_by_score(
+        [bid_first, bid_second], node_budget=1000.0
+    )
     # max() with key= should return the first encountered on ties
     assert winner["bid_id"] == "bid-first"
 
@@ -225,7 +226,15 @@ def _add_bid_with_fields(
         "proposed_code_hash, stake_amount, estimated_latency_ms, "
         "pop_tier_acceptance, status, quoted_price, capability_match) "
         "VALUES (?, ?, ?, ?, 'svc', 'hash12345678', ?, 5000, 1, 'pending', ?, ?)",
-        (bid_id, session_id, node_id, bidder_did, stake, quoted_price, capability_match),
+        (
+            bid_id,
+            session_id,
+            node_id,
+            bidder_did,
+            stake,
+            quoted_price,
+            capability_match,
+        ),
     )
     conn.commit()
     conn.close()
@@ -239,14 +248,24 @@ def test_t5_evaluate_bids_picks_spec_winner(tmp_path: Path):
     # Bid A: higher spec score (should win)
     # Q = 0.8 * 0.95 = 0.76, P = 1 - 100/1000 = 0.9, Score = 0.6*0.76 + 0.4*0.9 = 0.816
     _add_bid_with_fields(
-        db_path, "bid-a", "node-1", "did:mock:bidder-a",
-        stake=10.0, quoted_price=100.0, capability_match=0.95,
+        db_path,
+        "bid-a",
+        "node-1",
+        "did:mock:bidder-a",
+        stake=10.0,
+        quoted_price=100.0,
+        capability_match=0.95,
     )
     # Bid B: lower spec score (should lose)
     # Q = 0.2 * 0.1 = 0.02, P = 1 - 900/1000 = 0.1, Score = 0.6*0.02 + 0.4*0.1 = 0.052
     _add_bid_with_fields(
-        db_path, "bid-b", "node-1", "did:mock:bidder-b",
-        stake=1000.0, quoted_price=900.0, capability_match=0.1,
+        db_path,
+        "bid-b",
+        "node-1",
+        "did:mock:bidder-b",
+        stake=1000.0,
+        quoted_price=900.0,
+        capability_match=0.1,
     )
 
     result = reg.evaluate_bids("sess-eval")
@@ -397,13 +416,23 @@ def test_t8_evaluate_reads_real_budget_column(tmp_path: Path):
 
     # One bid per node at quoted_price=250
     _add_bid_with_fields(
-        db_path, "bid-a", "node-a", "did:mock:bidder-1",
-        stake=1.0, quoted_price=250.0, capability_match=1.0,
+        db_path,
+        "bid-a",
+        "node-a",
+        "did:mock:bidder-1",
+        stake=1.0,
+        quoted_price=250.0,
+        capability_match=1.0,
         session_id="sess-budget",
     )
     _add_bid_with_fields(
-        db_path, "bid-b", "node-b", "did:mock:bidder-1",
-        stake=1.0, quoted_price=250.0, capability_match=1.0,
+        db_path,
+        "bid-b",
+        "node-b",
+        "did:mock:bidder-1",
+        stake=1.0,
+        quoted_price=250.0,
+        capability_match=1.0,
         session_id="sess-budget",
     )
 
@@ -491,15 +520,22 @@ def test_taskbid_capability_match_range():
 
 
 def test_evaluate_bids_uncovered_nodes_still_critical(tmp_path: Path):
-    r""" evaluate_bids still flags uncovered nodes even with spec-formula winners."""
+    r"""evaluate_bids still flags uncovered nodes even with spec-formula winners."""
     db_path = tmp_path / "gov_uncovered.db"
     reg = _seed_db_for_evaluate(db_path, num_nodes=2)
     # Only bid on node-1
     _add_bid_with_fields(
-        db_path, "bid-1", "node-1", "did:mock:bidder-a",
-        stake=1.0, quoted_price=100.0, capability_match=1.0,
+        db_path,
+        "bid-1",
+        "node-1",
+        "did:mock:bidder-a",
+        stake=1.0,
+        quoted_price=100.0,
+        capability_match=1.0,
     )
     result = reg.evaluate_bids("sess-eval")
-    critical = [f for f in result["compliance_flags"] if f.get("severity") == "CRITICAL"]
+    critical = [
+        f for f in result["compliance_flags"] if f.get("severity") == "CRITICAL"
+    ]
     assert len(critical) >= 1
     assert "node-2" in str(critical)

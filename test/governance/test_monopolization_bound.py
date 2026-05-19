@@ -1,5 +1,4 @@
 """Monopolisation bound tests — 3 tests."""
-import pytest
 
 from oasis.governance.fairness import monopolization_bound
 

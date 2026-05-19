@@ -25,7 +25,6 @@ test_db_filepath = osp.join(parent_folder, "test.db")
 
 
 class MockChannel:
-
     def __init__(self):
         self.call_count = 0
         self.messages = []
@@ -63,8 +62,10 @@ async def test_refresh(setup_platform):
         conn = sqlite3.connect(test_db_filepath)
         cursor = conn.cursor()
         cursor.execute(
-            ("INSERT INTO user (user_id, agent_id, user_name, bio, "
-             "num_followings, num_followers) VALUES (?, ?, ?, ?, ?, ?)"),
+            (
+                "INSERT INTO user (user_id, agent_id, user_name, bio, "
+                "num_followings, num_followers) VALUES (?, ?, ?, ?, ?, ?)"
+            ),
             (1, 1, "user1", "This is test bio for user 1", 0, 0),
         )
         conn.commit()

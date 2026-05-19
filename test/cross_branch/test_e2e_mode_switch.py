@@ -1,4 +1,5 @@
 """E2E: Switch between LLM and synthetic execution mode mid-experiment."""
+
 from __future__ import annotations
 
 import json
@@ -58,12 +59,14 @@ def test_mode_switch_mid_experiment(cross_db, producers):
         assert dispatch_result["mode"] == "llm"
 
         # Submit output manually (LLM mode)
-        output_data = json.dumps({
-            "task_id": task_id,
-            "result": f"LLM output for {task_id}",
-            "status": "success",
-            "metrics": {"accuracy": 0.85, "completeness": 0.9},
-        })
+        output_data = json.dumps(
+            {
+                "task_id": task_id,
+                "result": f"LLM output for {task_id}",
+                "status": "success",
+                "metrics": {"accuracy": 0.85, "completeness": 0.9},
+            }
+        )
         dispatcher_llm.receive_output(task_id, output_data, agent_did)
 
         settle = settler_llm.settle_task(task_id, db)

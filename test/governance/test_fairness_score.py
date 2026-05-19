@@ -1,4 +1,5 @@
 """Normalised fairness score tests — 4 tests."""
+
 from oasis.governance.fairness import normalized_fairness_score, monopolization_bound
 
 
@@ -11,7 +12,6 @@ def test_score_1000_for_equal_distribution():
 
 def test_score_0_for_monopoly():
     """One producer holds all → HHI = 1.0 → score = 0."""
-    shares = [1.0]
     # With only 1 producer, there's no competition → trivially 1000
     # But if we pretend there are 5 producers (4 with 0):
     shares_5 = [1.0, 0.0, 0.0, 0.0, 0.0]

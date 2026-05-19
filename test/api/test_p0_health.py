@@ -1,4 +1,5 @@
 """P0 — Validate API TestClient fixture can hit the health endpoint."""
+
 from fastapi.testclient import TestClient
 
 
@@ -38,5 +39,7 @@ def test_openapi_exposes_v1_contracts(client: TestClient):
         ("/api/v1/adjudication/alerts", "get"),
         ("/api/v1/observatory/summary", "get"),
     ]:
-        response_schema = paths[path][method]["responses"]["200"]["content"]["application/json"]["schema"]
+        response_schema = paths[path][method]["responses"]["200"]["content"][
+            "application/json"
+        ]["schema"]
         assert response_schema["type"] in {"object", "array"}

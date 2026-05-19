@@ -6,6 +6,7 @@ Covers:
 - POST /api/v1/admin/sessions/milestone-crisis — mark quality crisis
 - POST /api/v1/admin/shock           — composite shock event
 """
+
 from __future__ import annotations
 
 import sqlite3
@@ -186,7 +187,9 @@ def test_remove_high_rep_count_zero_rejected(admin_client):
 # ---------------------------------------------------------------------------
 
 
-def test_milestone_crisis_marks_sessions(admin_client, seeded_session_with_milestone, gov_db):
+def test_milestone_crisis_marks_sessions(
+    admin_client, seeded_session_with_milestone, gov_db
+):
     """POST /milestone-crisis sets quality_crisis=1 on matching sessions."""
     resp = admin_client.post(
         "/api/v1/admin/sessions/milestone-crisis",
@@ -222,7 +225,9 @@ def test_milestone_crisis_no_sessions_returns_zero(admin_client):
 # ---------------------------------------------------------------------------
 
 
-def test_shock_event_composite(admin_client, seeded_agents, seeded_session_with_milestone):
+def test_shock_event_composite(
+    admin_client, seeded_agents, seeded_session_with_milestone
+):
     """POST /api/v1/admin/shock applies all sub-operations in one call."""
     resp = admin_client.post(
         "/api/v1/admin/shock",
@@ -263,7 +268,9 @@ def test_shock_event_no_milestone(admin_client, seeded_agents):
 # ---------------------------------------------------------------------------
 
 
-def test_shock_id_idempotency_returns_cached_result(admin_client, seeded_agents, gov_db):
+def test_shock_id_idempotency_returns_cached_result(
+    admin_client, seeded_agents, gov_db
+):
     """Second call with the same shock_id returns cached result without re-applying."""
     payload = {
         "free_rider_count": 2,
@@ -305,11 +312,21 @@ def test_different_shock_ids_are_independent(admin_client):
     """Different shock_id values are cached independently."""
     resp_a = admin_client.post(
         "/api/v1/admin/shock",
-        json={"free_rider_count": 1, "coalition_size": 0, "high_rep_remove_count": 0, "shock_id": "run-A"},
+        json={
+            "free_rider_count": 1,
+            "coalition_size": 0,
+            "high_rep_remove_count": 0,
+            "shock_id": "run-A",
+        },
     )
     resp_b = admin_client.post(
         "/api/v1/admin/shock",
-        json={"free_rider_count": 2, "coalition_size": 0, "high_rep_remove_count": 0, "shock_id": "run-B"},
+        json={
+            "free_rider_count": 2,
+            "coalition_size": 0,
+            "high_rep_remove_count": 0,
+            "shock_id": "run-B",
+        },
     )
     assert resp_a.status_code == 200
     assert resp_b.status_code == 200
@@ -384,7 +401,11 @@ def test_shock_free_rider_count_upper_bound(admin_client):
     """free_rider_count > 1000 is rejected with 422."""
     resp = admin_client.post(
         "/api/v1/admin/shock",
-        json={"free_rider_count": 1001, "coalition_size": 0, "high_rep_remove_count": 0},
+        json={
+            "free_rider_count": 1001,
+            "coalition_size": 0,
+            "high_rep_remove_count": 0,
+        },
     )
     assert resp.status_code == 422
 
@@ -393,7 +414,11 @@ def test_shock_coalition_size_upper_bound(admin_client):
     """coalition_size > 1000 is rejected with 422."""
     resp = admin_client.post(
         "/api/v1/admin/shock",
-        json={"free_rider_count": 0, "coalition_size": 1001, "high_rep_remove_count": 0},
+        json={
+            "free_rider_count": 0,
+            "coalition_size": 1001,
+            "high_rep_remove_count": 0,
+        },
     )
     assert resp.status_code == 422
 
@@ -411,10 +436,12 @@ def test_bulk_agents_upper_bound(admin_client):
     """Bulk register list > 1000 agents is rejected with 422."""
     resp = admin_client.post(
         "/api/v1/admin/agents/bulk",
-        json={"agents": [
-            {"agent_did": f"did:test:x-{i}", "display_name": f"X {i}"}
-            for i in range(1001)
-        ]},
+        json={
+            "agents": [
+                {"agent_did": f"did:test:x-{i}", "display_name": f"X {i}"}
+                for i in range(1001)
+            ]
+        },
     )
     assert resp.status_code == 422
 

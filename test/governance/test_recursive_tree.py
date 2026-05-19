@@ -1,19 +1,14 @@
 """P9 tests — get_session_tree retrieval."""
+
 from __future__ import annotations
 
 import json
 import sqlite3
 
-import pytest
 
 from oasis.governance.dag import (
     get_session_tree,
     trigger_child_session,
-)
-from oasis.governance.schema import (
-    create_governance_tables,
-    seed_clerks,
-    seed_constitution,
 )
 
 
@@ -21,8 +16,10 @@ from oasis.governance.schema import (
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _setup_session_with_dag(db_path, session_id, parent_session_id=None,
-                            parent_node_id=None, budget=1000.0):
+
+def _setup_session_with_dag(
+    db_path, session_id, parent_session_id=None, parent_node_id=None, budget=1000.0
+):
     """Insert a session + a non-leaf DAG node."""
     conn = sqlite3.connect(str(db_path))
     conn.execute("PRAGMA foreign_keys = ON")
@@ -47,8 +44,14 @@ def _setup_session_with_dag(db_path, session_id, parent_session_id=None,
         "(proposal_id, session_id, proposer_did, dag_spec, "
         " token_budget_total, deadline_ms) "
         "VALUES (?, ?, ?, ?, ?, ?)",
-        (prop_id, session_id, "did:oasis:clerk-registrar",
-         json.dumps({}), budget, 60000),
+        (
+            prop_id,
+            session_id,
+            "did:oasis:clerk-registrar",
+            json.dumps({}),
+            budget,
+            60000,
+        ),
     )
     conn.execute(
         "INSERT INTO dag_node "
@@ -65,8 +68,7 @@ def _setup_session_with_dag(db_path, session_id, parent_session_id=None,
         (f"n2-{session_id}", prop_id, budget / 2),
     )
     conn.execute(
-        "INSERT INTO dag_edge (proposal_id, from_node_id, to_node_id) "
-        "VALUES (?, ?, ?)",
+        "INSERT INTO dag_edge (proposal_id, from_node_id, to_node_id) VALUES (?, ?, ?)",
         (prop_id, f"n1-{session_id}", f"n2-{session_id}"),
     )
     conn.commit()
@@ -77,15 +79,14 @@ def _setup_session_with_dag(db_path, session_id, parent_session_id=None,
 # Tests
 # ---------------------------------------------------------------------------
 
+
 class TestRecursiveTree:
     """get_session_tree retrieval."""
 
     def test_tree_retrieval_correct(self, governance_db):
         """A simple parent-child tree is correctly retrieved."""
         _setup_session_with_dag(governance_db, "root-s")
-        child_id = trigger_child_session(
-            "root-s", f"n1-root-s", governance_db
-        )
+        child_id = trigger_child_session("root-s", "n1-root-s", governance_db)
 
         tree = get_session_tree("root-s", governance_db)
 
@@ -102,17 +103,18 @@ class TestRecursiveTree:
 
         # Two children of root
         child1 = trigger_child_session(
-            "root-s", f"n1-root-s", governance_db, child_budget=400.0
+            "root-s", "n1-root-s", governance_db, child_budget=400.0
         )
         child2 = trigger_child_session(
-            "root-s", f"n1-root-s", governance_db, child_budget=400.0
+            "root-s", "n1-root-s", governance_db, child_budget=400.0
         )
 
         # Add a DAG to child1 so it can have a grandchild
         _setup_session_with_dag(
-            governance_db, child1,
+            governance_db,
+            child1,
             parent_session_id="root-s",
-            parent_node_id=f"n1-root-s",
+            parent_node_id="n1-root-s",
             budget=400.0,
         )
 
@@ -126,14 +128,10 @@ class TestRecursiveTree:
         assert len(tree["children"]) == 2
 
         # Find child1 in the tree
-        child1_tree = next(
-            c for c in tree["children"] if c["session_id"] == child1
-        )
+        child1_tree = next(c for c in tree["children"] if c["session_id"] == child1)
         assert len(child1_tree["children"]) == 1
         assert child1_tree["children"][0]["session_id"] == grandchild
 
         # child2 has no children
-        child2_tree = next(
-            c for c in tree["children"] if c["session_id"] == child2
-        )
+        child2_tree = next(c for c in tree["children"] if c["session_id"] == child2)
         assert child2_tree["children"] == []

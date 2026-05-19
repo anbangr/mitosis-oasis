@@ -1,4 +1,5 @@
 """P8.6 — Bidding API tests."""
+
 from __future__ import annotations
 
 

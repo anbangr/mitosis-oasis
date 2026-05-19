@@ -25,7 +25,6 @@ test_db_filepath = osp.join(parent_folder, "test.db")
 
 
 class MockChannel:
-
     def __init__(self, user_actions):
         """
         user_actions: A list of tuples representing actions.
@@ -68,15 +67,18 @@ def generate_user_actions(n_users, posts_per_user):
         if user_id <= users_per_group:
             # This group of users sends m posts each
             for post_num in range(1, posts_per_user + 1):
-                actions.append((
-                    user_id,
-                    f"This is post {post_num} from User{user_id}",
-                    "create_post",
-                ))
+                actions.append(
+                    (
+                        user_id,
+                        f"This is post {post_num} from User{user_id}",
+                        "create_post",
+                    )
+                )
         elif user_id <= 2 * users_per_group:
             # This group of users sends 1 post each
             actions.append(
-                (user_id, f"This is post 1 from User{user_id}", "create_post"))
+                (user_id, f"This is post 1 from User{user_id}", "create_post")
+            )
         # The last group does not send any posts
 
     return actions
@@ -89,9 +91,7 @@ def setup_platform():
 
 
 @pytest.mark.asyncio
-async def test_signup_and_create_post(setup_platform,
-                                      n_users=30,
-                                      posts_per_user=4):
+async def test_signup_and_create_post(setup_platform, n_users=30, posts_per_user=4):
     try:
         # To simplify the simulation, assume that n_users is a multiple of 3.
         assert n_users % 3 == 0, "n_users should be a multiple of 3."
@@ -109,14 +109,16 @@ async def test_signup_and_create_post(setup_platform,
 
         cursor.execute("SELECT * FROM user")
         users = cursor.fetchall()
-        assert len(users) == n_users, ("The number of users in the database"
-                                       "should match n_users.")
+        assert len(users) == n_users, (
+            "The number of users in the databaseshould match n_users."
+        )
 
         cursor.execute("SELECT * FROM post")
         posts = cursor.fetchall()
         expected_posts = (n_users // 3) * posts_per_user + (n_users // 3)
-        assert (len(posts) == expected_posts
-                ), "The number of posts should match the expected value."
+        assert len(posts) == expected_posts, (
+            "The number of posts should match the expected value."
+        )
 
         conn.close()
         print_db_contents(test_db_filepath)

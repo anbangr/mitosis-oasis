@@ -1,4 +1,5 @@
 """Tests for full constitutional validation (all 6 checks)."""
+
 import sqlite3
 from pathlib import Path
 
@@ -36,12 +37,30 @@ def _valid_spec(bid_assignments: dict | None = None) -> CodedContractSpec:
         service_contract_specs={
             "dag_spec": {
                 "nodes": [
-                    {"node_id": "root", "label": "Root", "service_id": "svc",
-                     "pop_tier": 1, "token_budget": 500.0, "timeout_ms": 60000},
-                    {"node_id": "task-a", "label": "Task A", "service_id": "svc-a",
-                     "pop_tier": 1, "token_budget": 200.0, "timeout_ms": 60000},
-                    {"node_id": "task-b", "label": "Task B", "service_id": "svc-b",
-                     "pop_tier": 1, "token_budget": 200.0, "timeout_ms": 60000},
+                    {
+                        "node_id": "root",
+                        "label": "Root",
+                        "service_id": "svc",
+                        "pop_tier": 1,
+                        "token_budget": 500.0,
+                        "timeout_ms": 60000,
+                    },
+                    {
+                        "node_id": "task-a",
+                        "label": "Task A",
+                        "service_id": "svc-a",
+                        "pop_tier": 1,
+                        "token_budget": 200.0,
+                        "timeout_ms": 60000,
+                    },
+                    {
+                        "node_id": "task-b",
+                        "label": "Task B",
+                        "service_id": "svc-b",
+                        "pop_tier": 1,
+                        "token_budget": 200.0,
+                        "timeout_ms": 60000,
+                    },
                 ],
                 "edges": [
                     {"from_node_id": "root", "to_node_id": "task-a"},
@@ -70,8 +89,8 @@ def test_multiple_failures_aggregated(governance_db: Path):
     spec = CodedContractSpec(
         session_id="sess-1",
         collaboration_contract_spec={
-            "deviation_sigma": 0.1,   # out of range
-            "max_tools": 1000,        # out of range
+            "deviation_sigma": 0.1,  # out of range
+            "max_tools": 1000,  # out of range
         },
         guardian_module_spec={"mode": "passive"},
         verification_module_spec={"type": "hash"},
@@ -79,8 +98,12 @@ def test_multiple_failures_aggregated(governance_db: Path):
         service_contract_specs={
             "dag_spec": {
                 "nodes": [
-                    {"node_id": "A", "pop_tier": 1,
-                     "token_budget": -5.0, "timeout_ms": 60000},
+                    {
+                        "node_id": "A",
+                        "pop_tier": 1,
+                        "token_budget": -5.0,
+                        "timeout_ms": 60000,
+                    },
                 ],
                 "edges": [],
             },
@@ -111,8 +134,12 @@ def test_partial_failures_reported(governance_db: Path):
         service_contract_specs={
             "dag_spec": {
                 "nodes": [
-                    {"node_id": "A", "pop_tier": 1,
-                     "token_budget": -10.0, "timeout_ms": 60000},
+                    {
+                        "node_id": "A",
+                        "pop_tier": 1,
+                        "token_budget": -10.0,
+                        "timeout_ms": 60000,
+                    },
                 ],
                 "edges": [],
             },

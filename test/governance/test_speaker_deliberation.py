@@ -1,4 +1,5 @@
 """P6 — Test Speaker deliberation round methods."""
+
 import sqlite3
 from pathlib import Path
 

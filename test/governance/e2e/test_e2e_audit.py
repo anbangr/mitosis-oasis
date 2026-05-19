@@ -1,4 +1,5 @@
 """E2E audit — verify all MSG1–MSG7 logged in correct order after happy path."""
+
 from __future__ import annotations
 
 from oasis.governance.messages import MessageType, get_session_messages
@@ -15,10 +16,7 @@ def test_message_log_complete_and_ordered(e2e_db, producers):
     messages = get_session_messages(e2e_db, result["session_id"])
 
     # Extract protocol message types (exclude StateTransition)
-    msg_types = [
-        m["msg_type"] for m in messages
-        if m["msg_type"] != "StateTransition"
-    ]
+    msg_types = [m["msg_type"] for m in messages if m["msg_type"] != "StateTransition"]
 
     # Expected message order (some may repeat for multiple agents/nodes):
     # MSG1 (IDENTITY_VERIFICATION_REQUEST)

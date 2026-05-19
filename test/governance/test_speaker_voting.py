@@ -1,4 +1,5 @@
 """P6 — Test Speaker voting methods."""
+
 import json
 import sqlite3
 from pathlib import Path

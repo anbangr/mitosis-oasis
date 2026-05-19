@@ -26,7 +26,6 @@ test_db_filepath = osp.join(parent_folder, "test.db")
 
 
 class MockChannel:
-
     def __init__(self):
         self.call_count = 0
         self.messages = []  # Used to store sent messages
@@ -84,8 +83,10 @@ async def test_refresh(setup_platform):
         conn = sqlite3.connect(test_db_filepath)
         cursor = conn.cursor()
         cursor.execute(
-            ("INSERT INTO user (user_id, agent_id, user_name, bio, "
-             "num_followings, num_followers) VALUES (?, ?, ?, ?, ?, ?)"),
+            (
+                "INSERT INTO user (user_id, agent_id, user_name, bio, "
+                "num_followings, num_followers) VALUES (?, ?, ?, ?, ?, ?)"
+            ),
             (0, 0, "user0", "This is test bio for user 0", 0, 0),
         )
         conn.commit()
@@ -103,14 +104,18 @@ async def test_refresh(setup_platform):
             created_at = datetime.now()
 
             cursor.execute(
-                ("INSERT INTO post (user_id, content, created_at, "
-                 "num_likes, num_dislikes) VALUES (?, ?, ?, ?, ?)"),
+                (
+                    "INSERT INTO post (user_id, content, created_at, "
+                    "num_likes, num_dislikes) VALUES (?, ?, ?, ?, ?)"
+                ),
                 (user_id, content, created_at, 0, 1),
             )
             cursor.execute(
-                ("INSERT INTO comment (post_id, user_id, content, "
-                 "created_at, num_likes, num_dislikes) VALUES "
-                 "(?, ?, ?, ?, ?, ?)"),
+                (
+                    "INSERT INTO comment (post_id, user_id, content, "
+                    "created_at, num_likes, num_dislikes) VALUES "
+                    "(?, ?, ?, ?, ?, ?)"
+                ),
                 (i, user_id, comment_content, created_at, 0, 2),
             )
         conn.commit()

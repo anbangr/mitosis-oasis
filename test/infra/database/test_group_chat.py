@@ -24,7 +24,6 @@ test_db_filepath = osp.join(parent_folder, "test.db")
 
 
 class MockChannel:
-
     def __init__(self):
         self.messages = []
         self.call_count = 0
@@ -97,8 +96,7 @@ async def test_group_functionality(setup_platform):
         assert len(members) == 3  # All three users joined the group
 
         # Verify message sending
-        cursor.execute(
-            "SELECT * FROM group_messages WHERE content = 'Hello everyone!'")
+        cursor.execute("SELECT * FROM group_messages WHERE content = 'Hello everyone!'")
         messages = cursor.fetchall()
         assert len(messages) == 1  # One message with this content should exist
 

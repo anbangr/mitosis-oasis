@@ -4,6 +4,7 @@ Wraps the existing Platform + Channel with REST endpoints so that external
 agents (ZeroClaw) can interact with the simulation via HTTP instead of being
 embedded CAMEL agents.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -28,13 +29,33 @@ from oasis.governance import endpoints as gov_ep
 from oasis.execution import endpoints as exec_ep
 from oasis.adjudication import endpoints as adj_ep
 from oasis.observatory import endpoints as obs_ep
-from oasis.governance.endpoints import init_governance_db, router as governance_router, v1_router as governance_v1_router
-from oasis.execution.endpoints import init_execution_db, router as execution_router, v1_router as execution_v1_router
+from oasis.governance.endpoints import (
+    init_governance_db,
+    router as governance_router,
+    v1_router as governance_v1_router,
+)
+from oasis.execution.endpoints import (
+    init_execution_db,
+    router as execution_router,
+    v1_router as execution_v1_router,
+)
 from oasis.execution.schema import create_execution_tables
-from oasis.adjudication.endpoints import init_adjudication_db, router as adjudication_router, v1_router as adjudication_v1_router
+from oasis.adjudication.endpoints import (
+    init_adjudication_db,
+    router as adjudication_router,
+    v1_router as adjudication_v1_router,
+)
 from oasis.adjudication.schema import create_adjudication_tables
-from oasis.observatory.endpoints import init_observatory_db, router as observatory_router, v1_router as observatory_v1_router
-from oasis.admin.endpoints import set_admin_db, router as admin_router, v1_router as admin_v1_router
+from oasis.observatory.endpoints import (
+    init_observatory_db,
+    router as observatory_router,
+    v1_router as observatory_v1_router,
+)
+from oasis.admin.endpoints import (
+    set_admin_db,
+    router as admin_router,
+    v1_router as admin_v1_router,
+)
 from oasis.observatory.dashboard import router as dashboard_router
 from oasis.observatory.event_bus import EventBus
 from oasis.observatory.websocket import websocket_events
@@ -78,8 +99,12 @@ async def lifespan(app: FastAPI):
         _cfg = PlatformConfig(
             governance_mode=os.environ.get("GOVERNANCE_MODE", "full"),  # type: ignore[arg-type]
             execution_mode=os.environ.get("EXECUTION_MODE", "synthetic"),  # type: ignore[arg-type]
-            adjudication_enabled=os.environ.get("ADJUDICATION_ENABLED", "true").lower() == "true",
-            economic_incentives_enabled=os.environ.get("ECONOMIC_INCENTIVES_ENABLED", "true").lower() == "true",
+            adjudication_enabled=os.environ.get("ADJUDICATION_ENABLED", "true").lower()
+            == "true",
+            economic_incentives_enabled=os.environ.get(
+                "ECONOMIC_INCENTIVES_ENABLED", "true"
+            ).lower()
+            == "true",
         )
     except ValueError as exc:
         raise SystemExit(f"[oasis] Invalid environment configuration: {exc}") from exc
@@ -133,7 +158,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Mitosis-OASIS API",
     description="REST API for OASIS social simulation platform",
-    version="0.4.0",
+    version="0.3.0",
     lifespan=lifespan,
 )
 
@@ -176,13 +201,13 @@ async def ws_events(ws: WebSocket):
 # ---------------------------------------------------------------------------
 
 
-async def _dispatch(action_type: ActionType, agent_id: int,
-                    message: Any = None) -> Any:
+async def _dispatch(action_type: ActionType, agent_id: int, message: Any = None) -> Any:
     """Send an action through the channel and await the platform response."""
     if channel is None:
         raise HTTPException(status_code=503, detail="Platform not running")
     msg_id = await channel.write_to_receive_queue(
-        (agent_id, message, action_type.value))
+        (agent_id, message, action_type.value)
+    )
     _, _, result = await channel.read_from_send_queue(msg_id)
     return result
 
@@ -299,19 +324,57 @@ async def seed_demo():
     # --- Governance seed ------------------------------------------------
     conn = sqlite3.connect(gov_db)
     conn.execute("PRAGMA foreign_keys = ON")
-    row = conn.execute("SELECT COUNT(*) as c FROM agent_registry WHERE agent_type != 'clerk'").fetchone()
+    row = conn.execute(
+        "SELECT COUNT(*) as c FROM agent_registry WHERE agent_type != 'clerk'"
+    ).fetchone()
     if row[0] > 0:
         summary["governance"] = "already seeded"
     else:
         agents = [
-            ("did:demo:legislator-1", "producer", "Alice Legislator",  "alice@demo.dev",  0.85),
-            ("did:demo:legislator-2", "producer", "Bob Legislator",    "bob@demo.dev",    0.72),
-            ("did:demo:executor-1",   "producer", "Carol Executor",    "carol@demo.dev",  0.90),
-            ("did:demo:executor-2",   "producer", "Dave Executor",     "dave@demo.dev",   0.65),
-            ("did:demo:adjudicator-1","producer", "Eve Adjudicator",   "eve@demo.dev",    0.78),
-            ("did:demo:adjudicator-2","producer", "Frank Adjudicator", "frank@demo.dev",  0.60),
-            ("did:demo:observer-1",   "producer", "Grace Observer",    "grace@demo.dev",  0.88),
-            ("did:demo:observer-2",   "producer", "Hank Observer",     "hank@demo.dev",   0.55),
+            (
+                "did:demo:legislator-1",
+                "producer",
+                "Alice Legislator",
+                "alice@demo.dev",
+                0.85,
+            ),
+            (
+                "did:demo:legislator-2",
+                "producer",
+                "Bob Legislator",
+                "bob@demo.dev",
+                0.72,
+            ),
+            (
+                "did:demo:executor-1",
+                "producer",
+                "Carol Executor",
+                "carol@demo.dev",
+                0.90,
+            ),
+            ("did:demo:executor-2", "producer", "Dave Executor", "dave@demo.dev", 0.65),
+            (
+                "did:demo:adjudicator-1",
+                "producer",
+                "Eve Adjudicator",
+                "eve@demo.dev",
+                0.78,
+            ),
+            (
+                "did:demo:adjudicator-2",
+                "producer",
+                "Frank Adjudicator",
+                "frank@demo.dev",
+                0.60,
+            ),
+            (
+                "did:demo:observer-1",
+                "producer",
+                "Grace Observer",
+                "grace@demo.dev",
+                0.88,
+            ),
+            ("did:demo:observer-2", "producer", "Hank Observer", "hank@demo.dev", 0.55),
         ]
         conn.executemany(
             "INSERT OR IGNORE INTO agent_registry "
@@ -321,9 +384,9 @@ async def seed_demo():
         )
 
         sessions = [
-            ("sess-demo-draft",   "SESSION_INIT", 5000.0),
-            ("sess-demo-voting",  "BIDDING_OPEN", 8000.0),
-            ("sess-demo-enacted", "DEPLOYED",     12000.0),
+            ("sess-demo-draft", "SESSION_INIT", 5000.0),
+            ("sess-demo-voting", "BIDDING_OPEN", 8000.0),
+            ("sess-demo-enacted", "DEPLOYED", 12000.0),
         ]
         for sid, state, budget in sessions:
             conn.execute(
@@ -335,12 +398,12 @@ async def seed_demo():
         rep_entries = [
             ("did:demo:legislator-1", 0.50, 0.70, 0.80, "Initial assessment"),
             ("did:demo:legislator-1", 0.70, 0.85, 0.90, "Task completion bonus"),
-            ("did:demo:executor-1",   0.50, 0.75, 0.85, "Initial assessment"),
-            ("did:demo:executor-1",   0.75, 0.90, 0.95, "Excellent output quality"),
-            ("did:demo:adjudicator-1",0.50, 0.65, 0.70, "Initial assessment"),
-            ("did:demo:adjudicator-1",0.65, 0.78, 0.80, "Fair adjudication record"),
-            ("did:demo:observer-1",   0.50, 0.80, 0.88, "Initial assessment"),
-            ("did:demo:observer-2",   0.50, 0.55, 0.50, "Initial assessment"),
+            ("did:demo:executor-1", 0.50, 0.75, 0.85, "Initial assessment"),
+            ("did:demo:executor-1", 0.75, 0.90, 0.95, "Excellent output quality"),
+            ("did:demo:adjudicator-1", 0.50, 0.65, 0.70, "Initial assessment"),
+            ("did:demo:adjudicator-1", 0.65, 0.78, 0.80, "Fair adjudication record"),
+            ("did:demo:observer-1", 0.50, 0.80, 0.88, "Initial assessment"),
+            ("did:demo:observer-2", 0.50, 0.55, 0.50, "Initial assessment"),
         ]
         conn.executemany(
             "INSERT INTO reputation_ledger "
@@ -349,7 +412,11 @@ async def seed_demo():
             rep_entries,
         )
         conn.commit()
-        summary["governance"] = {"agents": len(agents), "sessions": len(sessions), "reputation_entries": len(rep_entries)}
+        summary["governance"] = {
+            "agents": len(agents),
+            "sessions": len(sessions),
+            "reputation_entries": len(rep_entries),
+        }
     conn.close()
 
     # --- Execution seed -------------------------------------------------
@@ -360,11 +427,41 @@ async def seed_demo():
         summary["execution"] = "already seeded"
     else:
         tasks = [
-            (str(uuid.uuid4()), "sess-demo-enacted", "n1", "did:demo:executor-1", "assigned"),
-            (str(uuid.uuid4()), "sess-demo-enacted", "n2", "did:demo:executor-1", "running"),
-            (str(uuid.uuid4()), "sess-demo-enacted", "n3", "did:demo:executor-2", "completed"),
-            (str(uuid.uuid4()), "sess-demo-enacted", "n4", "did:demo:executor-2", "settled"),
-            (str(uuid.uuid4()), "sess-demo-voting",  "n5", "did:demo:executor-1", "failed"),
+            (
+                str(uuid.uuid4()),
+                "sess-demo-enacted",
+                "n1",
+                "did:demo:executor-1",
+                "assigned",
+            ),
+            (
+                str(uuid.uuid4()),
+                "sess-demo-enacted",
+                "n2",
+                "did:demo:executor-1",
+                "running",
+            ),
+            (
+                str(uuid.uuid4()),
+                "sess-demo-enacted",
+                "n3",
+                "did:demo:executor-2",
+                "completed",
+            ),
+            (
+                str(uuid.uuid4()),
+                "sess-demo-enacted",
+                "n4",
+                "did:demo:executor-2",
+                "settled",
+            ),
+            (
+                str(uuid.uuid4()),
+                "sess-demo-voting",
+                "n5",
+                "did:demo:executor-1",
+                "failed",
+            ),
         ]
         conn.executemany(
             "INSERT OR IGNORE INTO task_assignment "
@@ -423,8 +520,20 @@ async def seed_demo():
         )
 
         alerts = [
-            ("alert-demo-1", "task-alert-1", "timeout", "high", "Task exceeded timeout by 200%"),
-            ("alert-demo-2", "task-alert-2", "schema_violation", "critical", "Output schema mismatch"),
+            (
+                "alert-demo-1",
+                "task-alert-1",
+                "timeout",
+                "high",
+                "Task exceeded timeout by 200%",
+            ),
+            (
+                "alert-demo-2",
+                "task-alert-2",
+                "schema_violation",
+                "critical",
+                "Output schema mismatch",
+            ),
         ]
         conn.executemany(
             "INSERT OR IGNORE INTO guardian_alert "
@@ -433,9 +542,33 @@ async def seed_demo():
         )
 
         decisions = [
-            (str(uuid.uuid4()), "alert-demo-1", None, "did:demo:executor-1", "warning",  "medium", "First offence — warning issued"),
-            (str(uuid.uuid4()), "alert-demo-2", None, "did:demo:executor-2", "slash",    "high",   "Repeated schema violations"),
-            (str(uuid.uuid4()), None,           None, "did:demo:executor-2", "freeze",   "critical","Frozen pending investigation"),
+            (
+                str(uuid.uuid4()),
+                "alert-demo-1",
+                None,
+                "did:demo:executor-1",
+                "warning",
+                "medium",
+                "First offence — warning issued",
+            ),
+            (
+                str(uuid.uuid4()),
+                "alert-demo-2",
+                None,
+                "did:demo:executor-2",
+                "slash",
+                "high",
+                "Repeated schema violations",
+            ),
+            (
+                str(uuid.uuid4()),
+                None,
+                None,
+                "did:demo:executor-2",
+                "freeze",
+                "critical",
+                "Frozen pending investigation",
+            ),
         ]
         conn.executemany(
             "INSERT OR IGNORE INTO adjudication_decision "
@@ -445,11 +578,11 @@ async def seed_demo():
         )
 
         treasury_entries = [
-            (None, None,                  "seed",   10000.0, 10000.0),
-            ("task-alert-1", "did:demo:executor-1", "reward",  500.0, 10500.0),
-            ("task-alert-2", "did:demo:executor-2", "slash",  -200.0, 10300.0),
-            (None, None,                  "fee",    -50.0,   10250.0),
-            (None, "did:demo:executor-1", "reward",  300.0, 10550.0),
+            (None, None, "seed", 10000.0, 10000.0),
+            ("task-alert-1", "did:demo:executor-1", "reward", 500.0, 10500.0),
+            ("task-alert-2", "did:demo:executor-2", "slash", -200.0, 10300.0),
+            (None, None, "fee", -50.0, 10250.0),
+            (None, "did:demo:executor-1", "reward", 300.0, 10550.0),
         ]
         conn.executemany(
             "INSERT INTO treasury "
@@ -521,14 +654,50 @@ async def seed_demo():
 
         # Agents
         obs_agents = [
-            ("did:demo:legislator-1", "producer", "Alice Legislator",  "alice@demo.dev",  0.85),
-            ("did:demo:legislator-2", "producer", "Bob Legislator",    "bob@demo.dev",    0.72),
-            ("did:demo:executor-1",   "producer", "Carol Executor",    "carol@demo.dev",  0.90),
-            ("did:demo:executor-2",   "producer", "Dave Executor",     "dave@demo.dev",   0.65),
-            ("did:demo:adjudicator-1","producer", "Eve Adjudicator",   "eve@demo.dev",    0.78),
-            ("did:demo:adjudicator-2","producer", "Frank Adjudicator", "frank@demo.dev",  0.60),
-            ("did:demo:observer-1",   "producer", "Grace Observer",    "grace@demo.dev",  0.88),
-            ("did:demo:observer-2",   "producer", "Hank Observer",     "hank@demo.dev",   0.55),
+            (
+                "did:demo:legislator-1",
+                "producer",
+                "Alice Legislator",
+                "alice@demo.dev",
+                0.85,
+            ),
+            (
+                "did:demo:legislator-2",
+                "producer",
+                "Bob Legislator",
+                "bob@demo.dev",
+                0.72,
+            ),
+            (
+                "did:demo:executor-1",
+                "producer",
+                "Carol Executor",
+                "carol@demo.dev",
+                0.90,
+            ),
+            ("did:demo:executor-2", "producer", "Dave Executor", "dave@demo.dev", 0.65),
+            (
+                "did:demo:adjudicator-1",
+                "producer",
+                "Eve Adjudicator",
+                "eve@demo.dev",
+                0.78,
+            ),
+            (
+                "did:demo:adjudicator-2",
+                "producer",
+                "Frank Adjudicator",
+                "frank@demo.dev",
+                0.60,
+            ),
+            (
+                "did:demo:observer-1",
+                "producer",
+                "Grace Observer",
+                "grace@demo.dev",
+                0.88,
+            ),
+            ("did:demo:observer-2", "producer", "Hank Observer", "hank@demo.dev", 0.55),
         ]
         conn.executemany(
             "INSERT OR IGNORE INTO agent_registry "
@@ -539,13 +708,13 @@ async def seed_demo():
         # Agent balances
         balances = [
             ("did:demo:legislator-1", 150.0, 10.0, 140.0),
-            ("did:demo:legislator-2", 100.0,  0.0, 100.0),
-            ("did:demo:executor-1",   200.0, 25.0, 175.0),
-            ("did:demo:executor-2",    80.0,  5.0,  75.0),
-            ("did:demo:adjudicator-1",120.0,  0.0, 120.0),
-            ("did:demo:adjudicator-2", 95.0,  0.0,  95.0),
-            ("did:demo:observer-1",   110.0,  0.0, 110.0),
-            ("did:demo:observer-2",    90.0,  0.0,  90.0),
+            ("did:demo:legislator-2", 100.0, 0.0, 100.0),
+            ("did:demo:executor-1", 200.0, 25.0, 175.0),
+            ("did:demo:executor-2", 80.0, 5.0, 75.0),
+            ("did:demo:adjudicator-1", 120.0, 0.0, 120.0),
+            ("did:demo:adjudicator-2", 95.0, 0.0, 95.0),
+            ("did:demo:observer-1", 110.0, 0.0, 110.0),
+            ("did:demo:observer-2", 90.0, 0.0, 90.0),
         ]
         conn.executemany(
             "INSERT OR IGNORE INTO agent_balance "
@@ -554,19 +723,37 @@ async def seed_demo():
             balances,
         )
         # Sessions
-        conn.execute("INSERT OR IGNORE INTO legislative_session (session_id, state, mission_budget_cap) VALUES (?, ?, ?)",
-                     ("sess-demo-draft", "SESSION_INIT", 5000.0))
-        conn.execute("INSERT OR IGNORE INTO legislative_session (session_id, state, mission_budget_cap) VALUES (?, ?, ?)",
-                     ("sess-demo-voting", "BIDDING_OPEN", 8000.0))
-        conn.execute("INSERT OR IGNORE INTO legislative_session (session_id, state, mission_budget_cap) VALUES (?, ?, ?)",
-                     ("sess-demo-enacted", "DEPLOYED", 12000.0))
+        conn.execute(
+            "INSERT OR IGNORE INTO legislative_session (session_id, state, mission_budget_cap) VALUES (?, ?, ?)",
+            ("sess-demo-draft", "SESSION_INIT", 5000.0),
+        )
+        conn.execute(
+            "INSERT OR IGNORE INTO legislative_session (session_id, state, mission_budget_cap) VALUES (?, ?, ?)",
+            ("sess-demo-voting", "BIDDING_OPEN", 8000.0),
+        )
+        conn.execute(
+            "INSERT OR IGNORE INTO legislative_session (session_id, state, mission_budget_cap) VALUES (?, ?, ?)",
+            ("sess-demo-enacted", "DEPLOYED", 12000.0),
+        )
         # Task assignments
         obs_tasks = [
-            ("task-obs-1", "sess-demo-enacted", "n1", "did:demo:executor-1", "assigned"),
+            (
+                "task-obs-1",
+                "sess-demo-enacted",
+                "n1",
+                "did:demo:executor-1",
+                "assigned",
+            ),
             ("task-obs-2", "sess-demo-enacted", "n2", "did:demo:executor-1", "running"),
-            ("task-obs-3", "sess-demo-enacted", "n3", "did:demo:executor-2", "completed"),
+            (
+                "task-obs-3",
+                "sess-demo-enacted",
+                "n3",
+                "did:demo:executor-2",
+                "completed",
+            ),
             ("task-obs-4", "sess-demo-enacted", "n4", "did:demo:executor-2", "settled"),
-            ("task-obs-5", "sess-demo-voting",  "n5", "did:demo:executor-1", "failed"),
+            ("task-obs-5", "sess-demo-voting", "n5", "did:demo:executor-1", "failed"),
         ]
         conn.executemany(
             "INSERT OR IGNORE INTO task_assignment "
@@ -582,7 +769,13 @@ async def seed_demo():
         conn.execute(
             "INSERT OR IGNORE INTO guardian_alert (alert_id, task_id, alert_type, severity, details) "
             "VALUES (?, ?, ?, ?, ?)",
-            ("alert-obs-2", "task-obs-5", "schema_violation", "critical", "Output mismatch"),
+            (
+                "alert-obs-2",
+                "task-obs-5",
+                "schema_violation",
+                "critical",
+                "Output mismatch",
+            ),
         )
         # Treasury
         obs_treasury = [
@@ -598,10 +791,16 @@ async def seed_demo():
         )
         # Reputation ledger
         obs_rep = [
-            ("did:demo:legislator-1", 0.50, 0.85, 0.90, "Consistent legislation quality"),
-            ("did:demo:executor-1",   0.50, 0.90, 0.95, "Excellent task execution"),
-            ("did:demo:adjudicator-1",0.50, 0.78, 0.80, "Fair adjudication"),
-            ("did:demo:observer-1",   0.50, 0.88, 0.88, "Active monitoring"),
+            (
+                "did:demo:legislator-1",
+                0.50,
+                0.85,
+                0.90,
+                "Consistent legislation quality",
+            ),
+            ("did:demo:executor-1", 0.50, 0.90, 0.95, "Excellent task execution"),
+            ("did:demo:adjudicator-1", 0.50, 0.78, 0.80, "Fair adjudication"),
+            ("did:demo:observer-1", 0.50, 0.88, 0.88, "Active monitoring"),
         ]
         conn.executemany(
             "INSERT INTO reputation_ledger "
@@ -614,31 +813,231 @@ async def seed_demo():
         now = time.time()
         hour = 3600.0
         events = [
-            (str(uuid.uuid4()), "SESSION_CREATED",         now - 23*hour, "sess-demo-draft",   "did:demo:legislator-1", json.dumps({"budget": 5000}),  1),
-            (str(uuid.uuid4()), "SESSION_CREATED",         now - 22*hour, "sess-demo-voting",  "did:demo:legislator-2", json.dumps({"budget": 8000}),  2),
-            (str(uuid.uuid4()), "SESSION_CREATED",         now - 21*hour, "sess-demo-enacted", "did:demo:legislator-1", json.dumps({"budget": 12000}), 3),
-            (str(uuid.uuid4()), "SESSION_STATE_CHANGED",   now - 20*hour, "sess-demo-voting",  None,                    json.dumps({"from": "SESSION_INIT", "to": "BIDDING_OPEN"}), 4),
-            (str(uuid.uuid4()), "SESSION_STATE_CHANGED",   now - 19*hour, "sess-demo-enacted", None,                    json.dumps({"from": "SESSION_INIT", "to": "DEPLOYED"}), 5),
-            (str(uuid.uuid4()), "IDENTITY_VERIFIED",       now - 18*hour, "sess-demo-enacted", "did:demo:executor-1",   json.dumps({"method": "DID"}), 6),
-            (str(uuid.uuid4()), "PROPOSAL_SUBMITTED",      now - 17*hour, "sess-demo-enacted", "did:demo:legislator-1", json.dumps({"nodes": 4}), 7),
-            (str(uuid.uuid4()), "VOTE_CAST",               now - 16*hour, "sess-demo-voting",  "did:demo:legislator-1", json.dumps({"preference": [1, 2]}), 8),
-            (str(uuid.uuid4()), "VOTE_CAST",               now - 15.5*hour,"sess-demo-voting", "did:demo:legislator-2", json.dumps({"preference": [2, 1]}), 9),
-            (str(uuid.uuid4()), "BID_SUBMITTED",           now - 15*hour, "sess-demo-voting",  "did:demo:executor-1",   json.dumps({"stake": 0.5}), 10),
-            (str(uuid.uuid4()), "TASK_ASSIGNED",           now - 14*hour, "sess-demo-enacted", "did:demo:executor-1",   json.dumps({"node_id": "n1"}), 11),
-            (str(uuid.uuid4()), "TASK_ASSIGNED",           now - 13.5*hour,"sess-demo-enacted","did:demo:executor-2",   json.dumps({"node_id": "n3"}), 12),
-            (str(uuid.uuid4()), "TASK_COMMITTED",          now - 13*hour, "sess-demo-enacted", "did:demo:executor-1",   json.dumps({"stake": 25.0}), 13),
-            (str(uuid.uuid4()), "TASK_EXECUTED",           now - 12*hour, "sess-demo-enacted", "did:demo:executor-2",   json.dumps({"latency_ms": 4500}), 14),
-            (str(uuid.uuid4()), "TASK_VALIDATED",          now - 11*hour, "sess-demo-enacted", "did:demo:executor-2",   json.dumps({"quality": 0.92}), 15),
-            (str(uuid.uuid4()), "TASK_SETTLED",            now - 10*hour, "sess-demo-enacted", "did:demo:executor-2",   json.dumps({"reward": 500.0}), 16),
-            (str(uuid.uuid4()), "GUARDIAN_ALERT_RAISED",   now - 9*hour,  "sess-demo-enacted", "did:demo:executor-1",   json.dumps({"alert_type": "timeout"}), 17),
-            (str(uuid.uuid4()), "STAKE_SLASHED",           now - 8*hour,  "sess-demo-enacted", "did:demo:executor-1",   json.dumps({"amount": 200.0}), 18),
-            (str(uuid.uuid4()), "REPUTATION_UPDATED",      now - 7*hour,  "sess-demo-enacted", "did:demo:executor-1",   json.dumps({"old": 0.90, "new": 0.85}), 19),
-            (str(uuid.uuid4()), "COORDINATION_FLAGGED",    now - 6*hour,  "sess-demo-voting",  "did:demo:legislator-1", json.dumps({"pair": "legislator-1/legislator-2", "score": 0.78}), 20),
-            (str(uuid.uuid4()), "TREASURY_ENTRY",          now - 5*hour,  None,                None,                    json.dumps({"type": "fee", "amount": -50.0}), 21),
-            (str(uuid.uuid4()), "DELIBERATION_ROUND",      now - 4*hour,  "sess-demo-voting",  "did:demo:legislator-1", json.dumps({"round": 1, "message": "Propose budget increase"}), 22),
-            (str(uuid.uuid4()), "REGULATORY_DECISION_MADE",now - 3*hour,  "sess-demo-enacted", "did:demo:adjudicator-1",json.dumps({"approved": True}), 23),
-            (str(uuid.uuid4()), "SPEC_COMPILED",           now - 2*hour,  "sess-demo-enacted", None,                    json.dumps({"spec_id": "spec-1"}), 24),
-            (str(uuid.uuid4()), "SESSION_DEPLOYED",        now - 1*hour,  "sess-demo-enacted", None,                    json.dumps({"deployed": True}), 25),
+            (
+                str(uuid.uuid4()),
+                "SESSION_CREATED",
+                now - 23 * hour,
+                "sess-demo-draft",
+                "did:demo:legislator-1",
+                json.dumps({"budget": 5000}),
+                1,
+            ),
+            (
+                str(uuid.uuid4()),
+                "SESSION_CREATED",
+                now - 22 * hour,
+                "sess-demo-voting",
+                "did:demo:legislator-2",
+                json.dumps({"budget": 8000}),
+                2,
+            ),
+            (
+                str(uuid.uuid4()),
+                "SESSION_CREATED",
+                now - 21 * hour,
+                "sess-demo-enacted",
+                "did:demo:legislator-1",
+                json.dumps({"budget": 12000}),
+                3,
+            ),
+            (
+                str(uuid.uuid4()),
+                "SESSION_STATE_CHANGED",
+                now - 20 * hour,
+                "sess-demo-voting",
+                None,
+                json.dumps({"from": "SESSION_INIT", "to": "BIDDING_OPEN"}),
+                4,
+            ),
+            (
+                str(uuid.uuid4()),
+                "SESSION_STATE_CHANGED",
+                now - 19 * hour,
+                "sess-demo-enacted",
+                None,
+                json.dumps({"from": "SESSION_INIT", "to": "DEPLOYED"}),
+                5,
+            ),
+            (
+                str(uuid.uuid4()),
+                "IDENTITY_VERIFIED",
+                now - 18 * hour,
+                "sess-demo-enacted",
+                "did:demo:executor-1",
+                json.dumps({"method": "DID"}),
+                6,
+            ),
+            (
+                str(uuid.uuid4()),
+                "PROPOSAL_SUBMITTED",
+                now - 17 * hour,
+                "sess-demo-enacted",
+                "did:demo:legislator-1",
+                json.dumps({"nodes": 4}),
+                7,
+            ),
+            (
+                str(uuid.uuid4()),
+                "VOTE_CAST",
+                now - 16 * hour,
+                "sess-demo-voting",
+                "did:demo:legislator-1",
+                json.dumps({"preference": [1, 2]}),
+                8,
+            ),
+            (
+                str(uuid.uuid4()),
+                "VOTE_CAST",
+                now - 15.5 * hour,
+                "sess-demo-voting",
+                "did:demo:legislator-2",
+                json.dumps({"preference": [2, 1]}),
+                9,
+            ),
+            (
+                str(uuid.uuid4()),
+                "BID_SUBMITTED",
+                now - 15 * hour,
+                "sess-demo-voting",
+                "did:demo:executor-1",
+                json.dumps({"stake": 0.5}),
+                10,
+            ),
+            (
+                str(uuid.uuid4()),
+                "TASK_ASSIGNED",
+                now - 14 * hour,
+                "sess-demo-enacted",
+                "did:demo:executor-1",
+                json.dumps({"node_id": "n1"}),
+                11,
+            ),
+            (
+                str(uuid.uuid4()),
+                "TASK_ASSIGNED",
+                now - 13.5 * hour,
+                "sess-demo-enacted",
+                "did:demo:executor-2",
+                json.dumps({"node_id": "n3"}),
+                12,
+            ),
+            (
+                str(uuid.uuid4()),
+                "TASK_COMMITTED",
+                now - 13 * hour,
+                "sess-demo-enacted",
+                "did:demo:executor-1",
+                json.dumps({"stake": 25.0}),
+                13,
+            ),
+            (
+                str(uuid.uuid4()),
+                "TASK_EXECUTED",
+                now - 12 * hour,
+                "sess-demo-enacted",
+                "did:demo:executor-2",
+                json.dumps({"latency_ms": 4500}),
+                14,
+            ),
+            (
+                str(uuid.uuid4()),
+                "TASK_VALIDATED",
+                now - 11 * hour,
+                "sess-demo-enacted",
+                "did:demo:executor-2",
+                json.dumps({"quality": 0.92}),
+                15,
+            ),
+            (
+                str(uuid.uuid4()),
+                "TASK_SETTLED",
+                now - 10 * hour,
+                "sess-demo-enacted",
+                "did:demo:executor-2",
+                json.dumps({"reward": 500.0}),
+                16,
+            ),
+            (
+                str(uuid.uuid4()),
+                "GUARDIAN_ALERT_RAISED",
+                now - 9 * hour,
+                "sess-demo-enacted",
+                "did:demo:executor-1",
+                json.dumps({"alert_type": "timeout"}),
+                17,
+            ),
+            (
+                str(uuid.uuid4()),
+                "STAKE_SLASHED",
+                now - 8 * hour,
+                "sess-demo-enacted",
+                "did:demo:executor-1",
+                json.dumps({"amount": 200.0}),
+                18,
+            ),
+            (
+                str(uuid.uuid4()),
+                "REPUTATION_UPDATED",
+                now - 7 * hour,
+                "sess-demo-enacted",
+                "did:demo:executor-1",
+                json.dumps({"old": 0.90, "new": 0.85}),
+                19,
+            ),
+            (
+                str(uuid.uuid4()),
+                "COORDINATION_FLAGGED",
+                now - 6 * hour,
+                "sess-demo-voting",
+                "did:demo:legislator-1",
+                json.dumps({"pair": "legislator-1/legislator-2", "score": 0.78}),
+                20,
+            ),
+            (
+                str(uuid.uuid4()),
+                "TREASURY_ENTRY",
+                now - 5 * hour,
+                None,
+                None,
+                json.dumps({"type": "fee", "amount": -50.0}),
+                21,
+            ),
+            (
+                str(uuid.uuid4()),
+                "DELIBERATION_ROUND",
+                now - 4 * hour,
+                "sess-demo-voting",
+                "did:demo:legislator-1",
+                json.dumps({"round": 1, "message": "Propose budget increase"}),
+                22,
+            ),
+            (
+                str(uuid.uuid4()),
+                "REGULATORY_DECISION_MADE",
+                now - 3 * hour,
+                "sess-demo-enacted",
+                "did:demo:adjudicator-1",
+                json.dumps({"approved": True}),
+                23,
+            ),
+            (
+                str(uuid.uuid4()),
+                "SPEC_COMPILED",
+                now - 2 * hour,
+                "sess-demo-enacted",
+                None,
+                json.dumps({"spec_id": "spec-1"}),
+                24,
+            ),
+            (
+                str(uuid.uuid4()),
+                "SESSION_DEPLOYED",
+                now - 1 * hour,
+                "sess-demo-enacted",
+                None,
+                json.dumps({"deployed": True}),
+                25,
+            ),
         ]
         conn.executemany(
             "INSERT INTO event_log "
@@ -849,8 +1248,7 @@ async def trend(agent_id: int = Query(..., description="Agent ID")):
 @app.post("/api/posts", tags=["Posts"])
 async def create_post(body: CreatePostBody):
     """Create a new post."""
-    result = await _dispatch(ActionType.CREATE_POST, body.agent_id,
-                              body.content)
+    result = await _dispatch(ActionType.CREATE_POST, body.agent_id, body.content)
     return result
 
 
@@ -878,8 +1276,7 @@ async def dislike_post(post_id: int, body: AgentIdBody):
 @app.delete("/api/posts/{post_id}/dislike", tags=["Posts"])
 async def undo_dislike_post(post_id: int, body: AgentIdBody):
     """Remove a dislike from a post."""
-    result = await _dispatch(ActionType.UNDO_DISLIKE_POST, body.agent_id,
-                              post_id)
+    result = await _dispatch(ActionType.UNDO_DISLIKE_POST, body.agent_id, post_id)
     return result
 
 
@@ -896,8 +1293,9 @@ async def report_post(post_id: int, body: ReportPostBody):
 
     The Platform's report_post expects ``report_message = (post_id, reason)``.
     """
-    result = await _dispatch(ActionType.REPORT_POST, body.agent_id,
-                              (post_id, body.reason))
+    result = await _dispatch(
+        ActionType.REPORT_POST, body.agent_id, (post_id, body.reason)
+    )
     return result
 
 
@@ -907,8 +1305,9 @@ async def quote_post(post_id: int, body: QuotePostBody):
 
     The Platform's quote_post expects ``quote_message = (post_id, content)``.
     """
-    result = await _dispatch(ActionType.QUOTE_POST, body.agent_id,
-                              (post_id, body.content))
+    result = await _dispatch(
+        ActionType.QUOTE_POST, body.agent_id, (post_id, body.content)
+    )
     return result
 
 
@@ -923,40 +1322,37 @@ async def create_comment(post_id: int, body: CreateCommentBody):
 
     The Platform's create_comment expects ``comment_message = (post_id, content)``.
     """
-    result = await _dispatch(ActionType.CREATE_COMMENT, body.agent_id,
-                              (post_id, body.content))
+    result = await _dispatch(
+        ActionType.CREATE_COMMENT, body.agent_id, (post_id, body.content)
+    )
     return result
 
 
 @app.post("/api/comments/{comment_id}/like", tags=["Comments"])
 async def like_comment(comment_id: int, body: AgentIdBody):
     """Like a comment."""
-    result = await _dispatch(ActionType.LIKE_COMMENT, body.agent_id,
-                              comment_id)
+    result = await _dispatch(ActionType.LIKE_COMMENT, body.agent_id, comment_id)
     return result
 
 
 @app.delete("/api/comments/{comment_id}/like", tags=["Comments"])
 async def unlike_comment(comment_id: int, body: AgentIdBody):
     """Remove a like from a comment."""
-    result = await _dispatch(ActionType.UNLIKE_COMMENT, body.agent_id,
-                              comment_id)
+    result = await _dispatch(ActionType.UNLIKE_COMMENT, body.agent_id, comment_id)
     return result
 
 
 @app.post("/api/comments/{comment_id}/dislike", tags=["Comments"])
 async def dislike_comment(comment_id: int, body: AgentIdBody):
     """Dislike a comment."""
-    result = await _dispatch(ActionType.DISLIKE_COMMENT, body.agent_id,
-                              comment_id)
+    result = await _dispatch(ActionType.DISLIKE_COMMENT, body.agent_id, comment_id)
     return result
 
 
 @app.delete("/api/comments/{comment_id}/dislike", tags=["Comments"])
 async def undo_dislike_comment(comment_id: int, body: AgentIdBody):
     """Remove a dislike from a comment."""
-    result = await _dispatch(ActionType.UNDO_DISLIKE_COMMENT, body.agent_id,
-                              comment_id)
+    result = await _dispatch(ActionType.UNDO_DISLIKE_COMMENT, body.agent_id, comment_id)
     return result
 
 
@@ -971,32 +1367,28 @@ async def follow(body: FollowBody):
 
     The Platform's follow expects ``followee_id`` as the message.
     """
-    result = await _dispatch(ActionType.FOLLOW, body.agent_id,
-                              body.target_user_id)
+    result = await _dispatch(ActionType.FOLLOW, body.agent_id, body.target_user_id)
     return result
 
 
 @app.delete("/api/follow", tags=["Social Graph"])
 async def unfollow(body: FollowBody):
     """Unfollow a user."""
-    result = await _dispatch(ActionType.UNFOLLOW, body.agent_id,
-                              body.target_user_id)
+    result = await _dispatch(ActionType.UNFOLLOW, body.agent_id, body.target_user_id)
     return result
 
 
 @app.post("/api/mute", tags=["Social Graph"])
 async def mute(body: FollowBody):
     """Mute a user."""
-    result = await _dispatch(ActionType.MUTE, body.agent_id,
-                              body.target_user_id)
+    result = await _dispatch(ActionType.MUTE, body.agent_id, body.target_user_id)
     return result
 
 
 @app.delete("/api/mute", tags=["Social Graph"])
 async def unmute(body: FollowBody):
     """Unmute a user."""
-    result = await _dispatch(ActionType.UNMUTE, body.agent_id,
-                              body.target_user_id)
+    result = await _dispatch(ActionType.UNMUTE, body.agent_id, body.target_user_id)
     return result
 
 
@@ -1033,8 +1425,7 @@ async def search_posts(
 @app.post("/api/groups", tags=["Groups"])
 async def create_group(body: CreateGroupBody):
     """Create a new chat group."""
-    result = await _dispatch(ActionType.CREATE_GROUP, body.agent_id,
-                              body.group_name)
+    result = await _dispatch(ActionType.CREATE_GROUP, body.agent_id, body.group_name)
     return result
 
 
@@ -1058,8 +1449,9 @@ async def send_to_group(group_id: int, body: AgentIdWithContentBody):
 
     The Platform's send_to_group expects ``message = (group_id, content)``.
     """
-    result = await _dispatch(ActionType.SEND_TO_GROUP, body.agent_id,
-                              (group_id, body.content))
+    result = await _dispatch(
+        ActionType.SEND_TO_GROUP, body.agent_id, (group_id, body.content)
+    )
     return result
 
 
@@ -1084,8 +1476,9 @@ async def purchase_product(product_name: str, body: PurchaseProductBody):
     The Platform's purchase_product expects
     ``purchase_message = (product_name, quantity)``.
     """
-    result = await _dispatch(ActionType.PURCHASE_PRODUCT, body.agent_id,
-                              (product_name, body.quantity))
+    result = await _dispatch(
+        ActionType.PURCHASE_PRODUCT, body.agent_id, (product_name, body.quantity)
+    )
     return result
 
 

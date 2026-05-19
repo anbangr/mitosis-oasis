@@ -1,4 +1,5 @@
 """P1 — Test clerk_registry table operations."""
+
 import json
 import sqlite3
 from pathlib import Path
@@ -57,8 +58,7 @@ def test_authority_envelope_stored(db_path: Path):
     seed_clerks(db_path)
     conn = _connect(db_path)
     row = conn.execute(
-        "SELECT authority_envelope FROM clerk_registry "
-        "WHERE clerk_role = 'registrar'"
+        "SELECT authority_envelope FROM clerk_registry WHERE clerk_role = 'registrar'"
     ).fetchone()
     conn.close()
     envelope = json.loads(row["authority_envelope"])

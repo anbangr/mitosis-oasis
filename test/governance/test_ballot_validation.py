@@ -1,7 +1,6 @@
 """Ballot validation tests — 5 tests."""
-import pytest
 
-from oasis.governance.voting import validate_ballot, CopelandVoting
+from oasis.governance.voting import validate_ballot
 
 
 CANDIDATES = ["A", "B", "C"]

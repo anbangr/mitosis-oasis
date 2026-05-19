@@ -1,4 +1,5 @@
 """Tests for WebSocket backpressure and event persistence."""
+
 from __future__ import annotations
 
 import sqlite3
@@ -17,6 +18,7 @@ def test_slow_client_queue_capped(event_bus: EventBus):
 
     def slow_callback(e: Event) -> None:
         from oasis.observatory.events import serialize_event
+
         queue.append(serialize_event(e))
 
     event_bus.subscribe(slow_callback)
@@ -28,7 +30,9 @@ def test_slow_client_queue_capped(event_bus: EventBus):
     assert len(queue) == MAX_CLIENT_QUEUE
 
 
-def test_events_still_persisted_despite_backpressure(event_bus: EventBus, observatory_db):
+def test_events_still_persisted_despite_backpressure(
+    event_bus: EventBus, observatory_db
+):
     """Events are persisted to DB even when subscriber queue overflows."""
     from collections import deque
     from oasis.observatory.events import serialize_event

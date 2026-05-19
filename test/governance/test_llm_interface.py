@@ -1,4 +1,5 @@
 """P7 — LLM interface tests: MockLLM, error handling, real LLM skip."""
+
 from __future__ import annotations
 
 import pytest

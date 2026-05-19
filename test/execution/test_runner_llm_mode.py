@@ -1,4 +1,5 @@
 """Tests for ExecutionDispatcher in LLM mode."""
+
 from __future__ import annotations
 
 import json
@@ -16,6 +17,7 @@ from .conftest import drive_to_deployed
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture()
 def llm_config() -> PlatformConfig:
@@ -42,6 +44,7 @@ def committed_task(execution_db, producers, llm_dispatcher):
 # Tests
 # ---------------------------------------------------------------------------
 
+
 class TestRunnerLLMMode:
     def test_dispatch_sets_executing(self, llm_dispatcher, committed_task):
         """Dispatching in LLM mode sets task status to 'executing'."""
@@ -62,12 +65,14 @@ class TestRunnerLLMMode:
     def test_receive_output_stores_and_validates(self, llm_dispatcher, committed_task):
         """Receiving output stores it and triggers validation."""
         llm_dispatcher.dispatch_task(committed_task["task_id"])
-        output_data = json.dumps({
-            "task_id": committed_task["task_id"],
-            "result": "test-result",
-            "status": "success",
-            "metrics": {"accuracy": 0.9, "completeness": 0.95},
-        })
+        output_data = json.dumps(
+            {
+                "task_id": committed_task["task_id"],
+                "result": "test-result",
+                "status": "success",
+                "metrics": {"accuracy": 0.9, "completeness": 0.95},
+            }
+        )
         result = llm_dispatcher.receive_output(
             committed_task["task_id"],
             output_data,
@@ -79,12 +84,14 @@ class TestRunnerLLMMode:
     def test_validation_triggered_on_receive(self, llm_dispatcher, committed_task):
         """After receiving output, validation record exists."""
         llm_dispatcher.dispatch_task(committed_task["task_id"])
-        output_data = json.dumps({
-            "task_id": committed_task["task_id"],
-            "result": "test-result",
-            "status": "success",
-            "metrics": {"accuracy": 0.8, "completeness": 0.9},
-        })
+        output_data = json.dumps(
+            {
+                "task_id": committed_task["task_id"],
+                "result": "test-result",
+                "status": "success",
+                "metrics": {"accuracy": 0.8, "completeness": 0.9},
+            }
+        )
         llm_dispatcher.receive_output(
             committed_task["task_id"],
             output_data,

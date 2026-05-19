@@ -6,10 +6,11 @@ Implements the democratic voting protocol from the AgentCity paper (§3.5):
 - Kendall τ: rank correlation for deliberation analysis
 - Coordination detection: herding/convergence detection via τ shifts
 """
+
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from itertools import combinations
 from typing import Dict, List, Optional, Tuple
 
@@ -18,9 +19,11 @@ from typing import Dict, List, Optional, Tuple
 # Data types
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class VotingResult:
     """Outcome of a Copeland election."""
+
     winner: Optional[str]
     scores: Dict[str, float]
     pairwise_matrix: Dict[Tuple[str, str], int]
@@ -31,6 +34,7 @@ class VotingResult:
 # Ballot validation
 # ---------------------------------------------------------------------------
 
+
 def validate_ballot(ranking: List[str], candidates: List[str]) -> Tuple[bool, str]:
     """Validate a ballot is a complete ranking of all candidates.
 
@@ -39,7 +43,10 @@ def validate_ballot(ranking: List[str], candidates: List[str]) -> Tuple[bool, st
     if not ranking:
         return False, "Empty ranking"
     if len(ranking) != len(candidates):
-        return False, f"Incomplete ranking: got {len(ranking)}, expected {len(candidates)}"
+        return (
+            False,
+            f"Incomplete ranking: got {len(ranking)}, expected {len(candidates)}",
+        )
     if len(set(ranking)) != len(ranking):
         return False, "Duplicate candidates in ranking"
     unknown = set(ranking) - set(candidates)
@@ -51,6 +58,7 @@ def validate_ballot(ranking: List[str], candidates: List[str]) -> Tuple[bool, st
 # ---------------------------------------------------------------------------
 # Copeland voting
 # ---------------------------------------------------------------------------
+
 
 class CopelandVoting:
     """Copeland method with Minimax tie-breaking.
@@ -149,7 +157,9 @@ class CopelandVoting:
     def result(self) -> VotingResult:
         """Run the full Copeland election with minimax tiebreak if needed."""
         if not self.candidates:
-            return VotingResult(winner=None, scores={}, pairwise_matrix={}, tiebreak_used=False)
+            return VotingResult(
+                winner=None, scores={}, pairwise_matrix={}, tiebreak_used=False
+            )
 
         if len(self.candidates) == 1:
             return VotingResult(
@@ -195,6 +205,7 @@ class CopelandVoting:
 # Kendall τ correlation coefficient
 # ---------------------------------------------------------------------------
 
+
 def kendall_tau(ranking_a: List[str], ranking_b: List[str]) -> float:
     """Compute Kendall τ correlation between two rankings of the same items.
 
@@ -233,6 +244,7 @@ def kendall_tau(ranking_a: List[str], ranking_b: List[str]) -> float:
 # ---------------------------------------------------------------------------
 # Coordination / herding detection
 # ---------------------------------------------------------------------------
+
 
 def coordination_detection(
     straw_poll_rankings: Dict[str, List[str]],

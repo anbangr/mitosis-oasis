@@ -1,4 +1,5 @@
 """Tests: each MSG_TYPE rejects invalid fields (7 tests)."""
+
 from __future__ import annotations
 
 import pytest

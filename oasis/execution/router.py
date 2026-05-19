@@ -1,4 +1,5 @@
 """Task routing — create execution task assignments from approved bids."""
+
 from __future__ import annotations
 
 import json
@@ -47,9 +48,7 @@ def route_tasks(session_id: str, db_path: Union[str, Path]) -> list[dict]:
             (session_id,),
         ).fetchone()
         if dec is None:
-            raise ValueError(
-                f"No regulatory decision found for session {session_id}"
-            )
+            raise ValueError(f"No regulatory decision found for session {session_id}")
 
         approved_bid_ids = json.loads(dec["approved_bids"])
         if not approved_bid_ids:
@@ -71,13 +70,15 @@ def route_tasks(session_id: str, db_path: Union[str, Path]) -> list[dict]:
                 "VALUES (?, ?, ?, ?, 'pending')",
                 (task_id, session_id, bid["task_node_id"], bid["bidder_did"]),
             )
-            assignments.append({
-                "task_id": task_id,
-                "session_id": session_id,
-                "node_id": bid["task_node_id"],
-                "agent_did": bid["bidder_did"],
-                "status": "pending",
-            })
+            assignments.append(
+                {
+                    "task_id": task_id,
+                    "session_id": session_id,
+                    "node_id": bid["task_node_id"],
+                    "agent_did": bid["bidder_did"],
+                    "status": "pending",
+                }
+            )
 
         conn.commit()
         return assignments
@@ -102,8 +103,7 @@ def get_agent_tasks(
             ).fetchall()
         else:
             rows = conn.execute(
-                "SELECT * FROM task_assignment "
-                "WHERE agent_did = ? ORDER BY created_at",
+                "SELECT * FROM task_assignment WHERE agent_did = ? ORDER BY created_at",
                 (agent_did,),
             ).fetchall()
         return [dict(r) for r in rows]
@@ -119,8 +119,7 @@ def get_session_tasks(
     conn = _connect(db_path)
     try:
         rows = conn.execute(
-            "SELECT * FROM task_assignment "
-            "WHERE session_id = ? ORDER BY created_at",
+            "SELECT * FROM task_assignment WHERE session_id = ? ORDER BY created_at",
             (session_id,),
         ).fetchall()
         return [dict(r) for r in rows]

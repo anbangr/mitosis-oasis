@@ -1,4 +1,5 @@
 """Tests for full execution state flow: pending → committed → executing → completed/failed."""
+
 from __future__ import annotations
 
 import json
@@ -16,6 +17,7 @@ from .conftest import drive_to_deployed
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture()
 def llm_config():
@@ -41,6 +43,7 @@ def tasks_and_db(execution_db, producers):
 # Tests
 # ---------------------------------------------------------------------------
 
+
 class TestExecutionStateFlow:
     def test_full_flow_success(self, tasks_and_db, llm_config):
         """Full flow: pending → committed → executing → completed."""
@@ -63,12 +66,14 @@ class TestExecutionStateFlow:
         assert status.status == "executing"
 
         # → completed
-        output_data = json.dumps({
-            "task_id": task["task_id"],
-            "result": "final-result",
-            "status": "success",
-            "metrics": {"accuracy": 0.9, "completeness": 0.9},
-        })
+        output_data = json.dumps(
+            {
+                "task_id": task["task_id"],
+                "result": "final-result",
+                "status": "success",
+                "metrics": {"accuracy": 0.9, "completeness": 0.9},
+            }
+        )
         dispatcher.receive_output(task["task_id"], output_data, task["agent_did"])
         status = dispatcher.get_task_status(task["task_id"])
         assert status.status == "completed"
@@ -106,12 +111,14 @@ class TestExecutionStateFlow:
         # Complete the full flow
         commit_to_task(task["task_id"], task["agent_did"], db)
         dispatcher.dispatch_task(task["task_id"])
-        output_data = json.dumps({
-            "task_id": task["task_id"],
-            "result": "done",
-            "status": "success",
-            "metrics": {"accuracy": 0.9, "completeness": 0.9},
-        })
+        output_data = json.dumps(
+            {
+                "task_id": task["task_id"],
+                "result": "done",
+                "status": "success",
+                "metrics": {"accuracy": 0.9, "completeness": 0.9},
+            }
+        )
         dispatcher.receive_output(task["task_id"], output_data, task["agent_did"])
 
         # Try to submit again — task is now completed

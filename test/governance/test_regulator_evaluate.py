@@ -1,5 +1,5 @@
 """P6 — Test Regulator.evaluate_bids."""
-import json
+
 import sqlite3
 from pathlib import Path
 
@@ -40,7 +40,15 @@ def _setup(governance_db: Path, num_nodes: int = 2, num_bidders: int = 2) -> Reg
     return reg
 
 
-def _add_bid(governance_db: Path, bid_id: str, node_id: str, bidder_did: str, stake: float = 1.0, quoted_price: float | None = None, capability_match: float | None = None):
+def _add_bid(
+    governance_db: Path,
+    bid_id: str,
+    node_id: str,
+    bidder_did: str,
+    stake: float = 1.0,
+    quoted_price: float | None = None,
+    capability_match: float | None = None,
+):
     conn = sqlite3.connect(str(governance_db))
     conn.execute("PRAGMA foreign_keys = ON")
     # Default new fields to stake/reputation for backward compatibility in tests
@@ -68,7 +76,9 @@ def test_all_nodes_covered_passes(governance_db: Path):
     result = reg.evaluate_bids("sess-eval")
     assert len(result["approved_bids"]) == 2
     # No CRITICAL flags since all nodes covered
-    critical = [f for f in result["compliance_flags"] if f.get("severity") == "CRITICAL"]
+    critical = [
+        f for f in result["compliance_flags"] if f.get("severity") == "CRITICAL"
+    ]
     assert len(critical) == 0
 
 
@@ -91,7 +101,9 @@ def test_critical_flag_blocks(governance_db: Path):
     # node-3 uncovered
 
     result = reg.evaluate_bids("sess-eval")
-    critical = [f for f in result["compliance_flags"] if f.get("severity") == "CRITICAL"]
+    critical = [
+        f for f in result["compliance_flags"] if f.get("severity") == "CRITICAL"
+    ]
     assert len(critical) >= 1
     assert "node-3" in str(critical)
 

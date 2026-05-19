@@ -2,6 +2,7 @@
 
 Coverage target: ≥80% (100% on slash_stake).
 """
+
 from __future__ import annotations
 
 import sqlite3
@@ -67,9 +68,7 @@ def _get_insurance_sum_for_decision(db_path: Path, decision_id: str) -> float:
 # ---------------------------------------------------------------------------
 
 
-def test_full_slash_splits_50_50(
-    adjudication_db: Path, config: PlatformConfig
-) -> None:
+def test_full_slash_splits_50_50(adjudication_db: Path, config: PlatformConfig) -> None:
     """T1: Full 100-unit slash splits 50/50 between treasury and insurance_pool."""
     engine = SanctionEngine(config)
     agent_did = "did:adj:agent-full"
@@ -77,9 +76,7 @@ def test_full_slash_splits_50_50(
 
     decision = engine.slash_stake(agent_did, 100.0, "full slash", adjudication_db)
 
-    treasury_sum = _get_treasury_sum_for_decision(
-        adjudication_db, decision.decision_id
-    )
+    treasury_sum = _get_treasury_sum_for_decision(adjudication_db, decision.decision_id)
     insurance_sum = _get_insurance_sum_for_decision(
         adjudication_db, decision.decision_id
     )
@@ -98,9 +95,7 @@ def test_partial_slash_splits_50_50(
 
     decision = engine.slash_stake(agent_did, 100.0, "partial slash", adjudication_db)
 
-    treasury_sum = _get_treasury_sum_for_decision(
-        adjudication_db, decision.decision_id
-    )
+    treasury_sum = _get_treasury_sum_for_decision(adjudication_db, decision.decision_id)
     insurance_sum = _get_insurance_sum_for_decision(
         adjudication_db, decision.decision_id
     )
@@ -131,9 +126,7 @@ def test_agent_balance_debited_by_actual_slash(
     assert bal["total_balance"] == pytest.approx(0.0)
 
 
-def test_fp_exactness_invariant(
-    adjudication_db: Path, config: PlatformConfig
-) -> None:
+def test_fp_exactness_invariant(adjudication_db: Path, config: PlatformConfig) -> None:
     """T5: treasury + insurance_pool sums equal actual_slash exactly for the decision_id."""
     engine = SanctionEngine(config)
     agent_did = "did:adj:agent-fp"
@@ -141,9 +134,7 @@ def test_fp_exactness_invariant(
 
     decision = engine.slash_stake(agent_did, 33.33, "fp test", adjudication_db)
 
-    treasury_sum = _get_treasury_sum_for_decision(
-        adjudication_db, decision.decision_id
-    )
+    treasury_sum = _get_treasury_sum_for_decision(adjudication_db, decision.decision_id)
     insurance_sum = _get_insurance_sum_for_decision(
         adjudication_db, decision.decision_id
     )
@@ -193,9 +184,7 @@ def test_odd_valued_slash_splits_evenly(
 
     decision = engine.slash_stake(agent_did, 7.0, "odd slash", adjudication_db)
 
-    treasury_sum = _get_treasury_sum_for_decision(
-        adjudication_db, decision.decision_id
-    )
+    treasury_sum = _get_treasury_sum_for_decision(adjudication_db, decision.decision_id)
     insurance_sum = _get_insurance_sum_for_decision(
         adjudication_db, decision.decision_id
     )
@@ -253,9 +242,7 @@ def test_slash_larger_than_locked_stake_splits_50_50(
 
     decision = engine.slash_stake(agent_did, 999.0, "big slash", adjudication_db)
 
-    treasury_sum = _get_treasury_sum_for_decision(
-        adjudication_db, decision.decision_id
-    )
+    treasury_sum = _get_treasury_sum_for_decision(adjudication_db, decision.decision_id)
     insurance_sum = _get_insurance_sum_for_decision(
         adjudication_db, decision.decision_id
     )

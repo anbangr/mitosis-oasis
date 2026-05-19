@@ -7,6 +7,7 @@ Provides FastAPI routes for the adjudication branch:
 - Agent balance and sanction history
 - Treasury summary and ledger
 """
+
 from __future__ import annotations
 
 import sqlite3
@@ -77,6 +78,7 @@ v1_router = APIRouter(prefix="/api/v1/adjudication", tags=["Adjudication"])
 
 
 # ========================= Alerts ==========================================
+
 
 @_routes.get("/alerts", response_model=list[dict[str, Any]])
 async def list_alerts(
@@ -150,6 +152,7 @@ async def get_alert(alert_id: str):
 
 # ========================= Flags ===========================================
 
+
 @_routes.get("/flags", response_model=list[dict[str, Any]])
 async def list_flags(
     session_id: str | None = Query(None, description="Filter by session ID"),
@@ -193,6 +196,7 @@ async def list_flags(
 
 
 # ========================= Decisions =======================================
+
 
 @_routes.get("/decisions", response_model=list[dict[str, Any]])
 async def list_decisions(
@@ -268,6 +272,7 @@ async def get_decision(decision_id: str):
 
 # ========================= Agent balance & sanctions ========================
 
+
 @_routes.get("/agents/{agent_did}/balance", response_model=dict[str, Any])
 async def get_agent_balance(agent_did: str):
     """Get agent balance details."""
@@ -318,6 +323,7 @@ async def get_agent_sanctions(agent_did: str):
 
 
 # ========================= Treasury ========================================
+
 
 @_routes.get("/treasury", response_model=dict[str, Any])
 async def get_treasury():

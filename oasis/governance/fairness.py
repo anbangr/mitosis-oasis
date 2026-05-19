@@ -5,9 +5,9 @@ Implements the fairness constraints from the AgentCity paper (§3.6):
 - Normalised fairness scoring (0-1000 scale)
 - Monopolisation bounds derived from constitutional minimums
 """
+
 from __future__ import annotations
 
-import math
 from dataclasses import dataclass
 from typing import Dict, List, Optional
 
@@ -16,18 +16,21 @@ from typing import Dict, List, Optional
 # Data types
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class FairnessResult:
     """Outcome of a fairness check."""
-    score: int          # 0-1000 normalised fairness score
-    passed: bool        # True if score >= min_score
-    max_share: float    # largest individual share
+
+    score: int  # 0-1000 normalised fairness score
+    passed: bool  # True if score >= min_score
+    max_share: float  # largest individual share
     violator: Optional[str]  # agent_did of the largest shareholder (if failed)
 
 
 # ---------------------------------------------------------------------------
 # HHI — Herfindahl-Hirschman Index
 # ---------------------------------------------------------------------------
+
 
 def hhi(shares: List[float]) -> float:
     """Compute the raw Herfindahl-Hirschman Index.
@@ -41,6 +44,7 @@ def hhi(shares: List[float]) -> float:
 # ---------------------------------------------------------------------------
 # Normalised fairness score
 # ---------------------------------------------------------------------------
+
 
 def normalized_fairness_score(shares: List[float], num_producers: int) -> int:
     """Map raw HHI to a 0-1000 fairness score.
@@ -68,6 +72,7 @@ def normalized_fairness_score(shares: List[float], num_producers: int) -> int:
 # ---------------------------------------------------------------------------
 # Monopolisation bound
 # ---------------------------------------------------------------------------
+
 
 def monopolization_bound(num_producers: int, min_fairness: int = 600) -> float:
     """Maximum share any single producer can hold while maintaining fairness.
@@ -100,6 +105,7 @@ def monopolization_bound(num_producers: int, min_fairness: int = 600) -> float:
 # ---------------------------------------------------------------------------
 # Fairness check
 # ---------------------------------------------------------------------------
+
 
 def check_fairness(
     bid_assignments: Dict[str, float],

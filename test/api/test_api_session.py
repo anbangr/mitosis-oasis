@@ -1,4 +1,5 @@
 """P8.1 — Session management API tests."""
+
 from __future__ import annotations
 
 from oasis.governance import endpoints as gov_ep
@@ -121,7 +122,11 @@ def test_get_session_includes_governance_fields(client):
     try:
         resp = client.post(
             "/api/governance/sessions",
-            json={"mission_budget_cap": 500.0, "governance_mode": "emergent", "milestone_id": "milestone-01"},
+            json={
+                "mission_budget_cap": 500.0,
+                "governance_mode": "emergent",
+                "milestone_id": "milestone-01",
+            },
         )
         session_id = resp.json()["session_id"]
 

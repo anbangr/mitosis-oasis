@@ -1,4 +1,5 @@
 """Observatory event bus — singleton publish/subscribe with SQLite persistence."""
+
 from __future__ import annotations
 
 import json
@@ -7,7 +8,7 @@ import threading
 from pathlib import Path
 from typing import Any, Callable, Union
 
-from oasis.observatory.events import Event, EventType, serialize_event
+from oasis.observatory.events import Event, EventType
 from oasis.observatory.schema import create_observatory_tables
 
 
@@ -24,7 +25,9 @@ class EventBus:
         self._db_path = str(db_path)
         self._sequence = 0
         self._seq_lock = threading.Lock()
-        self._subscribers: dict[str, tuple[Callable[[Event], Any], Callable[[Event], bool] | None]] = {}
+        self._subscribers: dict[
+            str, tuple[Callable[[Event], Any], Callable[[Event], bool] | None]
+        ] = {}
         self._sub_id_counter = 0
         self._sub_lock = threading.Lock()
 
@@ -79,7 +82,9 @@ class EventBus:
                 "VALUES (?, ?, ?, ?, ?, ?, ?)",
                 (
                     event.event_id,
-                    event.event_type.value if isinstance(event.event_type, EventType) else event.event_type,
+                    event.event_type.value
+                    if isinstance(event.event_type, EventType)
+                    else event.event_type,
                     event.timestamp,
                     event.session_id,
                     event.agent_did,
@@ -139,8 +144,7 @@ class EventBus:
                 placeholders = ", ".join("?" for _ in event_types)
                 query += f" AND event_type IN ({placeholders})"
                 params.extend(
-                    et.value if isinstance(et, EventType) else et
-                    for et in event_types
+                    et.value if isinstance(et, EventType) else et for et in event_types
                 )
 
             if session_id is not None:

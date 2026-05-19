@@ -1,4 +1,5 @@
 """P6 — Test Speaker.issue_approval."""
+
 from pathlib import Path
 
 from oasis.governance.clerks.speaker import Speaker
@@ -21,4 +22,6 @@ def test_unauthorized_action_rejected(governance_db: Path):
     result = sp.issue_approval("sess-approve", "spec-abc")
     assert result["speaker_signature"] is None
     assert "error" in result
-    assert "unauthorized" in result["error"].lower() or "Unauthorized" in result["error"]
+    assert (
+        "unauthorized" in result["error"].lower() or "Unauthorized" in result["error"]
+    )

@@ -1,4 +1,5 @@
 """Copeland minimax tie-breaking tests — 4 tests."""
+
 from oasis.governance.voting import CopelandVoting
 
 

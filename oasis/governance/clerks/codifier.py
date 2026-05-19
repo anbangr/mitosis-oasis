@@ -6,11 +6,11 @@ Handles:
 - Verifying deployed contracts match specifications
 - Layer 2: semantic consistency validation between proposal and spec
 """
+
 from __future__ import annotations
 
 import json
 import uuid
-from datetime import datetime, timezone
 from typing import Any, Optional
 
 from oasis.governance.clerks.base import BaseClerk
@@ -77,16 +77,18 @@ class Codifier(BaseClerk):
         for node in nodes:
             nid = node["node_id"]
             bid = bid_map.get(nid, {})
-            service_specs.append({
-                "node_id": nid,
-                "service_id": bid.get("service_id", node.get("service_id", "")),
-                "bidder_did": bid.get("bidder_did", ""),
-                "code_hash": bid.get("proposed_code_hash", ""),
-                "stake_amount": bid.get("stake_amount", 0.0),
-                "pop_tier": node.get("pop_tier", 1),
-                "token_budget": node.get("token_budget", 0.0),
-                "timeout_ms": node.get("timeout_ms", 60000),
-            })
+            service_specs.append(
+                {
+                    "node_id": nid,
+                    "service_id": bid.get("service_id", node.get("service_id", "")),
+                    "bidder_did": bid.get("bidder_did", ""),
+                    "code_hash": bid.get("proposed_code_hash", ""),
+                    "stake_amount": bid.get("stake_amount", 0.0),
+                    "pop_tier": node.get("pop_tier", 1),
+                    "token_budget": node.get("token_budget", 0.0),
+                    "timeout_ms": node.get("timeout_ms", 60000),
+                }
+            )
 
         # Build collaboration contract spec
         collab_spec = {
@@ -149,7 +151,8 @@ class Codifier(BaseClerk):
                 "validation_proof, status) "
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'draft')",
                 (
-                    spec_id, session_id,
+                    spec_id,
+                    session_id,
                     json.dumps(collab_spec),
                     json.dumps(guardian_spec),
                     json.dumps(verification_spec),
@@ -169,7 +172,9 @@ class Codifier(BaseClerk):
     # Constitutional validation
     # ------------------------------------------------------------------
 
-    def run_constitutional_validation(self, spec: CodedContractSpec) -> ValidationResult:
+    def run_constitutional_validation(
+        self, spec: CodedContractSpec
+    ) -> ValidationResult:
         """Run all 6 constitutional checks on a spec.
 
         Delegates to ConstitutionalValidator.
@@ -261,8 +266,7 @@ class Codifier(BaseClerk):
             # Basic keyword extraction from rationale
             rationale_lower = rationale.lower()
             service_labels = [
-                s.get("service_id", "") or s.get("label", "")
-                for s in service_specs
+                s.get("service_id", "") or s.get("label", "") for s in service_specs
             ]
             service_text = " ".join(service_labels).lower()
 
@@ -307,7 +311,10 @@ class Codifier(BaseClerk):
 
             # Parse LLM response for issues
             response_lower = llm_response.lower()
-            if any(kw in response_lower for kw in ["mismatch", "inconsisten", "conflict", "ambig"]):
+            if any(
+                kw in response_lower
+                for kw in ["mismatch", "inconsisten", "conflict", "ambig"]
+            ):
                 issues.append(f"LLM semantic check: {llm_response}")
         except LLMError:
             pass  # degrade gracefully

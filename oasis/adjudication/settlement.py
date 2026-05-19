@@ -1,4 +1,5 @@
 """Settlement calculator — compute rewards, fees, reputation updates."""
+
 from __future__ import annotations
 
 import sqlite3
@@ -42,9 +43,7 @@ class SettlementCalculator:
     def __init__(self, config: PlatformConfig | None = None) -> None:
         self.config = config or PlatformConfig()
 
-    def settle_task(
-        self, task_id: str, db_path: Union[str, Path]
-    ) -> SettlementResult:
+    def settle_task(self, task_id: str, db_path: Union[str, Path]) -> SettlementResult:
         """Settle a completed task: compute reward, write records, update balances.
 
         Steps:
@@ -122,8 +121,17 @@ class SettlementCalculator:
                 "reputation_multiplier, final_reward, protocol_fee, "
                 "insurance_fee, treasury_subsidy) "
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (settlement_id, task_id, agent_did, base_reward,
-                 psi, final_reward, protocol_fee, insurance_fee, subsidy),
+                (
+                    settlement_id,
+                    task_id,
+                    agent_did,
+                    base_reward,
+                    psi,
+                    final_reward,
+                    protocol_fee,
+                    insurance_fee,
+                    subsidy,
+                ),
             )
 
             # 5. Update agent_balance — add final_reward to available

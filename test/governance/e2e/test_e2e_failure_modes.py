@@ -1,11 +1,10 @@
 """E2E failure mode tests — each failure path through the legislative pipeline."""
+
 from __future__ import annotations
 
-import json
 import sqlite3
 import uuid
 
-import pytest
 
 from oasis.governance.clerks.codifier import Codifier
 from oasis.governance.clerks.registrar import Registrar
@@ -22,6 +21,7 @@ from oasis.governance.state_machine import LegislativeState, LegislativeStateMac
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _create_session(db_path, sid=None, budget=1000.0):
     sid = sid or f"fail-{uuid.uuid4().hex[:8]}"
@@ -110,10 +110,14 @@ class TestFailureModes:
         )
         res = registrar.verify_identity(att)
         assert not res["passed"]
-        assert any("below" in e.lower() or "reputation" in e.lower() for e in res["errors"])
+        assert any(
+            "below" in e.lower() or "reputation" in e.lower() for e in res["errors"]
+        )
 
         # Transition to FAILED
-        r = sm.transition(LegislativeState.FAILED, reason="Agent below reputation floor")
+        r = sm.transition(
+            LegislativeState.FAILED, reason="Agent below reputation floor"
+        )
         assert r.allowed
         assert sm.current_state == LegislativeState.FAILED
 
@@ -127,10 +131,22 @@ class TestFailureModes:
 
         cyclic_dag = {
             "nodes": [
-                {"node_id": "a", "label": "A", "service_id": "svc-a",
-                 "pop_tier": 1, "token_budget": 100.0, "timeout_ms": 60000},
-                {"node_id": "b", "label": "B", "service_id": "svc-b",
-                 "pop_tier": 1, "token_budget": 100.0, "timeout_ms": 60000},
+                {
+                    "node_id": "a",
+                    "label": "A",
+                    "service_id": "svc-a",
+                    "pop_tier": 1,
+                    "token_budget": 100.0,
+                    "timeout_ms": 60000,
+                },
+                {
+                    "node_id": "b",
+                    "label": "B",
+                    "service_id": "svc-b",
+                    "pop_tier": 1,
+                    "token_budget": 100.0,
+                    "timeout_ms": 60000,
+                },
             ],
             "edges": [
                 {"from_node_id": "a", "to_node_id": "b"},
@@ -165,18 +181,33 @@ class TestFailureModes:
 
         dag = {
             "nodes": [
-                {"node_id": "n1", "label": "T1", "service_id": "s1",
-                 "pop_tier": 1, "token_budget": 500.0, "timeout_ms": 60000},
-                {"node_id": "n2", "label": "T2", "service_id": "s2",
-                 "pop_tier": 1, "token_budget": 200.0, "timeout_ms": 60000},
+                {
+                    "node_id": "n1",
+                    "label": "T1",
+                    "service_id": "s1",
+                    "pop_tier": 1,
+                    "token_budget": 500.0,
+                    "timeout_ms": 60000,
+                },
+                {
+                    "node_id": "n2",
+                    "label": "T2",
+                    "service_id": "s2",
+                    "pop_tier": 1,
+                    "token_budget": 200.0,
+                    "timeout_ms": 60000,
+                },
             ],
             "edges": [{"from_node_id": "n1", "to_node_id": "n2"}],
         }
 
         speaker = Speaker(db_path=str(e2e_db), clerk_did="did:oasis:clerk-speaker")
         proposal = DAGProposal(
-            session_id=sid, proposer_did=producers[0]["agent_did"],
-            dag_spec=dag, rationale="Bid test", token_budget_total=700.0,
+            session_id=sid,
+            proposer_did=producers[0]["agent_did"],
+            dag_spec=dag,
+            rationale="Bid test",
+            token_budget_total=700.0,
             deadline_ms=60000,
         )
         res = speaker.receive_proposal(sid, proposal)
@@ -186,12 +217,18 @@ class TestFailureModes:
         assert r.allowed
 
         # Only bid on n1, leave n2 uncovered
-        regulator = Regulator(db_path=str(e2e_db), clerk_did="did:oasis:clerk-regulator")
+        regulator = Regulator(
+            db_path=str(e2e_db), clerk_did="did:oasis:clerk-regulator"
+        )
         bid = TaskBid(
-            session_id=sid, task_node_id="n1",
-            bidder_did=producers[0]["agent_did"], service_id="s1",
-            proposed_code_hash="abcdef1234567890", stake_amount=0.5,
-            estimated_latency_ms=5000, quoted_price=0.5,
+            session_id=sid,
+            task_node_id="n1",
+            bidder_did=producers[0]["agent_did"],
+            service_id="s1",
+            proposed_code_hash="abcdef1234567890",
+            stake_amount=0.5,
+            estimated_latency_ms=5000,
+            quoted_price=0.5,
             capability_match=producers[0].get("reputation_score", 0.5),
             pop_tier_acceptance=1,
         )
@@ -217,10 +254,22 @@ class TestFailureModes:
         # Budget cap is 1_000_000 but node budgets will total 1_500_000
         big_dag = {
             "nodes": [
-                {"node_id": "big-root", "label": "Root", "service_id": "svc-root",
-                 "pop_tier": 1, "token_budget": 1500000.0, "timeout_ms": 60000},
-                {"node_id": "big-leaf", "label": "Leaf", "service_id": "svc-leaf",
-                 "pop_tier": 1, "token_budget": 500000.0, "timeout_ms": 60000},
+                {
+                    "node_id": "big-root",
+                    "label": "Root",
+                    "service_id": "svc-root",
+                    "pop_tier": 1,
+                    "token_budget": 1500000.0,
+                    "timeout_ms": 60000,
+                },
+                {
+                    "node_id": "big-leaf",
+                    "label": "Leaf",
+                    "service_id": "svc-leaf",
+                    "pop_tier": 1,
+                    "token_budget": 500000.0,
+                    "timeout_ms": 60000,
+                },
             ],
             "edges": [{"from_node_id": "big-root", "to_node_id": "big-leaf"}],
         }
@@ -228,26 +277,33 @@ class TestFailureModes:
         speaker = Speaker(db_path=str(e2e_db), clerk_did="did:oasis:clerk-speaker")
         # Set budget high enough to pass proposal guard but over constitutional cap
         proposal = DAGProposal(
-            session_id=sid, proposer_did=producers[0]["agent_did"],
-            dag_spec=big_dag, rationale="Over budget",
+            session_id=sid,
+            proposer_did=producers[0]["agent_did"],
+            dag_spec=big_dag,
+            rationale="Over budget",
             token_budget_total=999999.0,  # under cap at proposal level
             deadline_ms=60000,
         )
         res = speaker.receive_proposal(sid, proposal)
         assert res["passed"]
-        proposal_id = res["proposal_id"]
+        res["proposal_id"]
 
         r = sm.transition(LegislativeState.BIDDING_OPEN)
         assert r.allowed
 
-        regulator = Regulator(db_path=str(e2e_db), clerk_did="did:oasis:clerk-regulator")
+        regulator = Regulator(
+            db_path=str(e2e_db), clerk_did="did:oasis:clerk-regulator"
+        )
         for node in big_dag["nodes"]:
             bid = TaskBid(
-                session_id=sid, task_node_id=node["node_id"],
+                session_id=sid,
+                task_node_id=node["node_id"],
                 bidder_did=producers[0]["agent_did"],
                 service_id=node["service_id"],
-                proposed_code_hash="abcdef1234567890", stake_amount=0.5,
-                estimated_latency_ms=5000, quoted_price=0.5,
+                proposed_code_hash="abcdef1234567890",
+                stake_amount=0.5,
+                estimated_latency_ms=5000,
+                quoted_price=0.5,
                 capability_match=producers[0].get("reputation_score", 0.5),
                 pop_tier_acceptance=1,
             )
@@ -276,13 +332,15 @@ class TestFailureModes:
         assert not val_result.passed
         assert any("budget" in e.message.lower() for e in val_result.errors)
 
-        r = sm.transition(LegislativeState.FAILED, reason="Constitutional budget violation")
+        r = sm.transition(
+            LegislativeState.FAILED, reason="Constitutional budget violation"
+        )
         assert r.allowed
         assert sm.current_state == LegislativeState.FAILED
 
     def test_approval_timeout_fails(self, e2e_db, producers):
         """Approval timeout → FAILED at AWAITING_APPROVAL."""
-        from .conftest import drive_session_to_deployed, DEFAULT_DAG
+        from .conftest import DEFAULT_DAG
 
         sid = f"timeout-{uuid.uuid4().hex[:8]}"
         db = str(e2e_db)
@@ -309,8 +367,11 @@ class TestFailureModes:
 
         for p in producers:
             att = IdentityAttestation(
-                session_id=sid, agent_did=p["agent_did"],
-                signature="sig", reputation_score=0.5, agent_type="producer",
+                session_id=sid,
+                agent_did=p["agent_did"],
+                signature="sig",
+                reputation_score=0.5,
+                agent_type="producer",
             )
             registrar.verify_identity(att)
 
@@ -329,21 +390,29 @@ class TestFailureModes:
 
         dag = DEFAULT_DAG
         proposal = DAGProposal(
-            session_id=sid, proposer_did=producers[0]["agent_did"],
-            dag_spec=dag, rationale="timeout test",
-            token_budget_total=1000.0, deadline_ms=60000,
+            session_id=sid,
+            proposer_did=producers[0]["agent_did"],
+            dag_spec=dag,
+            rationale="timeout test",
+            token_budget_total=1000.0,
+            deadline_ms=60000,
         )
         speaker.receive_proposal(sid, proposal)
         sm.transition(LegislativeState.BIDDING_OPEN)
 
         for idx, node in enumerate(dag["nodes"]):
             bid = TaskBid(
-                session_id=sid, task_node_id=node["node_id"],
+                session_id=sid,
+                task_node_id=node["node_id"],
                 bidder_did=producers[idx % len(producers)]["agent_did"],
                 service_id=node["service_id"],
-                proposed_code_hash="abcdef1234567890", stake_amount=0.5,
-                estimated_latency_ms=5000, quoted_price=0.5,
-                capability_match=producers[idx % len(producers)].get("reputation_score", 0.5),
+                proposed_code_hash="abcdef1234567890",
+                stake_amount=0.5,
+                estimated_latency_ms=5000,
+                quoted_price=0.5,
+                capability_match=producers[idx % len(producers)].get(
+                    "reputation_score", 0.5
+                ),
                 pop_tier_acceptance=1,
             )
             regulator_clerk.receive_bid(sid, bid)
@@ -386,12 +455,29 @@ class TestFailureModes:
         def _make_dag(round_num):
             return {
                 "nodes": [
-                    {"node_id": f"rp{round_num}-r1", "label": "T", "service_id": "svc",
-                     "pop_tier": 1, "token_budget": 500.0, "timeout_ms": 60000},
-                    {"node_id": f"rp{round_num}-r2", "label": "T2", "service_id": "svc2",
-                     "pop_tier": 1, "token_budget": 200.0, "timeout_ms": 60000},
+                    {
+                        "node_id": f"rp{round_num}-r1",
+                        "label": "T",
+                        "service_id": "svc",
+                        "pop_tier": 1,
+                        "token_budget": 500.0,
+                        "timeout_ms": 60000,
+                    },
+                    {
+                        "node_id": f"rp{round_num}-r2",
+                        "label": "T2",
+                        "service_id": "svc2",
+                        "pop_tier": 1,
+                        "token_budget": 200.0,
+                        "timeout_ms": 60000,
+                    },
                 ],
-                "edges": [{"from_node_id": f"rp{round_num}-r1", "to_node_id": f"rp{round_num}-r2"}],
+                "edges": [
+                    {
+                        "from_node_id": f"rp{round_num}-r1",
+                        "to_node_id": f"rp{round_num}-r2",
+                    }
+                ],
             }
 
         def do_proposal_bid_regulatory():
@@ -405,9 +491,12 @@ class TestFailureModes:
             assert r.allowed
 
             proposal = DAGProposal(
-                session_id=sid, proposer_did=producers[0]["agent_did"],
-                dag_spec=dag, rationale=f"re-prop test {round_counter[0]}",
-                token_budget_total=700.0, deadline_ms=60000,
+                session_id=sid,
+                proposer_did=producers[0]["agent_did"],
+                dag_spec=dag,
+                rationale=f"re-prop test {round_counter[0]}",
+                token_budget_total=700.0,
+                deadline_ms=60000,
             )
             speaker.receive_proposal(sid, proposal)
 
@@ -417,12 +506,17 @@ class TestFailureModes:
             # Bid on ALL node IDs ever created (guard checks all proposals)
             for idx, (node_id, svc_id) in enumerate(all_node_ids):
                 bid = TaskBid(
-                    session_id=sid, task_node_id=node_id,
+                    session_id=sid,
+                    task_node_id=node_id,
                     bidder_did=producers[idx % len(producers)]["agent_did"],
                     service_id=svc_id,
-                    proposed_code_hash="abcdef1234567890", stake_amount=0.5,
-                    estimated_latency_ms=5000, quoted_price=0.5,
-                    capability_match=producers[idx % len(producers)].get("reputation_score", 0.5),
+                    proposed_code_hash="abcdef1234567890",
+                    stake_amount=0.5,
+                    estimated_latency_ms=5000,
+                    quoted_price=0.5,
+                    capability_match=producers[idx % len(producers)].get(
+                        "reputation_score", 0.5
+                    ),
                     pop_tier_acceptance=1,
                 )
                 regulator.receive_bid(sid, bid)

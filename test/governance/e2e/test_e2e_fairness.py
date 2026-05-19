@@ -1,4 +1,5 @@
 """E2E fairness — one producer bids on all tasks → Regulator flags fairness."""
+
 from __future__ import annotations
 
 import sqlite3
@@ -41,8 +42,11 @@ def test_monopolist_bid_rejected(e2e_db, producers):
 
     for p in producers:
         att = IdentityAttestation(
-            session_id=sid, agent_did=p["agent_did"],
-            signature="sig", reputation_score=0.5, agent_type="producer",
+            session_id=sid,
+            agent_did=p["agent_did"],
+            signature="sig",
+            reputation_score=0.5,
+            agent_type="producer",
         )
         registrar.verify_identity(att)
 
@@ -62,11 +66,24 @@ def test_monopolist_bid_rejected(e2e_db, producers):
     # DAG with 5 leaf nodes under a root
     dag = {
         "nodes": [
-            {"node_id": f"fair-root", "label": "Root", "service_id": "svc-root",
-             "pop_tier": 1, "token_budget": 1000.0, "timeout_ms": 60000},
-        ] + [
-            {"node_id": f"fair-{i}", "label": f"Task {i}", "service_id": f"svc-{i}",
-             "pop_tier": 1, "token_budget": 200.0, "timeout_ms": 60000}
+            {
+                "node_id": "fair-root",
+                "label": "Root",
+                "service_id": "svc-root",
+                "pop_tier": 1,
+                "token_budget": 1000.0,
+                "timeout_ms": 60000,
+            },
+        ]
+        + [
+            {
+                "node_id": f"fair-{i}",
+                "label": f"Task {i}",
+                "service_id": f"svc-{i}",
+                "pop_tier": 1,
+                "token_budget": 200.0,
+                "timeout_ms": 60000,
+            }
             for i in range(1, 5)
         ],
         "edges": [
@@ -77,9 +94,12 @@ def test_monopolist_bid_rejected(e2e_db, producers):
 
     speaker = Speaker(db_path=db, clerk_did="did:oasis:clerk-speaker")
     proposal = DAGProposal(
-        session_id=sid, proposer_did=producers[0]["agent_did"],
-        dag_spec=dag, rationale="Monopoly test",
-        token_budget_total=1800.0, deadline_ms=60000,
+        session_id=sid,
+        proposer_did=producers[0]["agent_did"],
+        dag_spec=dag,
+        rationale="Monopoly test",
+        token_budget_total=1800.0,
+        deadline_ms=60000,
     )
     res = speaker.receive_proposal(sid, proposal)
     assert res["passed"], f"Proposal failed: {res['errors']}"
@@ -92,11 +112,14 @@ def test_monopolist_bid_rejected(e2e_db, producers):
     monopolist = producers[0]
     for node in dag["nodes"]:
         bid = TaskBid(
-            session_id=sid, task_node_id=node["node_id"],
+            session_id=sid,
+            task_node_id=node["node_id"],
             bidder_did=monopolist["agent_did"],
             service_id=node["service_id"],
-            proposed_code_hash="abcdef1234567890", stake_amount=0.9,
-            estimated_latency_ms=5000, quoted_price=0.9,
+            proposed_code_hash="abcdef1234567890",
+            stake_amount=0.9,
+            estimated_latency_ms=5000,
+            quoted_price=0.9,
             capability_match=1.0,
             pop_tier_acceptance=1,
         )
@@ -106,11 +129,14 @@ def test_monopolist_bid_rejected(e2e_db, producers):
     for node in dag["nodes"]:
         other_bidder = producers[1]
         bid = TaskBid(
-            session_id=sid, task_node_id=node["node_id"],
+            session_id=sid,
+            task_node_id=node["node_id"],
             bidder_did=other_bidder["agent_did"],
             service_id=node["service_id"],
-            proposed_code_hash="abcdef1234567890", stake_amount=0.2,
-            estimated_latency_ms=5000, quoted_price=0.2,
+            proposed_code_hash="abcdef1234567890",
+            stake_amount=0.2,
+            estimated_latency_ms=5000,
+            quoted_price=0.2,
             capability_match=0.1,
             pop_tier_acceptance=1,
         )
@@ -119,7 +145,7 @@ def test_monopolist_bid_rejected(e2e_db, producers):
     sm.transition(LegislativeState.REGULATORY_REVIEW)
 
     # Evaluate — monopolist wins all nodes, fairness check should flag
-    eval_result = regulator.evaluate_bids(sid)
+    regulator.evaluate_bids(sid)
 
     # With 2 bidders but 1 winning all nodes: shares = {monopolist: 1.0, other: 0.0}
     # Actually bid_shares: {monopolist: 5/5=1.0} since only winning bids counted
@@ -131,7 +157,7 @@ def test_monopolist_bid_rejected(e2e_db, producers):
     # However, we can verify via the Regulator's own check_fairness method
     # which should detect concentration. Let's verify the direct fairness check
     # using the full registered producer count.
-    from oasis.governance.fairness import check_fairness, normalized_fairness_score
+    from oasis.governance.fairness import normalized_fairness_score
 
     # Build the bid assignment shares considering ALL registered producers
     conn = sqlite3.connect(db)

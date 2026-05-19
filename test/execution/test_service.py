@@ -16,6 +16,7 @@
 
 Tests the service layer directly (no HTTP), using a temp SQLite DB.
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -25,7 +26,11 @@ import pytest
 from oasis.config import PlatformConfig
 from oasis.execution.schema import create_execution_tables
 from oasis.execution.service import ExecutionService, ExecutionServiceError
-from oasis.governance.schema import create_governance_tables, seed_clerks, seed_constitution
+from oasis.governance.schema import (
+    create_governance_tables,
+    seed_clerks,
+    seed_constitution,
+)
 
 
 @pytest.fixture()

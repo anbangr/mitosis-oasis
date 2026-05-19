@@ -1,4 +1,5 @@
 """P6 — Test Registrar.check_quorum."""
+
 import sqlite3
 from pathlib import Path
 

@@ -1,9 +1,9 @@
 """P6 — Test Speaker straw poll methods."""
+
 import sqlite3
 from pathlib import Path
 
 from oasis.governance.clerks.speaker import Speaker
-from oasis.governance.messages import DAGProposal
 
 
 def _setup(governance_db: Path) -> Speaker:

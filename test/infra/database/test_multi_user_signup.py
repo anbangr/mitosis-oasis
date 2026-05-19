@@ -32,10 +32,10 @@ def test_multi_signup():
     db_cursor = db.cursor()
     user_insert_query = (
         "INSERT INTO user (agent_id, user_name, name, bio, created_at,"
-        " num_followings, num_followers) VALUES (?, ?, ?, ?, ?, ?, ?)")
+        " num_followings, num_followers) VALUES (?, ?, ?, ?, ?, ?, ?)"
+    )
     for i in range(N):
-        db_cursor.execute(user_insert_query,
-                          (i, i, i, i, datetime.now(), 0, 0))
+        db_cursor.execute(user_insert_query, (i, i, i, i, datetime.now(), 0, 0))
         db.commit()
 
     db_cursor.execute("SELECT * FROM user")

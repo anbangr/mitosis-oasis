@@ -1,7 +1,7 @@
 """Layer 2 LLM advisory override panel tests (4 tests)."""
+
 from __future__ import annotations
 
-import pytest
 
 from oasis.adjudication.override_panel import (
     DeterministicDecision,
@@ -32,9 +32,7 @@ class TestOverrideLayer2:
             responses={"borderline": "DISMISS — quality is marginal but acceptable"},
             default_response="DISMISS",
         )
-        panel = OverridePanel(
-            config, adjudication_db, llm_enabled=True, llm=mock_llm
-        )
+        panel = OverridePanel(config, adjudication_db, llm_enabled=True, llm=mock_llm)
         layer1 = DeterministicDecision(
             action="NEEDS_REVIEW",
             reason="Borderline quality",
@@ -49,9 +47,7 @@ class TestOverrideLayer2:
     def test_advisory_does_not_override_freeze(self, adjudication_db, agents, config):
         """Layer 2 advisory is NOT produced for FREEZE decisions."""
         mock_llm = MockLLM(default_response="DISMISS")
-        panel = OverridePanel(
-            config, adjudication_db, llm_enabled=True, llm=mock_llm
-        )
+        panel = OverridePanel(config, adjudication_db, llm_enabled=True, llm=mock_llm)
         layer1 = DeterministicDecision(
             action="FREEZE",
             reason="Quality below threshold",

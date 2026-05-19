@@ -19,6 +19,7 @@ ObservatoryService: business logic extracted from endpoints.py (RP2-C).
 Encapsulates the SQLite db_path and all query logic so endpoints.py becomes
 thin HTTP delegates and tests can instantiate with a temp DB.
 """
+
 from __future__ import annotations
 
 import json
@@ -111,7 +112,9 @@ class ObservatoryService:
 
             active_alerts = 0
             try:
-                row = conn.execute("SELECT COUNT(*) as cnt FROM guardian_alert").fetchone()
+                row = conn.execute(
+                    "SELECT COUNT(*) as cnt FROM guardian_alert"
+                ).fetchone()
                 active_alerts = row["cnt"] if row else 0
             except sqlite3.OperationalError:
                 pass
@@ -141,7 +144,7 @@ class ObservatoryService:
         }
         order_col = allowed_sorts.get(sort_by, "ar.reputation_score")
         where_clause = "WHERE ar.agent_type = ? " if agent_type is not None else ""
-        params: list[Any] = ([agent_type, limit] if agent_type is not None else [limit])
+        params: list[Any] = [agent_type, limit] if agent_type is not None else [limit]
 
         query = (
             "SELECT ar.agent_did, ar.display_name, ar.agent_type, "
@@ -292,7 +295,11 @@ class ObservatoryService:
                 "ORDER BY created_at ASC"
             ).fetchall()
             return [
-                {"session_id": r["session_id"], "state": r["state"], "created_at": r["created_at"]}
+                {
+                    "session_id": r["session_id"],
+                    "state": r["state"],
+                    "created_at": r["created_at"],
+                }
                 for r in rows
             ]
         except sqlite3.OperationalError:
@@ -360,10 +367,15 @@ class ObservatoryService:
                 ).fetchone()
                 total_sessions = total_row["cnt"] if total_row else 0
                 deployed = deployed_row["cnt"] if deployed_row else 0
-                metrics["pcr"] = round(deployed / total_sessions, 4) if total_sessions > 0 else 0.0
+                metrics["pcr"] = (
+                    round(deployed / total_sessions, 4) if total_sessions > 0 else 0.0
+                )
                 metrics["session_count"] = total_sessions
             except sqlite3.OperationalError as err:
-                logger.warning("PCR metric unavailable — governance tables missing or not yet created: %s", err)
+                logger.warning(
+                    "PCR metric unavailable — governance tables missing or not yet created: %s",
+                    err,
+                )
                 metrics["pcr"] = 0.0
                 metrics["session_count"] = 0
 
@@ -381,7 +393,10 @@ class ObservatoryService:
                 metrics["psr"] = round(active_p / total_p, 4) if total_p > 0 else 1.0
                 metrics["active_agent_count"] = active_p
             except sqlite3.OperationalError as err:
-                logger.warning("PSR metric unavailable — governance tables missing or not yet created: %s", err)
+                logger.warning(
+                    "PSR metric unavailable — governance tables missing or not yet created: %s",
+                    err,
+                )
                 metrics["psr"] = 1.0
                 metrics["active_agent_count"] = 0
 
@@ -395,10 +410,16 @@ class ObservatoryService:
                     f"WHERE ta.status IN ('completed', 'settled') "
                     f"GROUP BY ar.capability_tier"
                 ).fetchall()
-                tier_counts: dict[str, int] = {r["capability_tier"]: r["cnt"] for r in completed_by_tier}
+                tier_counts: dict[str, int] = {
+                    r["capability_tier"]: r["cnt"] for r in completed_by_tier
+                }
                 total_completed = sum(tier_counts.values())
                 high_tier = tier_counts.get("t3", 0) + tier_counts.get("t5", 0)
-                metrics["cau"] = round(high_tier / total_completed, 4) if total_completed > 0 else 0.0
+                metrics["cau"] = (
+                    round(high_tier / total_completed, 4)
+                    if total_completed > 0
+                    else 0.0
+                )
 
                 # SI — Specialization Index (1 - normalised HHI)
                 if total_completed > 0:
@@ -409,7 +430,10 @@ class ObservatoryService:
                 else:
                     metrics["si"] = 0.0
             except sqlite3.OperationalError as err:
-                logger.warning("CAU/SI metrics unavailable — execution or governance tables missing: %s", err)
+                logger.warning(
+                    "CAU/SI metrics unavailable — execution or governance tables missing: %s",
+                    err,
+                )
                 metrics["cau"] = 0.0
                 metrics["si"] = 0.0
 
@@ -426,7 +450,9 @@ class ObservatoryService:
                 vote_cnt = vote_events["cnt"] if vote_events else 0
                 metrics["cdr"] = round(coord_cnt / vote_cnt, 4) if vote_cnt > 0 else 0.0
             except sqlite3.OperationalError as err:
-                logger.warning("CDR metric unavailable — event_log table missing: %s", err)
+                logger.warning(
+                    "CDR metric unavailable — event_log table missing: %s", err
+                )
                 metrics["cdr"] = 0.0
 
             # OPA — Override Panel Activation count (guardian alerts raised)
@@ -436,7 +462,9 @@ class ObservatoryService:
                 ).fetchone()
                 metrics["opa"] = opa_row["cnt"] if opa_row else 0
             except sqlite3.OperationalError as err:
-                logger.warning("OPA metric unavailable — adjudication tables missing: %s", err)
+                logger.warning(
+                    "OPA metric unavailable — adjudication tables missing: %s", err
+                )
                 metrics["opa"] = 0
 
             # ECP — Endogenous Compliance Premium (mean reputation improvement)
@@ -445,10 +473,16 @@ class ObservatoryService:
                 rep_row = conn.execute(
                     f"SELECT AVG(new_score - old_score) as mean_delta FROM {gov}reputation_ledger"
                 ).fetchone()
-                delta = rep_row["mean_delta"] if rep_row and rep_row["mean_delta"] is not None else 0.0
+                delta = (
+                    rep_row["mean_delta"]
+                    if rep_row and rep_row["mean_delta"] is not None
+                    else 0.0
+                )
                 metrics["ecp"] = round(float(delta), 4)
             except sqlite3.OperationalError as err:
-                logger.warning("ECP metric unavailable — adjudication tables missing: %s", err)
+                logger.warning(
+                    "ECP metric unavailable — adjudication tables missing: %s", err
+                )
                 metrics["ecp"] = 0.0
 
         finally:

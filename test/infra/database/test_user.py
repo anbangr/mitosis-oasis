@@ -24,7 +24,6 @@ test_db_filepath = osp.join(parent_folder, "test.db")
 
 
 class MockChannel:
-
     def __init__(self):
         self.call_count = 0
         self.messages = []  # Used to store sent messages
@@ -39,8 +38,7 @@ class MockChannel:
             return ("id_", (1, 3, "follow"))  # Assuming user 1 follows user 3
         if self.call_count == 2:
             self.call_count += 1
-            return ("id_", (1, 3, "unfollow")
-                    )  # Assuming user 1 unfollows user 3
+            return ("id_", (1, 3, "unfollow"))  # Assuming user 1 unfollows user 3
         if self.call_count == 3:
             self.call_count += 1
             return ("id_", (2, 1, "mute"))  # Assuming user 2 mutes user 1
@@ -105,21 +103,27 @@ async def test_follow_user(setup_platform):
         conn = sqlite3.connect(test_db_filepath)
         cursor = conn.cursor()
         cursor.execute(
-            ("INSERT INTO user "
-             "(user_id, agent_id, user_name, num_followings, num_followers) "
-             "VALUES (?, ?, ?, ?, ?)"),
+            (
+                "INSERT INTO user "
+                "(user_id, agent_id, user_name, num_followings, num_followers) "
+                "VALUES (?, ?, ?, ?, ?)"
+            ),
             (1, 1, "user1", 0, 0),
         )
         cursor.execute(
-            ("INSERT INTO user "
-             "(user_id, agent_id, user_name, num_followings, num_followers) "
-             "VALUES (?, ?, ?, ?, ?)"),
+            (
+                "INSERT INTO user "
+                "(user_id, agent_id, user_name, num_followings, num_followers) "
+                "VALUES (?, ?, ?, ?, ?)"
+            ),
             (2, 2, "user2", 2, 4),
         )
         cursor.execute(
-            ("INSERT INTO user "
-             "(user_id, agent_id, user_name, num_followings, num_followers) "
-             "VALUES (?, ?, ?, ?, ?)"),
+            (
+                "INSERT INTO user "
+                "(user_id, agent_id, user_name, num_followings, num_followers) "
+                "VALUES (?, ?, ?, ?, ?)"
+            ),
             (3, 3, "user3", 3, 5),
         )
         conn.commit()
@@ -129,8 +133,7 @@ async def test_follow_user(setup_platform):
         # Verify if the data was correctly inserted into the database
 
         # Verify if the follow table has the correct data inserted
-        cursor.execute(
-            "SELECT * FROM follow WHERE follower_id=1 AND followee_id=2")
+        cursor.execute("SELECT * FROM follow WHERE follower_id=1 AND followee_id=2")
         assert cursor.fetchone() is not None, "Follow record not found"
 
         # Verify if the trace table correctly recorded the follow operation
@@ -138,8 +141,7 @@ async def test_follow_user(setup_platform):
         assert cursor.fetchone() is not None, "Follow action not traced"
 
         # Verify if the follow table correctly deleted the data
-        cursor.execute(
-            "SELECT * FROM follow WHERE follower_id=1 AND followee_id=3")
+        cursor.execute("SELECT * FROM follow WHERE follower_id=1 AND followee_id=3")
         assert cursor.fetchone() is None, "Unfollow record not deleted"
 
         # Verify if the trace table correctly recorded the unfollow operation

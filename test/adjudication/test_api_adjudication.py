@@ -1,4 +1,5 @@
 """Adjudication API endpoint tests (8 tests)."""
+
 from __future__ import annotations
 
 import sqlite3
@@ -21,6 +22,7 @@ from oasis.adjudication.schema import create_adjudication_tables
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture()
 def adj_db(tmp_path: Path) -> Path:
@@ -154,6 +156,7 @@ def seeded_data(adj_db: Path) -> dict:
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
+
 
 class TestAdjudicationAPI:
     """Adjudication REST endpoint tests."""

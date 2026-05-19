@@ -1,4 +1,5 @@
 """Observatory dashboard — self-contained HTML page with inline CSS + JS."""
+
 from __future__ import annotations
 
 from fastapi import APIRouter

@@ -7,10 +7,10 @@ Handles:
 - Admitting agents to sessions
 - Layer 2: Sybil pattern detection (burst registrations, similar profiles)
 """
+
 from __future__ import annotations
 
 import json
-import uuid
 from datetime import datetime, timezone
 from difflib import SequenceMatcher
 from typing import Any, Optional
@@ -79,7 +79,9 @@ class Registrar(BaseClerk):
     # Session management
     # ------------------------------------------------------------------
 
-    def open_session(self, session_id: str, min_reputation: float) -> IdentityVerificationRequest:
+    def open_session(
+        self, session_id: str, min_reputation: float
+    ) -> IdentityVerificationRequest:
         """Open identity-verification phase for a session.
 
         Creates the session row, broadcasts MSG1, and logs it.
@@ -169,7 +171,9 @@ class Registrar(BaseClerk):
         # Log the attestation
         if passed:
             log_message(
-                self.db_path, session_id, attestation,
+                self.db_path,
+                session_id,
+                attestation,
                 sender_did=agent_did,
             )
 
@@ -180,9 +184,7 @@ class Registrar(BaseClerk):
             "errors": errors,
         }
 
-    def _get_session_min_reputation(
-        self, conn: Any, session_id: str
-    ) -> float:
+    def _get_session_min_reputation(self, conn: Any, session_id: str) -> float:
         """Get min_reputation from the MSG1 for this session."""
         row = conn.execute(
             "SELECT payload FROM message_log "
@@ -256,6 +258,7 @@ class Registrar(BaseClerk):
             ).fetchone()[0]
 
             import math
+
             required_producers = math.ceil(threshold * total_producers)
             if required_producers < 1:
                 required_producers = 1
@@ -277,11 +280,11 @@ class Registrar(BaseClerk):
         profile: dict[str, Any] | None = None,
     ) -> None:
         """Register a new agent in the global agent_registry.
-        
+
         Derives the correct capability tier from the provided capability profile.
         """
         tier = derive_capability_tier(profile)
-        
+
         conn = self._connect()
         try:
             conn.execute(
@@ -397,11 +400,13 @@ class Registrar(BaseClerk):
             results = []
             for r in rows:
                 payload = json.loads(r["payload"]) if r["payload"] else {}
-                results.append({
-                    "agent_did": r["sender_did"],
-                    "timestamp": r["created_at"],
-                    "display_name": payload.get("display_name", r["sender_did"]),
-                })
+                results.append(
+                    {
+                        "agent_did": r["sender_did"],
+                        "timestamp": r["created_at"],
+                        "display_name": payload.get("display_name", r["sender_did"]),
+                    }
+                )
             return results
         finally:
             conn.close()

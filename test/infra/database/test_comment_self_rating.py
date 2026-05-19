@@ -24,7 +24,6 @@ test_db_filepath = osp.join(parent_folder, "test.db")
 
 
 class MockChannel:
-
     def __init__(self):
         self.call_count = 0
         self.messages = []  # Used to store the sent message.
@@ -67,7 +66,8 @@ class MockChannel:
         elif self.call_count == 3:
             assert message[2]["success"] is False
             assert message[2]["error"] == (
-                "Users are not allowed to like/dislike their own comments.")
+                "Users are not allowed to like/dislike their own comments."
+            )
         elif self.call_count == 4:
             # Assert the success message for liking a post.
             assert message[2]["success"] is True
@@ -76,7 +76,8 @@ class MockChannel:
             # Assert the success message for unliking a post.
             assert message[2]["success"] is False
             assert message[2]["error"] == (
-                "Users are not allowed to like/dislike their own comments.")
+                "Users are not allowed to like/dislike their own comments."
+            )
         elif self.call_count == 6:
             assert message[2]["success"] is True
             assert "comment_dislike_id" in message[2]
@@ -90,9 +91,7 @@ def setup_platform():
     db_path = test_db_filepath
 
     mock_channel = MockChannel()
-    platform_instance = Platform(db_path,
-                                 mock_channel,
-                                 allow_self_rating=False)
+    platform_instance = Platform(db_path, mock_channel, allow_self_rating=False)
     return platform_instance
 
 
@@ -104,15 +103,19 @@ async def test_comment(setup_platform):
         conn = sqlite3.connect(test_db_filepath)
         cursor = conn.cursor()
         cursor.execute(
-            ("INSERT INTO user "
-             "(user_id, agent_id, user_name, num_followings, num_followers) "
-             "VALUES (?, ?, ?, ?, ?)"),
+            (
+                "INSERT INTO user "
+                "(user_id, agent_id, user_name, num_followings, num_followers) "
+                "VALUES (?, ?, ?, ?, ?)"
+            ),
             (1, 1, "user1", 0, 0),
         )
         cursor.execute(
-            ("INSERT INTO user "
-             "(user_id, agent_id, user_name, num_followings, num_followers) "
-             "VALUES (?, ?, ?, ?, ?)"),
+            (
+                "INSERT INTO user "
+                "(user_id, agent_id, user_name, num_followings, num_followers) "
+                "VALUES (?, ?, ?, ?, ?)"
+            ),
             (2, 2, "user2", 2, 4),
         )
         conn.commit()

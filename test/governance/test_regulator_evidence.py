@@ -1,4 +1,5 @@
 """P6 — Test Regulator.publish_evidence."""
+
 import sqlite3
 from pathlib import Path
 

@@ -1,7 +1,7 @@
 """E2E: Run 10 tasks, verify fees + slashing + subsidies balance correctly."""
+
 from __future__ import annotations
 
-import copy
 import sqlite3
 
 from oasis.config import PlatformConfig
@@ -9,7 +9,7 @@ from oasis.adjudication.sanctions import SanctionEngine
 from oasis.adjudication.treasury import Treasury
 from oasis.governance.state_machine import LegislativeState
 
-from .conftest import drive_to_deployed, execute_all_tasks, _make_unique_dag
+from .conftest import drive_to_deployed, execute_all_tasks
 
 
 # A larger DAG with 10 nodes for treasury balance testing.
@@ -24,7 +24,8 @@ TEN_TASK_DAG = {
             "token_budget": 1000.0,
             "timeout_ms": 60000,
         },
-    ] + [
+    ]
+    + [
         {
             "node_id": f"treasury-task-{i}",
             "label": f"Task {i}",
@@ -53,7 +54,8 @@ def test_treasury_balance_after_10_tasks(cross_db, producers):
 
     # Legislative → DEPLOYED with 10-task DAG (root=1000 + 9*100 = 1900)
     result = drive_to_deployed(
-        cross_db, producers,
+        cross_db,
+        producers,
         dag_spec=TEN_TASK_DAG,
         total_budget=1900.0,
     )

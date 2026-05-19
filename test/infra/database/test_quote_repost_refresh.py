@@ -25,7 +25,6 @@ test_db_filepath = osp.join(parent_folder, "test.db")
 
 
 class MockChannel:
-
     def __init__(self):
         self.call_count = 0
         self.messages = []
@@ -52,18 +51,16 @@ class MockChannel:
             return ("id_", (2, 1, "repost"))
         elif self.call_count == 6:
             self.call_count += 1
-            return ("id_", (1, (1, 'I like the post.'), "quote_post"))
+            return ("id_", (1, (1, "I like the post."), "quote_post"))
         elif self.call_count == 7:
             self.call_count += 1
-            return ("id_", (2, (2, 'I quote to the reposted post.'),
-                            "quote_post"))
+            return ("id_", (2, (2, "I quote to the reposted post."), "quote_post"))
         elif self.call_count == 8:
             self.call_count += 1
             return ("id_", (1, 4, "repost"))
         elif self.call_count == 9:
             self.call_count += 1
-            return ("id_", (2, (4, 'I quote to the quoted post.'),
-                            "quote_post"))
+            return ("id_", (2, (4, "I quote to the quoted post."), "quote_post"))
         elif self.call_count == 10:
             self.call_count += 1
             return ("id_", (None, None, ActionType.UPDATE_REC_TABLE))
@@ -84,14 +81,14 @@ class MockChannel:
             assert message[2]["success"] is True
             assert len(message[2]["posts"]) == 1
             post = message[2]["posts"][0]
-            assert post['comments'] == []
-            assert post['content'] == 'This is a test post'
-            assert post['created_at'] is not None
-            assert post['num_dislikes'] == 0
-            assert post['num_likes'] == 1
-            assert post['num_shares'] == 0
-            assert post['post_id'] == 1
-            assert post['user_id'] == 1
+            assert post["comments"] == []
+            assert post["content"] == "This is a test post"
+            assert post["created_at"] is not None
+            assert post["num_dislikes"] == 0
+            assert post["num_likes"] == 1
+            assert post["num_shares"] == 0
+            assert post["post_id"] == 1
+            assert post["user_id"] == 1
         elif self.call_count == 5:
             assert message[2]["success"] is True
         elif self.call_count == 6:
@@ -113,54 +110,59 @@ class MockChannel:
             posts = message[2]["posts"]
             assert len(posts) == 6
             # Post 1
-            assert posts[0]['post_id'] == 1
-            assert posts[0]['user_id'] == 1
-            assert posts[0]['content'] == 'This is a test post'
-            assert posts[0]['num_likes'] == 1
-            assert posts[0]['num_shares'] == 4
-            assert len(posts[0]['comments']) == 1
-            assert posts[0]['comments'][0]['comment_id'] == 1
-            assert posts[0]['comments'][0]['content'] == 'a comment'
+            assert posts[0]["post_id"] == 1
+            assert posts[0]["user_id"] == 1
+            assert posts[0]["content"] == "This is a test post"
+            assert posts[0]["num_likes"] == 1
+            assert posts[0]["num_shares"] == 4
+            assert len(posts[0]["comments"]) == 1
+            assert posts[0]["comments"][0]["comment_id"] == 1
+            assert posts[0]["comments"][0]["content"] == "a comment"
 
             # Post 2
-            assert posts[1]['post_id'] == 2
-            assert posts[1]['user_id'] == 2
-            assert posts[1]['content'] == (
-                'User 2 reposted a post from User 1. Repost content: This is '
-                'a test post. ')
-            assert posts[1]['num_likes'] == 1
+            assert posts[1]["post_id"] == 2
+            assert posts[1]["user_id"] == 2
+            assert posts[1]["content"] == (
+                "User 2 reposted a post from User 1. Repost content: This is "
+                "a test post. "
+            )
+            assert posts[1]["num_likes"] == 1
 
             # Post 3
-            assert posts[2]['post_id'] == 3
-            assert posts[2]['user_id'] == 1
-            assert posts[2]['content'] == (
-                'User 1 quoted a post from User 1. Quote content: I like the '
-                'post.. Original Content: This is a test post')
-            assert posts[2]['num_likes'] == 0
+            assert posts[2]["post_id"] == 3
+            assert posts[2]["user_id"] == 1
+            assert posts[2]["content"] == (
+                "User 1 quoted a post from User 1. Quote content: I like the "
+                "post.. Original Content: This is a test post"
+            )
+            assert posts[2]["num_likes"] == 0
 
             # Post 4
-            assert posts[3]['post_id'] == 4
-            assert posts[3]['user_id'] == 2
-            assert posts[3]['content'] == (
-                'User 2 quoted a post from User 1. Quote content: I quote to '
-                'the reposted post.. Original Content: This is a test post')
-            assert posts[3]['num_likes'] == 0
+            assert posts[3]["post_id"] == 4
+            assert posts[3]["user_id"] == 2
+            assert posts[3]["content"] == (
+                "User 2 quoted a post from User 1. Quote content: I quote to "
+                "the reposted post.. Original Content: This is a test post"
+            )
+            assert posts[3]["num_likes"] == 0
 
             # Post 5
-            assert posts[4]['post_id'] == 5
-            assert posts[4]['user_id'] == 1
-            assert posts[4]['content'] == (
-                'User 1 reposted a post from User 2. Repost content: This is '
-                'a test post. ')
-            assert posts[4]['num_likes'] == 0
+            assert posts[4]["post_id"] == 5
+            assert posts[4]["user_id"] == 1
+            assert posts[4]["content"] == (
+                "User 1 reposted a post from User 2. Repost content: This is "
+                "a test post. "
+            )
+            assert posts[4]["num_likes"] == 0
 
             # Post 6
-            assert posts[5]['post_id'] == 6
-            assert posts[5]['user_id'] == 2
-            assert posts[5]['content'] == (
-                'User 2 quoted a post from User 1. Quote content: I quote to '
-                'the quoted post.. Original Content: This is a test post')
-            assert posts[5]['num_likes'] == 0
+            assert posts[5]["post_id"] == 6
+            assert posts[5]["user_id"] == 2
+            assert posts[5]["content"] == (
+                "User 2 quoted a post from User 1. Quote content: I quote to "
+                "the quoted post.. Original Content: This is a test post"
+            )
+            assert posts[5]["num_likes"] == 0
 
 
 @pytest.fixture
@@ -173,10 +175,12 @@ def setup_platform():
     db_path = test_db_filepath
 
     mock_channel = MockChannel()
-    instance = Platform(db_path=db_path,
-                        channel=mock_channel,
-                        refresh_rec_post_count=10,
-                        max_rec_post_len=10)
+    instance = Platform(
+        db_path=db_path,
+        channel=mock_channel,
+        refresh_rec_post_count=10,
+        max_rec_post_len=10,
+    )
     return instance
 
 
@@ -189,21 +193,27 @@ async def test_create_repost_like_unlike_post(setup_platform):
         conn = sqlite3.connect(test_db_filepath)
         cursor = conn.cursor()
         cursor.execute(
-            ("INSERT INTO user "
-             "(user_id, agent_id, user_name, num_followings, num_followers) "
-             "VALUES (?, ?, ?, ?, ?)"),
+            (
+                "INSERT INTO user "
+                "(user_id, agent_id, user_name, num_followings, num_followers) "
+                "VALUES (?, ?, ?, ?, ?)"
+            ),
             (1, 1, "user1", 0, 0),
         )
         cursor.execute(
-            ("INSERT INTO user "
-             "(user_id, agent_id, user_name, num_followings, num_followers) "
-             "VALUES (?, ?, ?, ?, ?)"),
+            (
+                "INSERT INTO user "
+                "(user_id, agent_id, user_name, num_followings, num_followers) "
+                "VALUES (?, ?, ?, ?, ?)"
+            ),
             (2, 2, "user2", 2, 4),
         )
         cursor.execute(
-            ("INSERT INTO user "
-             "(user_id, agent_id, user_name, num_followings, num_followers) "
-             "VALUES (?, ?, ?, ?, ?)"),
+            (
+                "INSERT INTO user "
+                "(user_id, agent_id, user_name, num_followings, num_followers) "
+                "VALUES (?, ?, ?, ?, ?)"
+            ),
             (3, 3, "user3", 2, 4),
         )
         conn.commit()

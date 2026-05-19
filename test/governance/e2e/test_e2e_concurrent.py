@@ -1,4 +1,5 @@
 """E2E concurrent sessions — two independent sessions without interference."""
+
 from __future__ import annotations
 
 from oasis.governance.state_machine import LegislativeState
@@ -9,10 +10,14 @@ from .conftest import drive_session_to_deployed
 def test_two_concurrent_sessions(e2e_db, producers):
     """Two independent sessions run simultaneously and both reach DEPLOYED."""
     result_a = drive_session_to_deployed(
-        e2e_db, producers, session_id="concurrent-a",
+        e2e_db,
+        producers,
+        session_id="concurrent-a",
     )
     result_b = drive_session_to_deployed(
-        e2e_db, producers, session_id="concurrent-b",
+        e2e_db,
+        producers,
+        session_id="concurrent-b",
     )
 
     # Both sessions independently DEPLOYED

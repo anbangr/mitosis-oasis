@@ -1,5 +1,5 @@
 """P6 — Test Registrar.open_session."""
-import json
+
 import sqlite3
 from pathlib import Path
 
@@ -10,7 +10,7 @@ from oasis.governance.messages import MessageType
 def test_session_created(governance_db: Path):
     """open_session creates a legislative_session row."""
     reg = Registrar(str(governance_db), "did:oasis:clerk-registrar")
-    msg1 = reg.open_session("sess-1", min_reputation=0.3)
+    reg.open_session("sess-1", min_reputation=0.3)
 
     conn = sqlite3.connect(str(governance_db))
     row = conn.execute(

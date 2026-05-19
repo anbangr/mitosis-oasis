@@ -8,12 +8,13 @@ Implements the 6-check constitutional validation algorithm (SS3.7):
 5. DAG structure — delegates to dag.validate_dag()
 6. Fairness — delegates to fairness.check_fairness()
 """
+
 from __future__ import annotations
 
 import sqlite3
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Dict, List, Union
 
 from oasis.governance.dag import DAGEdge, DAGNode, DAGSpec, validate_dag
 from oasis.governance.fairness import check_fairness
@@ -24,17 +25,20 @@ from oasis.governance.messages import CodedContractSpec
 # Data types
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class ValidationError:
     """A single validation failure."""
-    check: str       # which check failed (e.g. "behavioral_params")
-    field: str       # specific field or context
-    message: str     # human-readable description
+
+    check: str  # which check failed (e.g. "behavioral_params")
+    field: str  # specific field or context
+    message: str  # human-readable description
 
 
 @dataclass
 class ValidationResult:
     """Outcome of constitutional validation."""
+
     passed: bool
     errors: List[ValidationError] = field(default_factory=list)
 
@@ -42,6 +46,7 @@ class ValidationResult:
 # ---------------------------------------------------------------------------
 # Constitutional Validator
 # ---------------------------------------------------------------------------
+
 
 class ConstitutionalValidator:
     """Validates a CodedContractSpec against constitutional parameters.
@@ -86,7 +91,9 @@ class ConstitutionalValidator:
     # Check 1: Behavioral parameters
     # -------------------------------------------------------------------
 
-    def _check_behavioral_params(self, spec: CodedContractSpec) -> List[ValidationError]:
+    def _check_behavioral_params(
+        self, spec: CodedContractSpec
+    ) -> List[ValidationError]:
         """Validate behavioral parameters in the collaboration contract.
 
         Expected fields in collaboration_contract_spec:
@@ -110,11 +117,13 @@ class ConstitutionalValidator:
             if value is None:
                 continue
             if not (lo <= value <= hi):
-                errors.append(ValidationError(
-                    check="behavioral_params",
-                    field=param,
-                    message=f"{param} = {value} is out of range [{lo}, {hi}]",
-                ))
+                errors.append(
+                    ValidationError(
+                        check="behavioral_params",
+                        field=param,
+                        message=f"{param} = {value} is out of range [{lo}, {hi}]",
+                    )
+                )
 
         return errors
 
@@ -122,7 +131,9 @@ class ConstitutionalValidator:
     # Check 2: Budget compliance
     # -------------------------------------------------------------------
 
-    def _check_budget_compliance(self, spec: CodedContractSpec) -> List[ValidationError]:
+    def _check_budget_compliance(
+        self, spec: CodedContractSpec
+    ) -> List[ValidationError]:
         """Validate budget constraints.
 
         - Total budget <= budget_cap_max from constitution
@@ -138,31 +149,37 @@ class ConstitutionalValidator:
 
         total_budget = sum(n.get("token_budget", 0) for n in nodes)
         if total_budget > budget_cap:
-            errors.append(ValidationError(
-                check="budget_compliance",
-                field="total_budget",
-                message=f"Total budget {total_budget:.2f} exceeds cap {budget_cap:.2f}",
-            ))
+            errors.append(
+                ValidationError(
+                    check="budget_compliance",
+                    field="total_budget",
+                    message=f"Total budget {total_budget:.2f} exceeds cap {budget_cap:.2f}",
+                )
+            )
 
         for n in nodes:
             nid = n.get("node_id", "unknown")
             budget = n.get("token_budget", 0)
             if budget <= 0:
-                errors.append(ValidationError(
-                    check="budget_compliance",
-                    field=f"node.{nid}.token_budget",
-                    message=f"Node {nid} has non-positive budget: {budget}",
-                ))
+                errors.append(
+                    ValidationError(
+                        check="budget_compliance",
+                        field=f"node.{nid}.token_budget",
+                        message=f"Node {nid} has non-positive budget: {budget}",
+                    )
+                )
             timeout = n.get("timeout_ms", 0)
             if timeout <= 0 or timeout > deadline_max:
-                errors.append(ValidationError(
-                    check="budget_compliance",
-                    field=f"node.{nid}.timeout_ms",
-                    message=(
-                        f"Node {nid} timeout {timeout} out of range "
-                        f"(0, {deadline_max:.0f}]"
-                    ),
-                ))
+                errors.append(
+                    ValidationError(
+                        check="budget_compliance",
+                        field=f"node.{nid}.timeout_ms",
+                        message=(
+                            f"Node {nid} timeout {timeout} out of range "
+                            f"(0, {deadline_max:.0f}]"
+                        ),
+                    )
+                )
 
         return errors
 
@@ -187,47 +204,55 @@ class ConstitutionalValidator:
             tier = n.get("pop_tier", 1)
 
             if tier not in (1, 2, 3):
-                errors.append(ValidationError(
-                    check="pop_tier",
-                    field=f"node.{nid}.pop_tier",
-                    message=f"Node {nid} has invalid PoP tier: {tier}",
-                ))
+                errors.append(
+                    ValidationError(
+                        check="pop_tier",
+                        field=f"node.{nid}.pop_tier",
+                        message=f"Node {nid} has invalid PoP tier: {tier}",
+                    )
+                )
                 continue
 
             if tier == 2:
                 redundancy = n.get("redundancy_factor", 1)
                 consensus = n.get("consensus_threshold", 1)
                 if redundancy < 2:
-                    errors.append(ValidationError(
-                        check="pop_tier",
-                        field=f"node.{nid}.redundancy_factor",
-                        message=(
-                            f"Tier 2 node {nid} requires redundancy_factor >= 2, "
-                            f"got {redundancy}"
-                        ),
-                    ))
+                    errors.append(
+                        ValidationError(
+                            check="pop_tier",
+                            field=f"node.{nid}.redundancy_factor",
+                            message=(
+                                f"Tier 2 node {nid} requires redundancy_factor >= 2, "
+                                f"got {redundancy}"
+                            ),
+                        )
+                    )
                 if consensus <= redundancy / 2:
-                    errors.append(ValidationError(
-                        check="pop_tier",
-                        field=f"node.{nid}.consensus_threshold",
-                        message=(
-                            f"Tier 2 node {nid} requires consensus_threshold > "
-                            f"redundancy/2 ({redundancy}/2 = {redundancy/2:.1f}), "
-                            f"got {consensus}"
-                        ),
-                    ))
+                    errors.append(
+                        ValidationError(
+                            check="pop_tier",
+                            field=f"node.{nid}.consensus_threshold",
+                            message=(
+                                f"Tier 2 node {nid} requires consensus_threshold > "
+                                f"redundancy/2 ({redundancy}/2 = {redundancy / 2:.1f}), "
+                                f"got {consensus}"
+                            ),
+                        )
+                    )
 
             if tier == 3:
                 timeout = n.get("timeout_ms", 0)
                 if timeout < 300_000:
-                    errors.append(ValidationError(
-                        check="pop_tier",
-                        field=f"node.{nid}.timeout_ms",
-                        message=(
-                            f"Tier 3 node {nid} requires timeout_ms >= 300000 "
-                            f"(spec §1.5), got {timeout}"
-                        ),
-                    ))
+                    errors.append(
+                        ValidationError(
+                            check="pop_tier",
+                            field=f"node.{nid}.timeout_ms",
+                            message=(
+                                f"Tier 3 node {nid} requires timeout_ms >= 300000 "
+                                f"(spec §1.5), got {timeout}"
+                            ),
+                        )
+                    )
 
         return errors
 
@@ -258,28 +283,34 @@ class ConstitutionalValidator:
                     (agent_did,),
                 ).fetchone()
                 if row is None:
-                    errors.append(ValidationError(
-                        check="identity_stake",
-                        field=f"agent.{agent_did}",
-                        message=f"Agent {agent_did} is not registered",
-                    ))
+                    errors.append(
+                        ValidationError(
+                            check="identity_stake",
+                            field=f"agent.{agent_did}",
+                            message=f"Agent {agent_did} is not registered",
+                        )
+                    )
                     continue
                 rep_score, active = row
                 if not active:
-                    errors.append(ValidationError(
-                        check="identity_stake",
-                        field=f"agent.{agent_did}",
-                        message=f"Agent {agent_did} is inactive",
-                    ))
+                    errors.append(
+                        ValidationError(
+                            check="identity_stake",
+                            field=f"agent.{agent_did}",
+                            message=f"Agent {agent_did} is inactive",
+                        )
+                    )
                 if rep_score < rep_floor:
-                    errors.append(ValidationError(
-                        check="identity_stake",
-                        field=f"agent.{agent_did}.reputation",
-                        message=(
-                            f"Agent {agent_did} reputation {rep_score:.2f} "
-                            f"is below floor {rep_floor:.2f}"
-                        ),
-                    ))
+                    errors.append(
+                        ValidationError(
+                            check="identity_stake",
+                            field=f"agent.{agent_did}.reputation",
+                            message=(
+                                f"Agent {agent_did} reputation {rep_score:.2f} "
+                                f"is below floor {rep_floor:.2f}"
+                            ),
+                        )
+                    )
         finally:
             conn.close()
 
@@ -330,11 +361,13 @@ class ConstitutionalValidator:
 
         if not result.valid:
             for err_msg in result.errors:
-                errors.append(ValidationError(
-                    check="dag_structure",
-                    field="dag_spec",
-                    message=err_msg,
-                ))
+                errors.append(
+                    ValidationError(
+                        check="dag_structure",
+                        field="dag_spec",
+                        message=err_msg,
+                    )
+                )
 
         return errors
 
@@ -356,14 +389,16 @@ class ConstitutionalValidator:
 
         result = check_fairness(bid_assignments, min_score=min_score)
         if not result.passed:
-            errors.append(ValidationError(
-                check="fairness",
-                field="bid_assignments",
-                message=(
-                    f"Fairness score {result.score} is below minimum "
-                    f"{min_score}; largest share held by {result.violator} "
-                    f"({result.max_share:.2%})"
-                ),
-            ))
+            errors.append(
+                ValidationError(
+                    check="fairness",
+                    field="bid_assignments",
+                    message=(
+                        f"Fairness score {result.score} is below minimum "
+                        f"{min_score}; largest share held by {result.violator} "
+                        f"({result.max_share:.2%})"
+                    ),
+                )
+            )
 
         return errors

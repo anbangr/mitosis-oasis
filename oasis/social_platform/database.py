@@ -162,8 +162,7 @@ def create_db(db_path: str | None = None):
         cursor.executescript(comment_like_sql_script)
 
         # Read and execute the comment_dislike table SQL script:
-        comment_dislike_sql_path = osp.join(schema_dir,
-                                            COMMENT_DISLIKE_SCHEMA_SQL)
+        comment_dislike_sql_path = osp.join(schema_dir, COMMENT_DISLIKE_SCHEMA_SQL)
         with open(comment_dislike_sql_path, "r") as sql_file:
             comment_dislike_sql_script = sql_file.read()
         cursor.executescript(comment_dislike_sql_script)
@@ -230,8 +229,10 @@ def print_db_tables_summary():
         if foreign_keys:
             print("- Foreign Keys:")
             for fk in foreign_keys:
-                print(f"    {fk[2]} references {fk[3]}({fk[4]}) on update "
-                      f"{fk[5]} on delete {fk[6]}")
+                print(
+                    f"    {fk[2]} references {fk[3]}({fk[4]}) on update "
+                    f"{fk[5]} on delete {fk[6]}"
+                )
         else:
             print("  No foreign keys.")
 
@@ -246,8 +247,9 @@ def print_db_tables_summary():
     conn.close()
 
 
-def fetch_table_from_db(cursor: sqlite3.Cursor,
-                        table_name: str) -> List[Dict[str, Any]]:
+def fetch_table_from_db(
+    cursor: sqlite3.Cursor, table_name: str
+) -> List[Dict[str, Any]]:
     cursor.execute(f"SELECT * FROM {table_name}")
     columns = [description[0] for description in cursor.description]
     data_dicts = [dict(zip(columns, row)) for row in cursor.fetchall()]
@@ -261,8 +263,7 @@ def fetch_rec_table_as_matrix(cursor: sqlite3.Cursor) -> List[List[int]]:
     user_ids = [row[0] for row in cursor.fetchall()]
 
     # Then, query all records from the rec table
-    cursor.execute(
-        "SELECT user_id, post_id FROM rec ORDER BY user_id, post_id")
+    cursor.execute("SELECT user_id, post_id FROM rec ORDER BY user_id, post_id")
     rec_rows = cursor.fetchall()
     # Initialize a dictionary, assigning an empty list to each user_id
     user_posts = {user_id: [] for user_id in user_ids}
@@ -275,15 +276,17 @@ def fetch_rec_table_as_matrix(cursor: sqlite3.Cursor) -> List[List[int]]:
     return matrix
 
 
-def insert_matrix_into_rec_table(cursor: sqlite3.Cursor,
-                                 matrix: List[List[int]]) -> None:
+def insert_matrix_into_rec_table(
+    cursor: sqlite3.Cursor, matrix: List[List[int]]
+) -> None:
     # Iterate through the matrix, skipping the placeholder at index 0
     for user_id, post_ids in enumerate(matrix, start=1):
         # Adjusted to start counting from 1
         for post_id in post_ids:
             # Insert each combination of user_id and post_id into the rec table
-            cursor.execute("INSERT INTO rec (user_id, post_id) VALUES (?, ?)",
-                           (user_id, post_id))
+            cursor.execute(
+                "INSERT INTO rec (user_id, post_id) VALUES (?, ?)", (user_id, post_id)
+            )
 
 
 if __name__ == "__main__":

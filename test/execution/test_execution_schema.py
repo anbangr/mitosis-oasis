@@ -1,10 +1,10 @@
 """Tests for execution schema — table creation, idempotency, FK constraints."""
+
 from __future__ import annotations
 
 import sqlite3
 from pathlib import Path
 
-from oasis.governance.schema import create_governance_tables, seed_clerks, seed_constitution
 from oasis.execution.schema import create_execution_tables
 
 

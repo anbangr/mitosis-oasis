@@ -1,4 +1,5 @@
 """E2E: Correlated votes → flag → delay proposal → adjudication decision."""
+
 from __future__ import annotations
 
 import json
@@ -50,9 +51,7 @@ def test_coordination_detection_pipeline(cross_db, producers):
     # Third agent submits different ranking
     diff_ranking = json.dumps([dummy_proposal_id, proposal_id])
     conn.execute(
-        "INSERT INTO vote "
-        "(session_id, agent_did, preference_ranking) "
-        "VALUES (?, ?, ?)",
+        "INSERT INTO vote (session_id, agent_did, preference_ranking) VALUES (?, ?, ?)",
         (sid, producers[2]["agent_did"], diff_ranking),
     )
     conn.commit()
@@ -77,18 +76,23 @@ def test_coordination_detection_pipeline(cross_db, producers):
     # Override panel evaluates the flag
     panel = OverridePanel(config, db)
     for flag in voting_flags:
-        decision = panel.decide({
-            "type": "flag",
-            "flag_id": flag.flag_id,
-            "session_id": sid,
-            "score": flag.score,
-            "kendall_tau": flag.score,
-            "agent_did_1": flag.agent_did_1,
-            "agent_did_2": flag.agent_did_2,
-        })
+        decision = panel.decide(
+            {
+                "type": "flag",
+                "flag_id": flag.flag_id,
+                "session_id": sid,
+                "score": flag.score,
+                "kendall_tau": flag.score,
+                "agent_did_1": flag.agent_did_1,
+                "agent_did_2": flag.agent_did_2,
+            }
+        )
         # With high coordination score, should FLAG_AND_DELAY or DISMISS
         assert decision.decision_type in (
-            "flag_and_delay", "dismiss", "freeze", "needs_review"
+            "flag_and_delay",
+            "dismiss",
+            "freeze",
+            "needs_review",
         )
 
     # Verify coordination flags persisted in DB

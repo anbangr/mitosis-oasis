@@ -1,11 +1,10 @@
 """Tests for adjudication schema creation."""
+
 from __future__ import annotations
 
 import sqlite3
 from pathlib import Path
 
-from oasis.governance.schema import create_governance_tables, seed_clerks, seed_constitution
-from oasis.execution.schema import create_execution_tables
 from oasis.adjudication.schema import create_adjudication_tables
 
 
@@ -38,8 +37,7 @@ def test_insurance_pool_table_created(adjudication_db: Path) -> None:
     assert "insurance_pool" in tables
 
     cols = {
-        r["name"]
-        for r in conn.execute("PRAGMA table_info(insurance_pool)").fetchall()
+        r["name"] for r in conn.execute("PRAGMA table_info(insurance_pool)").fetchall()
     }
     assert "entry_id" in cols
     assert "agent_did" in cols
@@ -54,10 +52,7 @@ def test_treasury_has_decision_id(adjudication_db: Path) -> None:
     """treasury table has decision_id column after idempotent schema setup."""
     conn = sqlite3.connect(str(adjudication_db))
     conn.row_factory = sqlite3.Row
-    cols = {
-        r["name"]
-        for r in conn.execute("PRAGMA table_info(treasury)").fetchall()
-    }
+    cols = {r["name"] for r in conn.execute("PRAGMA table_info(treasury)").fetchall()}
     assert "decision_id" in cols
     conn.close()
 
@@ -94,9 +89,7 @@ def test_legacy_ledgers_pick_up_decision_id(tmp_path: Path) -> None:
 
     conn = sqlite3.connect(str(db_path))
     treasury_cols = {r[1] for r in conn.execute("PRAGMA table_info(treasury)")}
-    insurance_cols = {
-        r[1] for r in conn.execute("PRAGMA table_info(insurance_pool)")
-    }
+    insurance_cols = {r[1] for r in conn.execute("PRAGMA table_info(insurance_pool)")}
     conn.close()
     assert "decision_id" in treasury_cols
     assert "decision_id" in insurance_cols
@@ -141,6 +134,7 @@ def test_fk_constraints(adjudication_db: Path) -> None:
 
     # FK violation: non-existent agent_did should fail
     import pytest
+
     with pytest.raises(sqlite3.IntegrityError):
         conn.execute(
             "INSERT INTO adjudication_decision "

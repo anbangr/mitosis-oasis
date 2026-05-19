@@ -3,6 +3,7 @@
 Verifies that seeding populates data across all branches and that
 observatory endpoints return meaningful content after seeding.
 """
+
 from __future__ import annotations
 
 from pathlib import Path

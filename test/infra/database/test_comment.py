@@ -24,7 +24,6 @@ test_db_filepath = osp.join(parent_folder, "test.db")
 
 
 class MockChannel:
-
     def __init__(self):
         self.call_count = 0
         self.messages = []  # Used to store the sent message.
@@ -106,15 +105,19 @@ async def test_comment(setup_platform):
         conn = sqlite3.connect(test_db_filepath)
         cursor = conn.cursor()
         cursor.execute(
-            ("INSERT INTO user "
-             "(user_id, agent_id, user_name, num_followings, num_followers) "
-             "VALUES (?, ?, ?, ?, ?)"),
+            (
+                "INSERT INTO user "
+                "(user_id, agent_id, user_name, num_followings, num_followers) "
+                "VALUES (?, ?, ?, ?, ?)"
+            ),
             (1, 1, "user1", 0, 0),
         )
         cursor.execute(
-            ("INSERT INTO user "
-             "(user_id, agent_id, user_name, num_followings, num_followers) "
-             "VALUES (?, ?, ?, ?, ?)"),
+            (
+                "INSERT INTO user "
+                "(user_id, agent_id, user_name, num_followings, num_followers) "
+                "VALUES (?, ?, ?, ?, ?)"
+            ),
             (2, 2, "user2", 2, 4),
         )
         conn.commit()
@@ -161,19 +164,16 @@ async def test_comment(setup_platform):
         assert results is not None, "Dislike comment action not traced"
         assert len(results) == 2
 
-        cursor.execute(
-            "SELECT * FROM trace WHERE action='undo_dislike_comment'")
+        cursor.execute("SELECT * FROM trace WHERE action='undo_dislike_comment'")
         results = cursor.fetchall()
         assert results is not None, "Undo dislike comment action not traced"
         assert results[0][0] == 2  # `user_id`
         assert results[0][-1] == '{"comment_id": 1, "comment_dislike_id": 2}'
 
-        cursor.execute("SELECT * FROM comment_like WHERE comment_id=1 AND "
-                       "user_id=1")
+        cursor.execute("SELECT * FROM comment_like WHERE comment_id=1 AND user_id=1")
         assert cursor.fetchone() is not None, "Comment like record not found"
 
-        cursor.execute("SELECT * FROM comment_dislike WHERE comment_id=1 AND "
-                       "user_id=1")
+        cursor.execute("SELECT * FROM comment_dislike WHERE comment_id=1 AND user_id=1")
         fetched_record = cursor.fetchone()
         assert fetched_record is not None, "Comment dislike record not found"
 

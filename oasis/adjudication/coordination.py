@@ -4,6 +4,7 @@ Detects:
 1. Voting coordination: reuses kendall_tau / coordination_detection from P3
 2. Bidding coordination: Jaccard overlap on bid targets
 """
+
 from __future__ import annotations
 
 import sqlite3
@@ -22,6 +23,7 @@ from oasis.governance.voting import kendall_tau
 # Data classes
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class CoordinationFlag:
     """Record of a detected coordination pattern between two agents."""
@@ -37,6 +39,7 @@ class CoordinationFlag:
 # ---------------------------------------------------------------------------
 # CoordinationDetector
 # ---------------------------------------------------------------------------
+
 
 class CoordinationDetector:
     """Detect coordination patterns (voting herding, bid collusion)."""
@@ -58,8 +61,7 @@ class CoordinationDetector:
         try:
             # Vote table stores preference_ranking as a JSON array per agent
             rows = conn.execute(
-                "SELECT agent_did, preference_ranking "
-                "FROM vote WHERE session_id = ?",
+                "SELECT agent_did, preference_ranking FROM vote WHERE session_id = ?",
                 (session_id,),
             ).fetchall()
 
@@ -120,9 +122,7 @@ class CoordinationDetector:
             agents = list(agent_targets.keys())
 
             for a1, a2 in combinations(agents, 2):
-                jaccard = self.jaccard_similarity(
-                    agent_targets[a1], agent_targets[a2]
-                )
+                jaccard = self.jaccard_similarity(agent_targets[a1], agent_targets[a2])
                 if jaccard > self.threshold:
                     flagged.append((a1, a2, jaccard))
 
@@ -144,17 +144,13 @@ class CoordinationDetector:
         # Voting coordination
         voting_pairs = self.detect_voting_coordination(session_id, db_path)
         for a1, a2, tau in voting_pairs:
-            flag = self._write_flag(
-                session_id, a1, a2, "voting", tau, db_path
-            )
+            flag = self._write_flag(session_id, a1, a2, "voting", tau, db_path)
             flags.append(flag)
 
         # Bidding coordination
         bidding_pairs = self.detect_bidding_coordination(session_id, db_path)
         for a1, a2, jaccard in bidding_pairs:
-            flag = self._write_flag(
-                session_id, a1, a2, "bidding", jaccard, db_path
-            )
+            flag = self._write_flag(session_id, a1, a2, "bidding", jaccard, db_path)
             flags.append(flag)
 
         return flags

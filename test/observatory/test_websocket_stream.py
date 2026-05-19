@@ -1,11 +1,8 @@
 """Tests for WebSocket event streaming."""
+
 from __future__ import annotations
 
-import asyncio
-import json
-import threading
 
-import pytest
 from fastapi import FastAPI, WebSocket
 from fastapi.testclient import TestClient
 
@@ -54,7 +51,9 @@ def test_filter_params_work(event_bus: EventBus):
             # This event should NOT be sent (wrong type)
             event_bus.publish(Event(event_type=EventType.SESSION_CREATED))
             # This event SHOULD be sent
-            event_bus.publish(Event(event_type=EventType.VOTE_CAST, payload={"ok": True}))
+            event_bus.publish(
+                Event(event_type=EventType.VOTE_CAST, payload={"ok": True})
+            )
 
             data = ws.receive_json(mode="text")
             assert data["event_type"] == "VOTE_CAST"
@@ -67,11 +66,12 @@ def test_disconnect_cleanup(event_bus: EventBus):
     initial_subs = len(event_bus._subscribers)
 
     with TestClient(app) as client:
-        with client.websocket_connect("/ws/events") as ws:
+        with client.websocket_connect("/ws/events"):
             assert len(event_bus._subscribers) == initial_subs + 1
 
     # After disconnect, subscriber should be cleaned up
     # Give cleanup a moment
     import time
+
     time.sleep(0.1)
     assert len(event_bus._subscribers) == initial_subs

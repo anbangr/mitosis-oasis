@@ -6,6 +6,7 @@ Implements the task-DAG data model from the AgentCity paper (SS3.5):
 - Structural validation (roots, terminals, orphans, budgets, I/O schemas)
 - Recursive decomposition: child sessions, budget conservation, depth tracking
 """
+
 from __future__ import annotations
 
 import sqlite3
@@ -19,6 +20,7 @@ from typing import Any, Dict, List, Optional, Set, Union
 # Exceptions
 # ---------------------------------------------------------------------------
 
+
 class CycleError(Exception):
     """Raised when a cycle is detected in the DAG."""
 
@@ -27,9 +29,11 @@ class CycleError(Exception):
 # Data types
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class DAGNode:
     """A single task node in the DAG."""
+
     node_id: str
     label: str
     service_id: str
@@ -46,6 +50,7 @@ class DAGNode:
 @dataclass
 class DAGEdge:
     """A directed edge between two DAG nodes."""
+
     from_node_id: str
     to_node_id: str
     data_flow_schema: Optional[dict] = None
@@ -54,6 +59,7 @@ class DAGEdge:
 @dataclass
 class DAGSpec:
     """Full DAG specification: nodes + edges."""
+
     nodes: List[DAGNode] = field(default_factory=list)
     edges: List[DAGEdge] = field(default_factory=list)
 
@@ -61,6 +67,7 @@ class DAGSpec:
 @dataclass
 class DAGValidationResult:
     """Outcome of DAG structural validation."""
+
     valid: bool
     errors: List[str] = field(default_factory=list)
     topological_order: List[str] = field(default_factory=list)
@@ -70,9 +77,10 @@ class DAGValidationResult:
 # Helper functions
 # ---------------------------------------------------------------------------
 
+
 def find_roots(dag: DAGSpec) -> List[str]:
     """Return node_ids that have no incoming edges (root nodes)."""
-    all_ids = {n.node_id for n in dag.nodes}
+    {n.node_id for n in dag.nodes}
     has_incoming = {e.to_node_id for e in dag.edges}
     return [n.node_id for n in dag.nodes if n.node_id not in has_incoming]
 
@@ -86,6 +94,7 @@ def find_leaves(dag: DAGSpec) -> List[str]:
 # ---------------------------------------------------------------------------
 # Topological sort (Kahn's algorithm)
 # ---------------------------------------------------------------------------
+
 
 def topological_sort(dag: DAGSpec) -> List[str]:
     """Return a topological ordering of node_ids.
@@ -126,6 +135,7 @@ def topological_sort(dag: DAGSpec) -> List[str]:
 # ---------------------------------------------------------------------------
 # Full DAG validation
 # ---------------------------------------------------------------------------
+
 
 def validate_dag(dag: DAGSpec) -> DAGValidationResult:
     """Validate a DAG specification.
@@ -228,8 +238,7 @@ def validate_dag(dag: DAGSpec) -> DAGValidationResult:
     for node in dag.nodes:
         if node.token_budget <= 0:
             errors.append(
-                f"Node {node.node_id} has non-positive budget: "
-                f"{node.token_budget}"
+                f"Node {node.node_id} has non-positive budget: {node.token_budget}"
             )
 
     return DAGValidationResult(
@@ -242,6 +251,7 @@ def validate_dag(dag: DAGSpec) -> DAGValidationResult:
 # ---------------------------------------------------------------------------
 # Recursive decomposition exceptions
 # ---------------------------------------------------------------------------
+
 
 class RecursionDepthError(Exception):
     """Raised when recursive child session creation exceeds max depth."""
@@ -296,8 +306,7 @@ def get_session_depth(session_id: str, db_path: Union[str, Path]) -> int:
         conn.close()
 
 
-def _is_leaf_node(node_id: str, proposal_id: str,
-                  conn: sqlite3.Connection) -> bool:
+def _is_leaf_node(node_id: str, proposal_id: str, conn: sqlite3.Connection) -> bool:
     """Check whether a DAG node is a leaf (no outgoing edges)."""
     row = conn.execute(
         "SELECT COUNT(*) AS cnt FROM dag_edge "
@@ -318,8 +327,7 @@ def _get_node_budget(node_id: str, conn: sqlite3.Connection) -> float:
     return float(row["token_budget"])
 
 
-def _get_proposal_for_node(node_id: str,
-                           conn: sqlite3.Connection) -> str:
+def _get_proposal_for_node(node_id: str, conn: sqlite3.Connection) -> str:
     """Return the proposal_id that owns a given DAG node."""
     row = conn.execute(
         "SELECT proposal_id FROM dag_node WHERE node_id = ?",
@@ -330,8 +338,9 @@ def _get_proposal_for_node(node_id: str,
     return row["proposal_id"]
 
 
-def _sum_child_budgets(parent_session_id: str, parent_node_id: str,
-                       conn: sqlite3.Connection) -> float:
+def _sum_child_budgets(
+    parent_session_id: str, parent_node_id: str, conn: sqlite3.Connection
+) -> float:
     """Sum the mission_budget_cap of all existing children of a parent node."""
     row = conn.execute(
         "SELECT COALESCE(SUM(mission_budget_cap), 0) AS total "
@@ -345,6 +354,7 @@ def _sum_child_budgets(parent_session_id: str, parent_node_id: str,
 # ---------------------------------------------------------------------------
 # Public API — recursive decomposition
 # ---------------------------------------------------------------------------
+
 
 def trigger_child_session(
     parent_session_id: str,
@@ -428,13 +438,10 @@ def trigger_child_session(
             child_budget = node_budget
         if child_budget > node_budget + 1e-9:
             raise BudgetConservationError(
-                f"Child budget {child_budget} exceeds parent node "
-                f"budget {node_budget}"
+                f"Child budget {child_budget} exceeds parent node budget {node_budget}"
             )
         # Check cumulative children budgets
-        existing_child_sum = _sum_child_budgets(
-            parent_session_id, parent_node_id, conn
-        )
+        existing_child_sum = _sum_child_budgets(parent_session_id, parent_node_id, conn)
         if existing_child_sum + child_budget > node_budget + 1e-9:
             raise BudgetConservationError(
                 f"Cumulative child budgets ({existing_child_sum} + "
@@ -518,8 +525,7 @@ def get_session_tree(
         def _build(sid: str) -> Dict[str, Any]:
             node = dict(nodes[sid])
             node["children"] = [
-                _build(child_id)
-                for child_id in sorted(children_map.get(sid, []))
+                _build(child_id) for child_id in sorted(children_map.get(sid, []))
             ]
             return node
 

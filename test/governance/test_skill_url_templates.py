@@ -1,11 +1,14 @@
 """P11 tests: URL template validation for SKILL.toml tools."""
+
 import re
 from pathlib import Path
 
 import tomli
 
 
-SKILL_TOML = Path(__file__).resolve().parents[2] / "skills" / "mitosis-governance" / "SKILL.toml"
+SKILL_TOML = (
+    Path(__file__).resolve().parents[2] / "skills" / "mitosis-governance" / "SKILL.toml"
+)
 
 # Canonical API endpoints from oasis/governance/endpoints.py and oasis/execution/endpoints.py
 API_ENDPOINTS = {
@@ -35,7 +38,13 @@ def _load_skill():
 # ---------- Test 1: URL templates contain expected path parameter ----------
 
 # Execution tools use {task_id}; governance tools use {session_id}
-EXECUTION_TOOLS = {"get_task", "submit_commitment", "submit_task_output", "get_task_status", "get_settlement"}
+EXECUTION_TOOLS = {
+    "get_task",
+    "submit_commitment",
+    "submit_task_output",
+    "get_task_status",
+    "get_settlement",
+}
 
 
 def test_url_templates_contain_path_param():
@@ -55,6 +64,7 @@ def test_url_templates_contain_path_param():
 
 # ---------- Test 2: No broken placeholders ----------
 
+
 def test_no_broken_placeholders():
     """URL templates must not contain unresolved or malformed placeholders
     other than {session_id} or {task_id}."""
@@ -73,6 +83,7 @@ def test_no_broken_placeholders():
 
 
 # ---------- Test 3: All endpoints match the API ----------
+
 
 def test_endpoints_match_api():
     """Each tool's url_template must exactly match the canonical API endpoint."""

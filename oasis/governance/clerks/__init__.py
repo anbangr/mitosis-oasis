@@ -6,6 +6,7 @@ Four clerks coordinate the legislative pipeline:
 - Regulator: fairness, bid evaluation, feasibility assessment
 - Codifier: spec compilation, constitutional + semantic validation
 """
+
 from oasis.governance.clerks.base import BaseClerk
 from oasis.governance.clerks.codifier import Codifier
 from oasis.governance.clerks.llm_interface import (

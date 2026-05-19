@@ -1,7 +1,7 @@
 """Tests for SyntheticGenerator in 'adversarial' quality mode."""
+
 from __future__ import annotations
 
-import json
 
 import pytest
 
@@ -34,8 +34,7 @@ class TestSyntheticAdversarial:
         """Adversarial mode has high failure rate (>50%)."""
         n = 500
         failures = sum(
-            1 for _ in range(n)
-            if not generator.generate_output(sample_task).success
+            1 for _ in range(n) if not generator.generate_output(sample_task).success
         )
         rate = failures / n
         assert rate > 0.50, f"Failure rate {rate:.2f} too low for adversarial mode"
@@ -55,7 +54,9 @@ class TestSyntheticAdversarial:
         # Should see at least one malicious pattern type
         assert len(seen) >= 1, f"No malicious patterns seen, got: {seen}"
 
-    def test_guardian_alerts_for_adversarial(self, generator, sample_task, execution_db, producers):
+    def test_guardian_alerts_for_adversarial(
+        self, generator, sample_task, execution_db, producers
+    ):
         """Adversarial outputs trigger guardian alerts when validated."""
         from oasis.execution.validator import OutputValidator
         from oasis.execution.router import route_tasks

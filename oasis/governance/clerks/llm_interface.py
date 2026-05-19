@@ -5,15 +5,16 @@ Provides:
 - MockLLM: canned-response implementation for deterministic tests
 - LLMError, LLMTimeoutError, LLMRateLimitError: error hierarchy
 """
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any
 
 
 # ---------------------------------------------------------------------------
 # Error hierarchy
 # ---------------------------------------------------------------------------
+
 
 class LLMError(Exception):
     """Base error for LLM operations."""
@@ -30,6 +31,7 @@ class LLMRateLimitError(LLMError):
 # ---------------------------------------------------------------------------
 # Abstract interface
 # ---------------------------------------------------------------------------
+
 
 class LLMInterface(ABC):
     """Protocol for LLM calls used by Layer 2 reasoning."""
@@ -48,6 +50,7 @@ class LLMInterface(ABC):
 # ---------------------------------------------------------------------------
 # Mock implementation (for testing — no real API calls)
 # ---------------------------------------------------------------------------
+
 
 class MockLLM(LLMInterface):
     """Mock LLM that returns canned responses based on prompt keywords.

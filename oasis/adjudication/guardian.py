@@ -1,4 +1,5 @@
 """Guardian — alert pipeline for output validation failures and anomalies."""
+
 from __future__ import annotations
 
 import sqlite3
@@ -59,7 +60,9 @@ class Guardian:
         task_id = validation_result["task_id"]
 
         if not validation_result.get("schema_valid", True):
-            return self._emit_alert(task_id, "schema_failure", details="Schema validation failed")
+            return self._emit_alert(
+                task_id, "schema_failure", details="Schema validation failed"
+            )
 
         if not validation_result.get("timeout_valid", True):
             return self._emit_alert(task_id, "timeout", details="Timeout exceeded")

@@ -1,4 +1,5 @@
 """P6 — Test Codifier.verify_deployment."""
+
 from pathlib import Path
 
 from oasis.governance.clerks.codifier import Codifier
@@ -22,7 +23,10 @@ def test_matching_spec_passes(governance_db: Path):
     cod = Codifier(str(governance_db), "did:oasis:clerk-codifier")
     spec = _make_spec()
     deployed = {
-        "collaboration_contract_spec": {"session_id": "sess-deploy", "total_budget": 100},
+        "collaboration_contract_spec": {
+            "session_id": "sess-deploy",
+            "total_budget": 100,
+        },
         "guardian_module_spec": {"budget_enforcement": True},
         "verification_module_spec": {"code_hash_verification": True},
         "gate_module_spec": {"approval_required": True},
@@ -38,7 +42,10 @@ def test_mismatched_param_fails(governance_db: Path):
     cod = Codifier(str(governance_db), "did:oasis:clerk-codifier")
     spec = _make_spec()
     deployed = {
-        "collaboration_contract_spec": {"session_id": "sess-deploy", "total_budget": 999},
+        "collaboration_contract_spec": {
+            "session_id": "sess-deploy",
+            "total_budget": 999,
+        },
         "guardian_module_spec": {"budget_enforcement": True},
         "verification_module_spec": {"code_hash_verification": True},
         "gate_module_spec": {"approval_required": True},
@@ -55,7 +62,10 @@ def test_missing_field_fails(governance_db: Path):
     cod = Codifier(str(governance_db), "did:oasis:clerk-codifier")
     spec = _make_spec()
     deployed = {
-        "collaboration_contract_spec": {"session_id": "sess-deploy", "total_budget": 100},
+        "collaboration_contract_spec": {
+            "session_id": "sess-deploy",
+            "total_budget": 100,
+        },
         # Missing guardian_module_spec
         "verification_module_spec": {"code_hash_verification": True},
         "gate_module_spec": {"approval_required": True},

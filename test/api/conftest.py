@@ -3,11 +3,10 @@
 Provides a FastAPI ``TestClient`` wired to the Mitosis-OASIS app with
 an in-memory database, plus governance-specific helpers.
 """
+
 from __future__ import annotations
 
-import json
 import sqlite3
-import tempfile
 from pathlib import Path
 
 import pytest
@@ -15,11 +14,6 @@ from fastapi.testclient import TestClient
 
 from oasis.api import app
 from oasis.governance import endpoints as gov_ep
-from oasis.governance.schema import (
-    create_governance_tables,
-    seed_clerks,
-    seed_constitution,
-)
 
 
 @pytest.fixture()
@@ -65,7 +59,7 @@ def registered_producers(gov_db: Path) -> list[dict]:
             "INSERT OR IGNORE INTO agent_registry "
             "(agent_did, agent_type, display_name, human_principal, reputation_score) "
             "VALUES (?, 'producer', ?, ?, 0.5)",
-            (p["agent_did"], p["display_name"], f"human@example.com"),
+            (p["agent_did"], p["display_name"], "human@example.com"),
         )
     conn.commit()
     conn.close()
@@ -75,6 +69,7 @@ def registered_producers(gov_db: Path) -> list[dict]:
 # ---------------------------------------------------------------------------
 # Helper: create a session and advance to a target state
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture()
 def session_factory(client, registered_producers, gov_db):
@@ -144,7 +139,11 @@ def session_factory(client, registered_producers, gov_db):
         conn.close()
 
         # Transition to PROPOSAL_OPEN via state machine
-        from oasis.governance.state_machine import LegislativeState, LegislativeStateMachine
+        from oasis.governance.state_machine import (
+            LegislativeState,
+            LegislativeStateMachine,
+        )
+
         sm = LegislativeStateMachine(session_id, str(gov_db))
         result = sm.transition(LegislativeState.PROPOSAL_OPEN)
         assert result.allowed, result.reason
@@ -155,10 +154,22 @@ def session_factory(client, registered_producers, gov_db):
         # Submit a proposal — root with enough budget, child within budget
         dag_spec = {
             "nodes": [
-                {"node_id": "n1", "label": "Task A", "service_id": "svc-a",
-                 "pop_tier": 1, "token_budget": 200.0, "timeout_ms": 60000},
-                {"node_id": "n2", "label": "Task B", "service_id": "svc-b",
-                 "pop_tier": 1, "token_budget": 100.0, "timeout_ms": 60000},
+                {
+                    "node_id": "n1",
+                    "label": "Task A",
+                    "service_id": "svc-a",
+                    "pop_tier": 1,
+                    "token_budget": 200.0,
+                    "timeout_ms": 60000,
+                },
+                {
+                    "node_id": "n2",
+                    "label": "Task B",
+                    "service_id": "svc-b",
+                    "pop_tier": 1,
+                    "token_budget": 100.0,
+                    "timeout_ms": 60000,
+                },
             ],
             "edges": [{"from_node_id": "n1", "to_node_id": "n2"}],
         }

@@ -1,4 +1,5 @@
 """Tests for topological sort."""
+
 import pytest
 
 from oasis.governance.dag import (
@@ -12,8 +13,11 @@ from oasis.governance.dag import (
 
 def _node(nid: str) -> DAGNode:
     return DAGNode(
-        node_id=nid, label=nid, service_id=f"svc-{nid}",
-        token_budget=100.0, timeout_ms=60000,
+        node_id=nid,
+        label=nid,
+        service_id=f"svc-{nid}",
+        token_budget=100.0,
+        timeout_ms=60000,
     )
 
 

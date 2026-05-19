@@ -1,4 +1,5 @@
 """Tests for Treasury accounting operations."""
+
 from __future__ import annotations
 
 from pathlib import Path

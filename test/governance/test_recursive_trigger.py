@@ -1,4 +1,5 @@
 """P9 tests — trigger_child_session basics."""
+
 from __future__ import annotations
 
 import json
@@ -10,16 +11,12 @@ from oasis.governance.dag import (
     LeafNodeError,
     trigger_child_session,
 )
-from oasis.governance.schema import (
-    create_governance_tables,
-    seed_clerks,
-    seed_constitution,
-)
 
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _setup_parent_session(db_path, *, session_id="parent-1"):
     """Create a parent session with a 3-node DAG (root -> A, root -> B)."""
@@ -32,7 +29,9 @@ def _setup_parent_session(db_path, *, session_id="parent-1"):
         (session_id,),
     )
     # Proposal
-    dag_spec = json.dumps({"nodes": ["root", "A", "B"], "edges": [["root", "A"], ["root", "B"]]})
+    dag_spec = json.dumps(
+        {"nodes": ["root", "A", "B"], "edges": [["root", "A"], ["root", "B"]]}
+    )
     conn.execute(
         "INSERT INTO proposal "
         "(proposal_id, session_id, proposer_did, dag_spec, "
@@ -41,7 +40,11 @@ def _setup_parent_session(db_path, *, session_id="parent-1"):
         ("prop-1", session_id, "did:oasis:clerk-registrar", dag_spec, 1000.0, 60000),
     )
     # DAG nodes
-    for nid, label, budget in [("root", "Root", 500.0), ("A", "Task A", 200.0), ("B", "Task B", 300.0)]:
+    for nid, label, budget in [
+        ("root", "Root", 500.0),
+        ("A", "Task A", 200.0),
+        ("B", "Task B", 300.0),
+    ]:
         conn.execute(
             "INSERT INTO dag_node "
             "(node_id, proposal_id, label, service_id, pop_tier, "
@@ -65,6 +68,7 @@ def _setup_parent_session(db_path, *, session_id="parent-1"):
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
+
 
 class TestRecursiveTrigger:
     """trigger_child_session basic behaviour."""

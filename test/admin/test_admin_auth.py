@@ -16,6 +16,7 @@
 Covers _require_admin dependency — missing token (401), wrong token (403),
 correct token (201/200 pass-through).
 """
+
 from __future__ import annotations
 
 from pathlib import Path

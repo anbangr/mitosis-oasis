@@ -1,12 +1,12 @@
 """E2E recursive decomposition — parent DEPLOYED triggers child session."""
+
 from __future__ import annotations
 
-import sqlite3
 
 from oasis.governance.dag import trigger_child_session, get_session_tree
 from oasis.governance.state_machine import LegislativeState
 
-from .conftest import DEFAULT_DAG, drive_session_to_deployed
+from .conftest import drive_session_to_deployed
 
 
 def test_recursive_parent_child_deployed(e2e_db, producers):
@@ -31,10 +31,22 @@ def test_recursive_parent_child_deployed(e2e_db, producers):
     # Drive the child session to DEPLOYED using a sub-DAG
     child_dag = {
         "nodes": [
-            {"node_id": "child-a", "label": "Sub-task A", "service_id": "sub-svc-a",
-             "pop_tier": 1, "token_budget": 250.0, "timeout_ms": 60000},
-            {"node_id": "child-b", "label": "Sub-task B", "service_id": "sub-svc-b",
-             "pop_tier": 1, "token_budget": 200.0, "timeout_ms": 60000},
+            {
+                "node_id": "child-a",
+                "label": "Sub-task A",
+                "service_id": "sub-svc-a",
+                "pop_tier": 1,
+                "token_budget": 250.0,
+                "timeout_ms": 60000,
+            },
+            {
+                "node_id": "child-b",
+                "label": "Sub-task B",
+                "service_id": "sub-svc-b",
+                "pop_tier": 1,
+                "token_budget": 200.0,
+                "timeout_ms": 60000,
+            },
         ],
         "edges": [
             {"from_node_id": "child-a", "to_node_id": "child-b"},

@@ -1,7 +1,7 @@
 """P7 — Layer 2 determinism tests: L1 deterministic, L2 may vary."""
+
 from __future__ import annotations
 
-import pytest
 
 from oasis.governance.clerks.llm_interface import MockLLM
 from oasis.governance.clerks.registrar import Registrar
@@ -14,7 +14,9 @@ class TestLayer1Deterministic:
 
     def test_same_input_same_output(self, governance_db):
         registrar = Registrar(
-            governance_db, "did:mock:clerk-registrar", llm_enabled=False,
+            governance_db,
+            "did:mock:clerk-registrar",
+            llm_enabled=False,
         )
         registrar.open_session("sess-determ", 0.1)
 
@@ -30,6 +32,7 @@ class TestLayer1Deterministic:
 
         # Clean up so we can run the exact same input again
         import sqlite3
+
         conn = sqlite3.connect(str(governance_db))
         conn.execute(
             "DELETE FROM message_log WHERE sender_did = 'did:mock:producer-1' "
@@ -54,19 +57,27 @@ class TestLayer2MayVary:
         llm2 = MockLLM(default_response="Analysis version B — different perspective.")
 
         speaker1 = Speaker(
-            governance_db, "did:mock:clerk-speaker",
-            llm_enabled=True, llm=llm1,
+            governance_db,
+            "did:mock:clerk-speaker",
+            llm_enabled=True,
+            llm=llm1,
         )
         speaker2 = Speaker(
-            governance_db, "did:mock:clerk-speaker",
-            llm_enabled=True, llm=llm2,
+            governance_db,
+            "did:mock:clerk-speaker",
+            llm_enabled=True,
+            llm=llm2,
         )
 
         ctx = {
             "session_id": "sess-determ",
             "round_num": 1,
             "messages": [
-                {"agent_did": "did:mock:p1", "content": "I support", "position": "approve"},
+                {
+                    "agent_did": "did:mock:p1",
+                    "content": "I support",
+                    "position": "approve",
+                },
             ],
             "participant_dids": ["did:mock:p1"],
         }
@@ -88,8 +99,10 @@ class TestCombinedResultDocumented:
     def test_combined_result(self, governance_db):
         llm = MockLLM(default_response="Advisory assessment.")
         registrar = Registrar(
-            governance_db, "did:mock:clerk-registrar",
-            llm_enabled=True, llm=llm,
+            governance_db,
+            "did:mock:clerk-registrar",
+            llm_enabled=True,
+            llm=llm,
         )
         registrar.open_session("sess-combined", 0.1)
 
@@ -102,14 +115,19 @@ class TestCombinedResultDocumented:
         )
 
         l1 = registrar.layer1_process(attestation)
-        l2 = registrar.layer2_reason({
-            "session_id": "sess-combined",
-            "agent_did": "did:mock:producer-1",
-            "recent_registrations": [
-                {"agent_did": "did:mock:producer-1", "timestamp": "2026-01-01T00:00:00Z",
-                 "display_name": "Producer 1"}
-            ],
-        })
+        l2 = registrar.layer2_reason(
+            {
+                "session_id": "sess-combined",
+                "agent_did": "did:mock:producer-1",
+                "recent_registrations": [
+                    {
+                        "agent_did": "did:mock:producer-1",
+                        "timestamp": "2026-01-01T00:00:00Z",
+                        "display_name": "Producer 1",
+                    }
+                ],
+            }
+        )
 
         combined = {
             "decision": l1["passed"],

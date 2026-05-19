@@ -1,11 +1,10 @@
 """E2E: 50 agents, 20 tasks — verify no deadlocks or data races."""
+
 from __future__ import annotations
 
 import copy
-import json
 import sqlite3
 import uuid
-from pathlib import Path
 
 from oasis.config import PlatformConfig
 from oasis.governance.clerks.codifier import Codifier
@@ -45,7 +44,8 @@ SCALE_DAG = {
             "token_budget": 5000.0,
             "timeout_ms": 60000,
         },
-    ] + [
+    ]
+    + [
         {
             "node_id": f"scale-task-{i}",
             "label": f"Task {i}",
@@ -210,7 +210,8 @@ def test_scale_50_agents_20_tasks(tmp_path):
     conn.execute("PRAGMA foreign_keys = ON")
     conn.row_factory = sqlite3.Row
     approved_bids = [
-        dict(b) for b in conn.execute(
+        dict(b)
+        for b in conn.execute(
             "SELECT * FROM bid WHERE session_id = ? AND status = 'approved'",
             (sid,),
         ).fetchall()

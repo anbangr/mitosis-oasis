@@ -1,4 +1,5 @@
 """E2E happy path — full 6-stage legislative pipeline → DEPLOYED."""
+
 from __future__ import annotations
 
 from oasis.governance.state_machine import LegislativeState

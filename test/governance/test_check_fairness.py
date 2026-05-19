@@ -1,4 +1,5 @@
 """check_fairness integration tests — 3 tests."""
+
 from oasis.governance.fairness import check_fairness
 
 

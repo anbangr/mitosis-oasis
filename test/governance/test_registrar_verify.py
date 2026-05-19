@@ -1,4 +1,5 @@
 """P6 — Test Registrar.verify_identity."""
+
 import sqlite3
 from pathlib import Path
 

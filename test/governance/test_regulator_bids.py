@@ -1,4 +1,5 @@
 """P6 — Test Regulator.receive_bid."""
+
 import sqlite3
 from pathlib import Path
 
@@ -86,7 +87,9 @@ def test_unregistered_service_rejected(governance_db: Path):
     bid = _make_bid(service_id="wrong-service")
     result = reg.receive_bid("sess-bid", bid)
     assert result["passed"] is False
-    assert any("service" in e.lower() or "mismatch" in e.lower() for e in result["errors"])
+    assert any(
+        "service" in e.lower() or "mismatch" in e.lower() for e in result["errors"]
+    )
 
 
 def test_code_hash_mismatch(governance_db: Path):

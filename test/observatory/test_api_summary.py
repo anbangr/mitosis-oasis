@@ -1,4 +1,5 @@
 """Tests for the observatory summary endpoint."""
+
 from __future__ import annotations
 
 import pytest

@@ -1,4 +1,5 @@
 """Tests for SettlementCalculator successful settlement flow."""
+
 from __future__ import annotations
 
 import sqlite3
@@ -81,4 +82,6 @@ def test_balance_updated(
     conn.close()
 
     assert after["total_balance"] == pytest.approx(initial_total + result.final_reward)
-    assert after["available_balance"] == pytest.approx(initial_available + result.final_reward)
+    assert after["available_balance"] == pytest.approx(
+        initial_available + result.final_reward
+    )

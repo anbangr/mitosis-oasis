@@ -1,4 +1,5 @@
 """Observatory event types, dataclass, and serialization."""
+
 from __future__ import annotations
 
 import json

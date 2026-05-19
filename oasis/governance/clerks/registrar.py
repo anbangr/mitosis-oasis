@@ -256,7 +256,7 @@ class Registrar(BaseClerk):
             ).fetchone()[0]
 
             import math
-            required_producers = math.floor(threshold * total_producers)
+            required_producers = math.ceil(threshold * total_producers)
             if required_producers < 1:
                 required_producers = 1
 

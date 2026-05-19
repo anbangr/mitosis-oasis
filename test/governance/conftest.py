@@ -78,7 +78,7 @@ SAMPLE_CLERK_AGENTS = [
 SAMPLE_CONSTITUTION_PARAMS = {
     "budget_cap_max": 1_000_000.0,
     "budget_cap_min": 1.0,
-    "quorum_threshold": 0.51,
+    "quorum_threshold": 0.60,
     "max_deliberation_rounds": 3,
     "reputation_floor": 0.1,
     "fairness_hhi_threshold": 0.25,

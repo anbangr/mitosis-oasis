@@ -11,7 +11,7 @@ from oasis.governance.schema import create_governance_tables, seed_constitution
 EXPECTED_PARAMS = {
     "budget_cap_max": 1_000_000.0,
     "budget_cap_min": 1.0,
-    "quorum_threshold": 0.51,
+    "quorum_threshold": 0.60,
     "max_deliberation_rounds": 3.0,
     "reputation_floor": 0.1,
     "fairness_hhi_threshold": 0.25,

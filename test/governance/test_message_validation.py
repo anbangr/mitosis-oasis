@@ -60,6 +60,8 @@ def test_msg4_rejects_invalid_pop_tier():
             proposed_code_hash="hash-abc",
             stake_amount=10.0,
             estimated_latency_ms=5000,
+            quoted_price=10.0,
+            capability_match=0.8,
             pop_tier_acceptance=5,  # out of range
         )
 

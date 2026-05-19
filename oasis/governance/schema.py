@@ -322,6 +322,18 @@ def create_governance_tables(db_path: Union[str, Path]) -> None:
         conn.execute("PRAGMA foreign_keys = ON")
         conn.executescript(_DDL)
         conn.commit()
+
+        # Idempotent column additions for bid-scoring formula (spec §1.2)
+        for column_sql in [
+            "ALTER TABLE bid ADD COLUMN quoted_price REAL NOT NULL DEFAULT 0.0",
+            "ALTER TABLE bid ADD COLUMN capability_match REAL NOT NULL DEFAULT 0.0",
+        ]:
+            try:
+                conn.execute(column_sql)
+                conn.commit()
+            except sqlite3.OperationalError:
+                # Column already exists — second invocation is a no-op
+                pass
     finally:
         conn.close()
 

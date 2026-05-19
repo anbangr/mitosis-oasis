@@ -192,6 +192,8 @@ def test_scale_50_agents_20_tasks(tmp_path):
             proposed_code_hash="scale-hash-" + node["node_id"],
             stake_amount=0.5,
             estimated_latency_ms=5000,
+            quoted_price=0.5,
+            capability_match=bidder.get("reputation_score", 0.5),
             pop_tier_acceptance=1,
         )
         bid_result = regulator.receive_bid(sid, bid)

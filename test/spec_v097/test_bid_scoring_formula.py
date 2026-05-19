@@ -215,6 +215,7 @@ def _add_bid_with_fields(
     stake: float,
     quoted_price: float,
     capability_match: float,
+    session_id: str = "sess-eval",
 ):
     conn = sqlite3.connect(str(db_path))
     conn.execute("PRAGMA foreign_keys = ON")
@@ -223,8 +224,8 @@ def _add_bid_with_fields(
         "(bid_id, session_id, task_node_id, bidder_did, service_id, "
         "proposed_code_hash, stake_amount, estimated_latency_ms, "
         "pop_tier_acceptance, status, quoted_price, capability_match) "
-        "VALUES (?, 'sess-eval', ?, ?, 'svc', 'hash12345678', ?, 5000, 1, 'pending', ?, ?)",
-        (bid_id, node_id, bidder_did, stake, quoted_price, capability_match),
+        "VALUES (?, ?, ?, ?, 'svc', 'hash12345678', ?, 5000, 1, 'pending', ?, ?)",
+        (bid_id, session_id, node_id, bidder_did, stake, quoted_price, capability_match),
     )
     conn.commit()
     conn.close()
@@ -398,10 +399,12 @@ def test_t8_evaluate_reads_real_budget_column(tmp_path: Path):
     _add_bid_with_fields(
         db_path, "bid-a", "node-a", "did:mock:bidder-1",
         stake=1.0, quoted_price=250.0, capability_match=1.0,
+        session_id="sess-budget",
     )
     _add_bid_with_fields(
         db_path, "bid-b", "node-b", "did:mock:bidder-1",
         stake=1.0, quoted_price=250.0, capability_match=1.0,
+        session_id="sess-budget",
     )
 
     result = reg.evaluate_bids("sess-budget")
@@ -493,7 +496,7 @@ def test_evaluate_bids_uncovered_nodes_still_critical(tmp_path: Path):
     reg = _seed_db_for_evaluate(db_path, num_nodes=2)
     # Only bid on node-1
     _add_bid_with_fields(
-        db_path, "bid-1", "node-1", "did:mock:bidder-1",
+        db_path, "bid-1", "node-1", "did:mock:bidder-a",
         stake=1.0, quoted_price=100.0, capability_match=1.0,
     )
     result = reg.evaluate_bids("sess-eval")

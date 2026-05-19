@@ -45,6 +45,8 @@ def _make_bid(**overrides) -> TaskBid:
         proposed_code_hash="a1b2c3d4e5f6g7h8",
         stake_amount=1.0,
         estimated_latency_ms=5000,
+        quoted_price=1.0,
+        capability_match=0.5,
         pop_tier_acceptance=2,
     )
     defaults.update(overrides)

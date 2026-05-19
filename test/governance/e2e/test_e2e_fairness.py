@@ -96,7 +96,9 @@ def test_monopolist_bid_rejected(e2e_db, producers):
             bidder_did=monopolist["agent_did"],
             service_id=node["service_id"],
             proposed_code_hash="abcdef1234567890", stake_amount=0.9,
-            estimated_latency_ms=5000, pop_tier_acceptance=1,
+            estimated_latency_ms=5000, quoted_price=0.9,
+            capability_match=1.0,
+            pop_tier_acceptance=1,
         )
         regulator.receive_bid(sid, bid)
 
@@ -108,7 +110,9 @@ def test_monopolist_bid_rejected(e2e_db, producers):
             bidder_did=other_bidder["agent_did"],
             service_id=node["service_id"],
             proposed_code_hash="abcdef1234567890", stake_amount=0.2,
-            estimated_latency_ms=5000, pop_tier_acceptance=1,
+            estimated_latency_ms=5000, quoted_price=0.2,
+            capability_match=0.1,
+            pop_tier_acceptance=1,
         )
         regulator.receive_bid(sid, bid)
 

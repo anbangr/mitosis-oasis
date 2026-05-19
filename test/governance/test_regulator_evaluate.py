@@ -40,16 +40,20 @@ def _setup(governance_db: Path, num_nodes: int = 2, num_bidders: int = 2) -> Reg
     return reg
 
 
-def _add_bid(governance_db: Path, bid_id: str, node_id: str, bidder_did: str, stake: float = 1.0):
+def _add_bid(governance_db: Path, bid_id: str, node_id: str, bidder_did: str, stake: float = 1.0, quoted_price: float | None = None, capability_match: float | None = None):
     conn = sqlite3.connect(str(governance_db))
     conn.execute("PRAGMA foreign_keys = ON")
+    # Default new fields to stake/reputation for backward compatibility in tests
+    # that just need "a bid wins"
+    qp = quoted_price if quoted_price is not None else stake
+    cm = capability_match if capability_match is not None else 0.5
     conn.execute(
         "INSERT INTO bid "
         "(bid_id, session_id, task_node_id, bidder_did, service_id, "
         "proposed_code_hash, stake_amount, estimated_latency_ms, "
-        "pop_tier_acceptance, status) "
-        "VALUES (?, 'sess-eval', ?, ?, 'svc', 'hash12345678', ?, 5000, 1, 'pending')",
-        (bid_id, node_id, bidder_did, stake),
+        "pop_tier_acceptance, status, quoted_price, capability_match) "
+        "VALUES (?, 'sess-eval', ?, ?, 'svc', 'hash12345678', ?, 5000, 1, 'pending', ?, ?)",
+        (bid_id, node_id, bidder_did, stake, qp, cm),
     )
     conn.commit()
     conn.close()

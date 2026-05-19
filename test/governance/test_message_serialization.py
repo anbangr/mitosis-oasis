@@ -32,7 +32,9 @@ def test_json_round_trip():
         TaskBid(
             session_id="s1", task_node_id="n1", bidder_did="did:mock:p2",
             service_id="svc1", proposed_code_hash="hash1",
-            stake_amount=5.0, estimated_latency_ms=2000, pop_tier_acceptance=1,
+            stake_amount=5.0, estimated_latency_ms=2000,
+            quoted_price=5.0, capability_match=0.8,
+            pop_tier_acceptance=1,
         ),
         RegulatoryDecision(
             session_id="s1", approved_bids=["b1"], rejected_bids=[],

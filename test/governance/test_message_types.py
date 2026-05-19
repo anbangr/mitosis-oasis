@@ -64,6 +64,8 @@ def test_msg4_task_bid():
         proposed_code_hash="sha256:abc123",
         stake_amount=10.0,
         estimated_latency_ms=5000,
+        quoted_price=10.0,
+        capability_match=0.8,
         pop_tier_acceptance=2,
     )
     assert msg.msg_type == MessageType.TASK_BID

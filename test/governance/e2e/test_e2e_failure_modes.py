@@ -191,7 +191,9 @@ class TestFailureModes:
             session_id=sid, task_node_id="n1",
             bidder_did=producers[0]["agent_did"], service_id="s1",
             proposed_code_hash="abcdef1234567890", stake_amount=0.5,
-            estimated_latency_ms=5000, pop_tier_acceptance=1,
+            estimated_latency_ms=5000, quoted_price=0.5,
+            capability_match=producers[0].get("reputation_score", 0.5),
+            pop_tier_acceptance=1,
         )
         regulator.receive_bid(sid, bid)
 
@@ -245,7 +247,9 @@ class TestFailureModes:
                 bidder_did=producers[0]["agent_did"],
                 service_id=node["service_id"],
                 proposed_code_hash="abcdef1234567890", stake_amount=0.5,
-                estimated_latency_ms=5000, pop_tier_acceptance=1,
+                estimated_latency_ms=5000, quoted_price=0.5,
+                capability_match=producers[0].get("reputation_score", 0.5),
+                pop_tier_acceptance=1,
             )
             regulator.receive_bid(sid, bid)
 
@@ -338,7 +342,9 @@ class TestFailureModes:
                 bidder_did=producers[idx % len(producers)]["agent_did"],
                 service_id=node["service_id"],
                 proposed_code_hash="abcdef1234567890", stake_amount=0.5,
-                estimated_latency_ms=5000, pop_tier_acceptance=1,
+                estimated_latency_ms=5000, quoted_price=0.5,
+                capability_match=producers[idx % len(producers)].get("reputation_score", 0.5),
+                pop_tier_acceptance=1,
             )
             regulator_clerk.receive_bid(sid, bid)
 
@@ -415,7 +421,9 @@ class TestFailureModes:
                     bidder_did=producers[idx % len(producers)]["agent_did"],
                     service_id=svc_id,
                     proposed_code_hash="abcdef1234567890", stake_amount=0.5,
-                    estimated_latency_ms=5000, pop_tier_acceptance=1,
+                    estimated_latency_ms=5000, quoted_price=0.5,
+                    capability_match=producers[idx % len(producers)].get("reputation_score", 0.5),
+                    pop_tier_acceptance=1,
                 )
                 regulator.receive_bid(sid, bid)
 

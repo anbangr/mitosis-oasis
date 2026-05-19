@@ -113,6 +113,8 @@ class TaskBid(BaseModel):
     proposed_code_hash: str = Field(..., min_length=1)
     stake_amount: float = Field(..., ge=0)
     estimated_latency_ms: int = Field(..., gt=0)
+    quoted_price: float = Field(..., ge=0)
+    capability_match: float = Field(..., ge=0.0, le=1.0)
     pop_tier_acceptance: int = Field(..., ge=1, le=3)
     timestamp: datetime = Field(default_factory=_utcnow)
 

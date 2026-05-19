@@ -125,6 +125,8 @@ def test_full_pipeline_via_http(http_env):
                 "proposed_code_hash": "abcdef1234567890",
                 "stake_amount": 0.5,
                 "estimated_latency_ms": 5000,
+                "quoted_price": 0.5,
+                "capability_match": 0.5,
                 "pop_tier_acceptance": 1,
             },
         )

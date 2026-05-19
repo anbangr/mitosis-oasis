@@ -16,6 +16,8 @@ def test_submit_bid(client, session_factory):
             "stake_amount": 0.5,
             "estimated_latency_ms": 5000,
             "pop_tier_acceptance": 1,
+            "quoted_price": 1.0,
+            "capability_match": 0.9,
         },
     )
     assert resp.status_code == 201
@@ -39,6 +41,8 @@ def test_list_bids(client, session_factory):
             "stake_amount": 0.3,
             "estimated_latency_ms": 3000,
             "pop_tier_acceptance": 1,
+            "quoted_price": 1.2,
+            "capability_match": 0.85,
         },
     )
 
@@ -62,6 +66,8 @@ def test_invalid_bid_400(client, session_factory):
             "stake_amount": 0.5,
             "estimated_latency_ms": 5000,
             "pop_tier_acceptance": 1,
+            "quoted_price": 1.0,
+            "capability_match": 0.9,
         },
     )
     assert resp.status_code == 400
@@ -81,6 +87,8 @@ def test_state_gate_bidding(client, session_factory):
             "stake_amount": 0.5,
             "estimated_latency_ms": 5000,
             "pop_tier_acceptance": 1,
+            "quoted_price": 1.0,
+            "capability_match": 0.9,
         },
     )
     assert resp.status_code == 409

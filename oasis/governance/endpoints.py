@@ -172,6 +172,8 @@ class BidBody(BaseModel):
     proposed_code_hash: str = Field(..., min_length=1)
     stake_amount: float = Field(..., ge=0)
     estimated_latency_ms: int = Field(..., gt=0)
+    quoted_price: float = Field(..., ge=0)
+    capability_match: float = Field(..., ge=0.0, le=1.0)
     pop_tier_acceptance: int = Field(..., ge=1, le=3)
 
 
@@ -567,6 +569,8 @@ async def submit_bid(session_id: str, body: BidBody):
         proposed_code_hash=body.proposed_code_hash,
         stake_amount=body.stake_amount,
         estimated_latency_ms=body.estimated_latency_ms,
+        quoted_price=body.quoted_price,
+        capability_match=body.capability_match,
         pop_tier_acceptance=body.pop_tier_acceptance,
     )
     result = regulator.receive_bid(session_id, bid)

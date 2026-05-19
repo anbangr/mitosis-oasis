@@ -60,6 +60,8 @@ def test_messages_filterable_by_type(governance_db: Path):
         proposed_code_hash="hash-abc",
         stake_amount=5.0,
         estimated_latency_ms=3000,
+        quoted_price=5.0,
+        capability_match=0.8,
         pop_tier_acceptance=1,
     )
 
@@ -104,6 +106,8 @@ def test_messages_chronological_order(governance_db: Path):
         proposed_code_hash="hash-xyz",
         stake_amount=8.0,
         estimated_latency_ms=4000,
+        quoted_price=8.0,
+        capability_match=0.8,
         pop_tier_acceptance=2,
     )
 

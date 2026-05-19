@@ -193,6 +193,8 @@ def session_factory(client, registered_producers, gov_db):
                     "stake_amount": 0.5,
                     "estimated_latency_ms": 5000,
                     "pop_tier_acceptance": 1,
+                    "quoted_price": 1.0,
+                    "capability_match": 0.9,
                 },
             )
             assert resp.status_code == 201, resp.text

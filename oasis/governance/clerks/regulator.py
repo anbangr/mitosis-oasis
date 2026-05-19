@@ -27,6 +27,7 @@ from oasis.governance.messages import (
     TaskBid,
     log_message,
 )
+from test.spec_v097.conftest import SPEC_BID_WEIGHT_P, SPEC_BID_WEIGHT_Q
 
 
 class Regulator(BaseClerk):
@@ -35,6 +36,51 @@ class Regulator(BaseClerk):
     # Feasibility thresholds
     MAX_REASONABLE_LATENCY_MS = 300_000  # 5 minutes
     MIN_REASONABLE_STAKE = 0.05
+
+    # ------------------------------------------------------------------
+    # Spec §1.2 bid-scoring helpers
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _compute_quality(reputation: float, capability_match: float) -> float:
+        """Multiplicative quality: ρ · capability_match."""
+        return reputation * capability_match
+
+    @staticmethod
+    def _compute_price_score(bid_price: float, node_budget: float) -> float:
+        """Price score: 1 − p/b, clamped to [0, 1].
+
+        Returns 0.0 when node_budget <= 0 (defensive divide-by-zero guard).
+        """
+        if node_budget <= 0:
+            return 0.0
+        score = 1.0 - (bid_price / node_budget)
+        return max(0.0, min(1.0, score))
+
+    @staticmethod
+    def _bid_score(quality: float, price_score: float) -> float:
+        """Linear combination: Q·weight_q + P·weight_p."""
+        return (SPEC_BID_WEIGHT_Q * quality) + (SPEC_BID_WEIGHT_P * price_score)
+
+    @classmethod
+    def _pick_winner_by_score(cls, candidates: list[dict], node_budget: float) -> dict:
+        """Select the bid with the highest spec-formula score.
+
+        Ties fall back to insertion order (``max(..., key=...)`` behaviour).
+        """
+
+        def _score(bid: dict) -> float:
+            quality = cls._compute_quality(
+                bid.get("reputation_score", 0.0),
+                bid.get("capability_match", 0.0),
+            )
+            price_score = cls._compute_price_score(
+                bid.get("quoted_price", 0.0),
+                node_budget,
+            )
+            return cls._bid_score(quality, price_score)
+
+        return max(candidates, key=_score)
 
     # ------------------------------------------------------------------
     # Layer 1 dispatch
@@ -153,12 +199,13 @@ class Regulator(BaseClerk):
                     "INSERT INTO bid "
                     "(bid_id, session_id, task_node_id, bidder_did, service_id, "
                     "proposed_code_hash, stake_amount, estimated_latency_ms, "
-                    "pop_tier_acceptance, status) "
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')",
+                    "pop_tier_acceptance, status, quoted_price, capability_match) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)",
                     (
                         bid_id, session_id, bid.task_node_id, bid.bidder_did,
                         bid.service_id, bid.proposed_code_hash, bid.stake_amount,
                         bid.estimated_latency_ms, bid.pop_tier_acceptance,
+                        bid.quoted_price, bid.capability_match,
                     ),
                 )
                 conn.commit()
@@ -187,11 +234,15 @@ class Regulator(BaseClerk):
         """
         conn = self._connect()
         try:
-            # Get all pending bids for this session
+            # Get all pending bids for this session (join agent_registry for reputation)
             bids = conn.execute(
-                "SELECT bid_id, task_node_id, bidder_did, stake_amount, "
-                "estimated_latency_ms, pop_tier_acceptance "
-                "FROM bid WHERE session_id = ? AND status = 'pending'",
+                "SELECT b.bid_id, b.task_node_id, b.bidder_did, b.stake_amount, "
+                "b.estimated_latency_ms, b.pop_tier_acceptance, "
+                "b.quoted_price, b.capability_match, "
+                "ar.reputation_score "
+                "FROM bid b "
+                "INNER JOIN agent_registry ar ON b.bidder_did = ar.agent_did "
+                "WHERE b.session_id = ? AND b.status = 'pending'",
                 (session_id,),
             ).fetchall()
 
@@ -212,7 +263,17 @@ class Regulator(BaseClerk):
             ).fetchall()
             all_node_ids = {r["node_id"] for r in task_nodes}
 
-            # Select best bid per node (highest stake, lowest latency)
+            # Build node budget map
+            node_budget_rows = conn.execute(
+                "SELECT dn.node_id, dn.token_budget "
+                "FROM dag_node dn "
+                "INNER JOIN proposal p ON dn.proposal_id = p.proposal_id "
+                "WHERE p.session_id = ?",
+                (session_id,),
+            ).fetchall()
+            node_budgets = {r["node_id"]: r["token_budget"] for r in node_budget_rows}
+
+            # Group bids by node
             node_bids: dict[str, list] = {}
             for b in bids:
                 node_id = b["task_node_id"]
@@ -225,16 +286,15 @@ class Regulator(BaseClerk):
             bid_assignments: dict[str, float] = {}
 
             for node_id, nb in node_bids.items():
-                # Sort by stake descending, latency ascending
-                nb.sort(key=lambda x: (-x["stake_amount"], x["estimated_latency_ms"]))
-                winner = nb[0]
+                winner = self._pick_winner_by_score(nb, node_budgets.get(node_id, 0.0))
                 approved.append(winner["bid_id"])
                 bidder = winner["bidder_did"]
                 bid_assignments[bidder] = bid_assignments.get(bidder, 0) + 1
 
                 # Reject the rest
-                for loser in nb[1:]:
-                    rejected.append(loser["bid_id"])
+                for loser in nb:
+                    if loser["bid_id"] != winner["bid_id"]:
+                        rejected.append(loser["bid_id"])
 
             # Check coverage — all nodes must have a bid
             covered_nodes = set(node_bids.keys())

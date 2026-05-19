@@ -85,10 +85,14 @@ class SanctionEngine:
         reason: str,
         db_path: Union[str, Path],
     ) -> AdjudicationDecision:
-        """Deduct from locked_stake and add slash_proceeds to treasury.
+        """Deduct from locked_stake and split slash proceeds 50/50 between
+        treasury and insurance_pool.
 
         If the agent's locked_stake is less than ``amount``, a partial
         slash is performed (whatever is available).
+
+        Adjudicator-stake slashes (impeachment) are handled separately in
+        Bundle 2 and remain 100% → treasury per spec §2.2.
         """
         conn = self._connect(db_path)
         try:
@@ -100,6 +104,16 @@ class SanctionEngine:
             locked = bal["locked_stake"] if bal else 0.0
             actual_slash = min(amount, locked)
 
+            # Record decision FIRST so decision_id is known for ledger entries
+            decision = self._record_decision(
+                conn,
+                agent_did=agent_did,
+                decision_type="slash",
+                severity="CRITICAL",
+                reason=f"{reason} (slashed {actual_slash:.2f})",
+                layer1_result=f"slashed_{actual_slash:.2f}",
+            )
+
             if actual_slash > 0:
                 # Deduct from agent's locked stake and total balance
                 conn.execute(
@@ -110,24 +124,30 @@ class SanctionEngine:
                     (actual_slash, actual_slash, agent_did),
                 )
 
+                # Split 50/50 between treasury and insurance_pool
+                treasury_share = actual_slash * 0.5
+                insurance_share = actual_slash - treasury_share
+
                 # Add to treasury as slash_proceeds
                 treasury_balance = self._get_treasury_balance(conn)
-                new_balance = treasury_balance + actual_slash
+                new_treasury_balance = treasury_balance + treasury_share
                 conn.execute(
                     "INSERT INTO treasury "
-                    "(agent_did, entry_type, amount, balance_after) "
-                    "VALUES (?, 'slash_proceeds', ?, ?)",
-                    (agent_did, actual_slash, new_balance),
+                    "(agent_did, entry_type, amount, balance_after, decision_id) "
+                    "VALUES (?, 'slash_proceeds', ?, ?, ?)",
+                    (agent_did, treasury_share, new_treasury_balance, decision.decision_id),
                 )
 
-            decision = self._record_decision(
-                conn,
-                agent_did=agent_did,
-                decision_type="slash",
-                severity="CRITICAL",
-                reason=f"{reason} (slashed {actual_slash:.2f})",
-                layer1_result=f"slashed_{actual_slash:.2f}",
-            )
+                # Add to insurance_pool as slash_proceeds
+                insurance_balance = self._get_insurance_balance(conn)
+                new_insurance_balance = insurance_balance + insurance_share
+                conn.execute(
+                    "INSERT INTO insurance_pool "
+                    "(agent_did, entry_type, amount, balance_after, decision_id) "
+                    "VALUES (?, 'slash_proceeds', ?, ?, ?)",
+                    (agent_did, insurance_share, new_insurance_balance, decision.decision_id),
+                )
+
             conn.commit()
             return decision
         finally:
@@ -261,6 +281,14 @@ class SanctionEngine:
         """Compute current treasury balance from the ledger."""
         row = conn.execute(
             "SELECT balance_after FROM treasury ORDER BY entry_id DESC LIMIT 1"
+        ).fetchone()
+        return row["balance_after"] if row else 0.0
+
+    @staticmethod
+    def _get_insurance_balance(conn: sqlite3.Connection) -> float:
+        """Compute current insurance_pool balance from the ledger."""
+        row = conn.execute(
+            "SELECT balance_after FROM insurance_pool ORDER BY entry_id DESC LIMIT 1"
         ).fetchone()
         return row["balance_after"] if row else 0.0
 

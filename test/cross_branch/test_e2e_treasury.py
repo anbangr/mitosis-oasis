@@ -103,7 +103,7 @@ def test_treasury_balance_after_10_tasks(cross_db, producers):
 
     sanctions.slash_stake(agent_did, 5.0, "Test slash", db)
 
-    # Treasury should now include slash_proceeds
+    # Treasury should now include slash_proceeds (50/50 split, spec §8.5)
     summary_after = treasury.get_summary()
-    assert summary_after.inflows.get("slash_proceeds", 0) >= 5.0
+    assert summary_after.inflows.get("slash_proceeds", 0) >= 2.5
     assert summary_after.net_balance > summary.net_balance

@@ -85,7 +85,5 @@ def resolve(did: str) -> bytes:
             f"decoded body must be {_EXPECTED_LEN} bytes, got {len(decoded)}"
         )
     if decoded[:2] != _ED25519_PREFIX:
-        raise ValueError(
-            f"multicodec prefix must be 0xed01, got {decoded[:2].hex()}"
-        )
+        raise ValueError(f"multicodec prefix must be 0xed01, got {decoded[:2].hex()}")
     return decoded[2:]

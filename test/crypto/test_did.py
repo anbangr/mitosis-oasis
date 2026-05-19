@@ -47,7 +47,7 @@ def test_t2_multicodec_prefix_shape():
     d = did_from_pubkey(pub)
     assert d.startswith("did:key:z"), f"DID does not start with 'did:key:z': {d!r}"
     # Strip the multibase 'z' prefix to get the raw base58 string
-    fragment = d[len("did:key:z"):]
+    fragment = d[len("did:key:z") :]
     decoded = base58.b58decode(fragment)
     assert decoded[:2] == bytes([0xED, 0x01]), (
         f"multicodec prefix is {decoded[:2].hex()!r}, expected 'ed01'"

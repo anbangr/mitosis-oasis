@@ -200,6 +200,28 @@ class TestGuardIdentityToProposal:
         # 4/4 active producers attested = 100% ≥ 0.60
         assert result.allowed is True
 
+    def test_inactive_producer_cannot_supply_quorum(self, gov_db: Path, gov_conn: sqlite3.Connection):
+        """Inactive producer attestations must not make a failing quorum pass."""
+        session_id = "e2e-inactive-quorum"
+        dids = _register_producers(gov_db, 10)
+        conn = sqlite3.connect(str(gov_db))
+        conn.execute("PRAGMA foreign_keys = ON")
+        conn.execute(
+            "UPDATE agent_registry SET active = 0 WHERE agent_did = ?",
+            (dids[5],),
+        )
+        conn.commit()
+        conn.close()
+
+        _insert_session(gov_db, session_id)
+        _insert_attestations(gov_db, session_id, dids[:6])
+
+        result = _guard_identity_to_proposal(session_id, gov_conn)
+
+        # Only 5 of 9 active producers attested; inactive did[5] must not count.
+        assert result.allowed is False
+        assert "quorum" in result.reason.lower()
+
     def test_quorum_edge_exact_threshold(self, gov_db: Path, gov_conn: sqlite3.Connection):
         """Exactly 60% of 10 = 6 should clear the 0.60 threshold."""
         session_id = "e2e-edge"

@@ -108,15 +108,21 @@ def _guard_init_to_identity(session_id: str, conn: sqlite3.Connection, **ctx: An
 
 def _guard_identity_to_proposal(session_id: str, conn: sqlite3.Connection, **ctx: Any) -> GuardResult:
     """IDENTITY_VERIFICATION → PROPOSAL_OPEN: quorum of agents attested identity."""
+<<<<<<< HEAD
     # Check that enough agents have sent IDENTITY_ATTESTATION messages
+=======
+    # Check that enough active producers have sent canonical identity attestations.
+>>>>>>> da9c443 (fix(governance): exclude inactive/non-producer attestations from quorum)
     total = conn.execute(
         "SELECT COUNT(*) FROM agent_registry WHERE agent_type = 'producer' AND active = 1"
     ).fetchone()[0]
     if total == 0:
         return GuardResult(False, "No active producers")
     attested = conn.execute(
-        "SELECT COUNT(DISTINCT sender_did) FROM message_log "
-        "WHERE session_id = ? AND msg_type = 'IDENTITY_ATTESTATION'",
+        "SELECT COUNT(DISTINCT ml.sender_did) FROM message_log ml "
+        "INNER JOIN agent_registry ar ON ar.agent_did = ml.sender_did "
+        "WHERE ml.session_id = ? AND ml.msg_type = 'IDENTITY_ATTESTATION' "
+        "AND ar.agent_type = 'producer' AND ar.active = 1",
         (session_id,),
     ).fetchone()[0]
     # Read quorum threshold from constitution
@@ -134,6 +140,7 @@ def _guard_identity_to_proposal(session_id: str, conn: sqlite3.Connection, **ctx
         "SELECT COUNT(*) FROM agent_registry ar "
         "INNER JOIN message_log ml ON ar.agent_did = ml.sender_did "
         "WHERE ml.session_id = ? AND ml.msg_type = 'IDENTITY_ATTESTATION' "
+        "AND ar.agent_type = 'producer' AND ar.active = 1 "
         "AND ar.reputation_score < ?",
         (session_id, rep_floor),
     ).fetchone()[0]

@@ -70,13 +70,13 @@ def test_full_pipeline_via_http(http_env):
         )
         assert resp.status_code == 200, resp.text
 
-    # Insert IdentityVerificationResponse for guard
+    # Insert IDENTITY_ATTESTATION for guard
     conn = sqlite3.connect(str(db))
     conn.execute("PRAGMA foreign_keys = ON")
     for i in range(1, 6):
         conn.execute(
             "INSERT INTO message_log (session_id, msg_type, sender_did, payload) "
-            "VALUES (?, 'IdentityVerificationResponse', ?, '{}')",
+            "VALUES (?, 'IDENTITY_ATTESTATION', ?, '{}')",
             (session_id, f"did:http:producer-{i}"),
         )
     conn.commit()

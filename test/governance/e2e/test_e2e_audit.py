@@ -14,10 +14,10 @@ def test_message_log_complete_and_ordered(e2e_db, producers):
 
     messages = get_session_messages(e2e_db, result["session_id"])
 
-    # Extract protocol message types (exclude StateTransition and IdentityVerificationResponse)
+    # Extract protocol message types (exclude StateTransition)
     msg_types = [
         m["msg_type"] for m in messages
-        if m["msg_type"] not in ("StateTransition", "IdentityVerificationResponse")
+        if m["msg_type"] != "StateTransition"
     ]
 
     # Expected message order (some may repeat for multiple agents/nodes):

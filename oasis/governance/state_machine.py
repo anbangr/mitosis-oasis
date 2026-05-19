@@ -108,7 +108,7 @@ def _guard_init_to_identity(session_id: str, conn: sqlite3.Connection, **ctx: An
 
 def _guard_identity_to_proposal(session_id: str, conn: sqlite3.Connection, **ctx: Any) -> GuardResult:
     """IDENTITY_VERIFICATION → PROPOSAL_OPEN: quorum of agents attested identity."""
-    # Check that enough agents have sent IdentityVerificationResponse messages
+    # Check that enough agents have sent IDENTITY_ATTESTATION messages
     total = conn.execute(
         "SELECT COUNT(*) FROM agent_registry WHERE agent_type = 'producer' AND active = 1"
     ).fetchone()[0]
@@ -116,7 +116,7 @@ def _guard_identity_to_proposal(session_id: str, conn: sqlite3.Connection, **ctx
         return GuardResult(False, "No active producers")
     attested = conn.execute(
         "SELECT COUNT(DISTINCT sender_did) FROM message_log "
-        "WHERE session_id = ? AND msg_type = 'IdentityVerificationResponse'",
+        "WHERE session_id = ? AND msg_type = 'IDENTITY_ATTESTATION'",
         (session_id,),
     ).fetchone()[0]
     # Read quorum threshold from constitution
@@ -133,7 +133,7 @@ def _guard_identity_to_proposal(session_id: str, conn: sqlite3.Connection, **ctx
     below_floor = conn.execute(
         "SELECT COUNT(*) FROM agent_registry ar "
         "INNER JOIN message_log ml ON ar.agent_did = ml.sender_did "
-        "WHERE ml.session_id = ? AND ml.msg_type = 'IdentityVerificationResponse' "
+        "WHERE ml.session_id = ? AND ml.msg_type = 'IDENTITY_ATTESTATION' "
         "AND ar.reputation_score < ?",
         (session_id, rep_floor),
     ).fetchone()[0]

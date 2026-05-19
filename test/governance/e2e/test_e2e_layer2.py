@@ -114,7 +114,7 @@ class TestLayer2:
         for p in producers:
             conn.execute(
                 "INSERT INTO message_log (session_id, msg_type, sender_did, payload) "
-                "VALUES (?, 'IdentityVerificationResponse', ?, '{}')",
+                "VALUES (?, 'IDENTITY_ATTESTATION', ?, '{}')",
                 (sid, p["agent_did"]),
             )
         conn.commit()

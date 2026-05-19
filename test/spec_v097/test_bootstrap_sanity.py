@@ -18,7 +18,6 @@ T2  governance_db fixture seeds default constitution with required params.
 T3  adj_db fixture provisions empty adjudication schema tables.
 T4  Spec constants are importable by module path.
 """
-
 from __future__ import annotations
 
 import sqlite3
@@ -67,7 +66,9 @@ def test_t2_governance_db_seeds_constitution(governance_db: sqlite3.Connection):
     Fails (red) until the schema seeder is updated to include
     ``fairness_minimum``, ``protocol_fee_bps``, and ``reputation_alpha``.
     """
-    rows = governance_db.execute("SELECT param_name FROM constitution").fetchall()
+    rows = governance_db.execute(
+        "SELECT param_name FROM constitution"
+    ).fetchall()
     names = {r["param_name"] for r in rows}
     required = {
         "quorum_threshold",
@@ -76,7 +77,9 @@ def test_t2_governance_db_seeds_constitution(governance_db: sqlite3.Connection):
         "reputation_alpha",
     }
     missing = required - names
-    assert not missing, f"Constitution missing spec-required params: {sorted(missing)}"
+    assert not missing, (
+        f"Constitution missing spec-required params: {sorted(missing)}"
+    )
 
 
 # ---------------------------------------------------------------------------

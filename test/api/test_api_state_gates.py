@@ -1,4 +1,5 @@
 """P8.11 — State gate tests: endpoints reject calls in wrong state (409)."""
+
 from __future__ import annotations
 
 
@@ -31,10 +32,19 @@ def test_proposal_in_bidding_409(client, session_factory):
         f"/api/governance/sessions/{session_id}/proposals",
         json={
             "proposer_did": "did:mock:producer-1",
-            "dag_spec": {"nodes": [{"node_id": "x", "label": "X",
-                                     "service_id": "s", "pop_tier": 1,
-                                     "token_budget": 10.0, "timeout_ms": 1000}],
-                         "edges": []},
+            "dag_spec": {
+                "nodes": [
+                    {
+                        "node_id": "x",
+                        "label": "X",
+                        "service_id": "s",
+                        "pop_tier": 1,
+                        "token_budget": 10.0,
+                        "timeout_ms": 1000,
+                    }
+                ],
+                "edges": [],
+            },
             "rationale": "Wrong state",
             "token_budget_total": 10.0,
             "deadline_ms": 1000,

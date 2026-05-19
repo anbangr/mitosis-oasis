@@ -3,6 +3,7 @@
 Layer 1: Deterministic rule evaluation against thresholds.
 Layer 2: Optional LLM advisory for borderline (NEEDS_REVIEW) cases.
 """
+
 from __future__ import annotations
 
 import sqlite3
@@ -19,6 +20,7 @@ from oasis.governance.clerks.llm_interface import LLMInterface
 # ---------------------------------------------------------------------------
 # Data classes
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class DeterministicDecision:
@@ -40,6 +42,7 @@ class LLMAdvisory:
 # ---------------------------------------------------------------------------
 # OverridePanel
 # ---------------------------------------------------------------------------
+
 
 class OverridePanel:
     """Two-layer adjudication panel (same pattern as governance clerks).
@@ -155,9 +158,8 @@ class OverridePanel:
             decision_id = f"dec-{uuid.uuid4().hex[:8]}"
             alert_id = alert_or_flag.get("alert_id")
             flag_id = alert_or_flag.get("flag_id")
-            agent_did = (
-                alert_or_flag.get("agent_did")
-                or alert_or_flag.get("agent_did_1", "unknown")
+            agent_did = alert_or_flag.get("agent_did") or alert_or_flag.get(
+                "agent_did_1", "unknown"
             )
 
             layer2_text = None

@@ -1,4 +1,5 @@
 """Sanction engine — freeze, slash, reputation reduction for misbehaving agents."""
+
 from __future__ import annotations
 
 import sqlite3
@@ -135,7 +136,12 @@ class SanctionEngine:
                     "INSERT INTO treasury "
                     "(agent_did, entry_type, amount, balance_after, decision_id) "
                     "VALUES (?, 'slash_proceeds', ?, ?, ?)",
-                    (agent_did, treasury_share, new_treasury_balance, decision.decision_id),
+                    (
+                        agent_did,
+                        treasury_share,
+                        new_treasury_balance,
+                        decision.decision_id,
+                    ),
                 )
 
                 # Add to insurance_pool as slash_proceeds
@@ -145,7 +151,12 @@ class SanctionEngine:
                     "INSERT INTO insurance_pool "
                     "(agent_did, entry_type, amount, balance_after, decision_id) "
                     "VALUES (?, 'slash_proceeds', ?, ?, ?)",
-                    (agent_did, insurance_share, new_insurance_balance, decision.decision_id),
+                    (
+                        agent_did,
+                        insurance_share,
+                        new_insurance_balance,
+                        decision.decision_id,
+                    ),
                 )
 
             conn.commit()
@@ -194,7 +205,14 @@ class SanctionEngine:
                 "INSERT INTO reputation_ledger "
                 "(agent_did, old_score, new_score, performance_score, lambda, reason) "
                 "VALUES (?, ?, ?, ?, ?, ?)",
-                (agent_did, old_rep, new_rep, performance_score, lam, "sanction_reputation_update"),
+                (
+                    agent_did,
+                    old_rep,
+                    new_rep,
+                    performance_score,
+                    lam,
+                    "sanction_reputation_update",
+                ),
             )
 
             decision = self._record_decision(
@@ -261,8 +279,17 @@ class SanctionEngine:
             "(decision_id, alert_id, flag_id, agent_did, decision_type, "
             "severity, reason, layer1_result, layer2_advisory) "
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            (decision_id, alert_id, flag_id, agent_did, decision_type,
-             severity, reason, layer1_result, None),
+            (
+                decision_id,
+                alert_id,
+                flag_id,
+                agent_did,
+                decision_type,
+                severity,
+                reason,
+                layer1_result,
+                None,
+            ),
         )
         return AdjudicationDecision(
             decision_id=decision_id,

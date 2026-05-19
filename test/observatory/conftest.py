@@ -1,4 +1,5 @@
 """Shared fixtures for observatory tests."""
+
 from __future__ import annotations
 
 import sqlite3
@@ -7,17 +8,21 @@ from typing import Generator
 
 import pytest
 
-from oasis.governance.schema import create_governance_tables, seed_clerks, seed_constitution
+from oasis.governance.schema import (
+    create_governance_tables,
+    seed_clerks,
+    seed_constitution,
+)
 from oasis.execution.schema import create_execution_tables
 from oasis.adjudication.schema import create_adjudication_tables
 from oasis.observatory.schema import create_observatory_tables
 from oasis.observatory.event_bus import EventBus
-from oasis.observatory.events import Event, EventType
 
 
 # ---------------------------------------------------------------------------
 # Core DB fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture()
 def db_path(tmp_path: Path) -> Path:

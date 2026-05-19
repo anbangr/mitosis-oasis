@@ -1,4 +1,5 @@
 """Basic Copeland voting tests — 5 tests."""
+
 from oasis.governance.voting import CopelandVoting
 
 

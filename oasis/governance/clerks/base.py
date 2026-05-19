@@ -5,6 +5,7 @@ Provides:
 - Authority envelope checking
 - Layer 1 (deterministic) / Layer 2 (LLM advisory) interface
 """
+
 from __future__ import annotations
 
 import json
@@ -51,8 +52,7 @@ class BaseClerk(ABC):
         conn = self._connect()
         try:
             row = conn.execute(
-                "SELECT authority_envelope FROM clerk_registry "
-                "WHERE agent_did = ?",
+                "SELECT authority_envelope FROM clerk_registry WHERE agent_did = ?",
                 (self.clerk_did,),
             ).fetchone()
             if row is None:

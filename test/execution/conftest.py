@@ -4,10 +4,10 @@ Provides governance + execution DB setup and a helper that drives a
 legislative session all the way to DEPLOYED so that execution routing
 can be tested end-to-end.
 """
+
 from __future__ import annotations
 
 import copy
-import json
 import sqlite3
 import uuid
 from pathlib import Path
@@ -38,6 +38,7 @@ from oasis.execution.schema import create_execution_tables
 # ---------------------------------------------------------------------------
 # Core DB fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture()
 def db_path(tmp_path: Path) -> Path:
@@ -155,6 +156,7 @@ def _make_unique_dag(dag: dict, prefix: str) -> dict:
 # Helper: drive session to DEPLOYED
 # ---------------------------------------------------------------------------
 
+
 def drive_to_deployed(
     db_path: Path,
     producers: list[dict],
@@ -257,7 +259,9 @@ def drive_to_deployed(
             pop_tier_acceptance=node.get("pop_tier", 1),
         )
         bid_result = regulator.receive_bid(sid, bid)
-        assert bid_result["passed"], f"Bid failed for {node['node_id']}: {bid_result['errors']}"
+        assert bid_result["passed"], (
+            f"Bid failed for {node['node_id']}: {bid_result['errors']}"
+        )
 
     # 7. BIDDING_OPEN → REGULATORY_REVIEW
     result = sm.transition(LegislativeState.REGULATORY_REVIEW)

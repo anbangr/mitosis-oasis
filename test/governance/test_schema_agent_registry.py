@@ -1,4 +1,5 @@
 """P1 — Test agent_registry table operations."""
+
 import sqlite3
 from pathlib import Path
 

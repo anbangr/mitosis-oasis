@@ -20,6 +20,7 @@ Holds all state (db_path, config, dispatcher) as instance attributes instead
 of module-level globals so tests can instantiate with a temp DB and the
 FastAPI app can hold a singleton created at startup.
 """
+
 from __future__ import annotations
 
 import json
@@ -79,8 +80,12 @@ class ExecutionService:
                 node_info = {
                     "label": node["label"],
                     "service_id": node["service_id"],
-                    "input_schema": json.loads(node["input_schema"]) if node["input_schema"] else None,
-                    "output_schema": json.loads(node["output_schema"]) if node["output_schema"] else None,
+                    "input_schema": json.loads(node["input_schema"])
+                    if node["input_schema"]
+                    else None,
+                    "output_schema": json.loads(node["output_schema"])
+                    if node["output_schema"]
+                    else None,
                     "token_budget": node["token_budget"],
                     "timeout_ms": node["timeout_ms"],
                 }
@@ -104,7 +109,9 @@ class ExecutionService:
         except ValueError as exc:
             raise ExecutionServiceError(str(exc), 400)
 
-    def submit_output(self, task_id: str, output_data: str, agent_did: str) -> dict[str, Any]:
+    def submit_output(
+        self, task_id: str, output_data: str, agent_did: str
+    ) -> dict[str, Any]:
         """Submit task output (LLM mode)."""
         try:
             return self._dispatcher.receive_output(task_id, output_data, agent_did)

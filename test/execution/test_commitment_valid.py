@@ -1,4 +1,5 @@
 """Tests for valid commitment flow — stake lock, status transition, record creation."""
+
 from __future__ import annotations
 
 import sqlite3
@@ -29,7 +30,9 @@ def test_stake_locked(execution_db: Path, deployed_session: dict) -> None:
     assert result["stake_amount"] > 0
 
 
-def test_status_transitions_to_committed(execution_db: Path, deployed_session: dict) -> None:
+def test_status_transitions_to_committed(
+    execution_db: Path, deployed_session: dict
+) -> None:
     """After commit_to_task, task status changes from 'pending' to 'committed'."""
     sid = deployed_session["session_id"]
     assignments = route_tasks(sid, execution_db)

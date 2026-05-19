@@ -1,7 +1,7 @@
 """P1 — Test message_log table operations."""
+
 import json
 import sqlite3
-import time
 from pathlib import Path
 
 import pytest
@@ -35,10 +35,18 @@ def test_message_logged(db_path: Path):
     conn.execute(
         "INSERT INTO message_log (session_id, msg_type, sender_did, receiver, payload) "
         "VALUES (?, ?, ?, ?, ?)",
-        ("sess-1", "IdentityVerificationRequest", "did:mock:p-1", "did:oasis:clerk-registrar", payload),
+        (
+            "sess-1",
+            "IdentityVerificationRequest",
+            "did:mock:p-1",
+            "did:oasis:clerk-registrar",
+            payload,
+        ),
     )
     conn.commit()
-    row = conn.execute("SELECT * FROM message_log WHERE session_id = 'sess-1'").fetchone()
+    row = conn.execute(
+        "SELECT * FROM message_log WHERE session_id = 'sess-1'"
+    ).fetchone()
     conn.close()
     assert row["msg_type"] == "IdentityVerificationRequest"
     assert row["sender_did"] == "did:mock:p-1"
@@ -50,7 +58,11 @@ def test_chronological_ordering(db_path: Path):
     create_governance_tables(db_path)
     conn = _connect(db_path)
     _setup_session(conn)
-    types = ["IdentityVerificationRequest", "IDENTITY_ATTESTATION", "ProposalSubmission"]
+    types = [
+        "IdentityVerificationRequest",
+        "IDENTITY_ATTESTATION",
+        "ProposalSubmission",
+    ]
     for mt in types:
         conn.execute(
             "INSERT INTO message_log (session_id, msg_type, sender_did) "

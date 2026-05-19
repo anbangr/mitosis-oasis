@@ -1,4 +1,5 @@
 """E2E paper example — replicate the 3-task mission trace from the paper."""
+
 from __future__ import annotations
 
 from oasis.governance.state_machine import LegislativeState

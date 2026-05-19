@@ -1,5 +1,4 @@
 """HHI (Herfindahl-Hirschman Index) tests — 4 tests."""
-import pytest
 
 from oasis.governance.fairness import hhi
 

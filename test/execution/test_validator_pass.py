@@ -1,8 +1,8 @@
 """Tests for OutputValidator — valid outputs pass all checks."""
+
 from __future__ import annotations
 
 import json
-import sqlite3
 
 import pytest
 
@@ -29,12 +29,14 @@ class TestValidatorPass:
     def test_valid_output_passes_all(self, validator, routed_task, execution_db):
         """A valid output passes schema, timeout, and quality checks."""
         output = {
-            "output_data": json.dumps({
-                "task_id": routed_task["task_id"],
-                "result": "test-result",
-                "status": "success",
-                "metrics": {"accuracy": 0.9, "completeness": 0.95},
-            }),
+            "output_data": json.dumps(
+                {
+                    "task_id": routed_task["task_id"],
+                    "result": "test-result",
+                    "status": "success",
+                    "metrics": {"accuracy": 0.9, "completeness": 0.95},
+                }
+            ),
             "latency_ms": 100,
         }
         result = validator.validate(routed_task["task_id"], output, execution_db)
@@ -44,12 +46,14 @@ class TestValidatorPass:
     def test_no_guardian_alert_for_valid(self, validator, routed_task, execution_db):
         """No guardian alert is emitted for a valid output."""
         output = {
-            "output_data": json.dumps({
-                "task_id": routed_task["task_id"],
-                "result": "good-result",
-                "status": "success",
-                "metrics": {"accuracy": 0.85, "completeness": 0.9},
-            }),
+            "output_data": json.dumps(
+                {
+                    "task_id": routed_task["task_id"],
+                    "result": "good-result",
+                    "status": "success",
+                    "metrics": {"accuracy": 0.85, "completeness": 0.9},
+                }
+            ),
             "latency_ms": 50,
         }
         result = validator.validate(routed_task["task_id"], output, execution_db)
@@ -58,12 +62,14 @@ class TestValidatorPass:
     def test_quality_score_populated(self, validator, routed_task, execution_db):
         """Quality score is computed and > 0 for valid outputs."""
         output = {
-            "output_data": json.dumps({
-                "task_id": routed_task["task_id"],
-                "result": "quality-result",
-                "status": "success",
-                "metrics": {"accuracy": 0.92, "completeness": 0.88},
-            }),
+            "output_data": json.dumps(
+                {
+                    "task_id": routed_task["task_id"],
+                    "result": "quality-result",
+                    "status": "success",
+                    "metrics": {"accuracy": 0.92, "completeness": 0.88},
+                }
+            ),
             "latency_ms": 75,
         }
         result = validator.validate(routed_task["task_id"], output, execution_db)

@@ -24,7 +24,6 @@ test_db_filepath = osp.join(parent_folder, "test.db")
 
 
 class MockChannel:
-
     def __init__(self):
         self.call_count = 0
         self.messages = []
@@ -56,14 +55,16 @@ class MockChannel:
         elif self.call_count == 2:
             assert message[2]["success"] is False
             assert message[2]["error"] == (
-                "Users are not allowed to like/dislike their own posts.")
+                "Users are not allowed to like/dislike their own posts."
+            )
         elif self.call_count == 3:
             assert message[2]["success"] is True
             assert "like_id" in message[2]
         elif self.call_count == 4:
             assert message[2]["success"] is False
             assert message[2]["error"] == (
-                "Users are not allowed to like/dislike their own posts.")
+                "Users are not allowed to like/dislike their own posts."
+            )
         elif self.call_count == 5:
             assert message[2]["success"] is True
             assert "dislike_id" in message[2]
@@ -89,15 +90,19 @@ async def test_create_repost_like_unlike_post(setup_platform):
         conn = sqlite3.connect(test_db_filepath)
         cursor = conn.cursor()
         cursor.execute(
-            ("INSERT INTO user "
-             "(user_id, agent_id, user_name, num_followings, num_followers) "
-             "VALUES (?, ?, ?, ?, ?)"),
+            (
+                "INSERT INTO user "
+                "(user_id, agent_id, user_name, num_followings, num_followers) "
+                "VALUES (?, ?, ?, ?, ?)"
+            ),
             (1, 1, "user1", 0, 0),
         )
         cursor.execute(
-            ("INSERT INTO user "
-             "(user_id, agent_id, user_name, num_followings, num_followers) "
-             "VALUES (?, ?, ?, ?, ?)"),
+            (
+                "INSERT INTO user "
+                "(user_id, agent_id, user_name, num_followings, num_followers) "
+                "VALUES (?, ?, ?, ?, ?)"
+            ),
             (2, 2, "user2", 2, 4),
         )
         conn.commit()

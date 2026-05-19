@@ -1,4 +1,5 @@
 """Coordination / herding detection tests — 4 tests."""
+
 from oasis.governance.voting import coordination_detection
 
 

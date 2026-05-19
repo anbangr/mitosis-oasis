@@ -1,4 +1,5 @@
 """Tests for settlement interaction with sanctions (slash on failure)."""
+
 from __future__ import annotations
 
 import sqlite3

@@ -1,4 +1,5 @@
 """P6 — Test BaseClerk abstract class."""
+
 import pytest
 from pathlib import Path
 

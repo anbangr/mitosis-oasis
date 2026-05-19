@@ -1,4 +1,5 @@
 """Tests for stake release — after settlement, double-release prevention."""
+
 from __future__ import annotations
 
 import sqlite3
@@ -10,7 +11,9 @@ from oasis.execution.commitment import commit_to_task, release_stake
 from oasis.execution.router import route_tasks
 
 
-def test_stake_released_after_settlement(execution_db: Path, deployed_session: dict) -> None:
+def test_stake_released_after_settlement(
+    execution_db: Path, deployed_session: dict
+) -> None:
     """After release_stake, the locked stake is returned to available balance."""
     sid = deployed_session["session_id"]
     assignments = route_tasks(sid, execution_db)

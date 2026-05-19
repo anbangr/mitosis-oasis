@@ -1,9 +1,9 @@
 """Layer 1 deterministic override panel tests (5 tests)."""
+
 from __future__ import annotations
 
 import sqlite3
 
-import pytest
 
 from oasis.adjudication.override_panel import OverridePanel
 from oasis.config import PlatformConfig
@@ -62,7 +62,9 @@ class TestOverrideLayer1:
         assert decision.action == "FLAG_AND_DELAY"
         assert decision.severity == "WARNING"
 
-    def test_sustained_failure_slash(self, adjudication_db, agents, seeded_task, config):
+    def test_sustained_failure_slash(
+        self, adjudication_db, agents, seeded_task, config
+    ):
         """Reputation below sanction_floor + 3 consecutive failures → SLASH."""
         agent_did = agents[0]["agent_did"]
 

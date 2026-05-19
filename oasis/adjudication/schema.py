@@ -4,6 +4,7 @@ The live HTTP server initialises adjudication in a branch-local SQLite DB, so
 it cannot rely on execution tables existing elsewhere. We therefore recreate
 the small subset of cross-branch tables adjudication reads directly.
 """
+
 from __future__ import annotations
 
 import sqlite3

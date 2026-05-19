@@ -1,7 +1,8 @@
 """Tests: each MSG_TYPE creates a valid model instance (7 tests)."""
+
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime
 
 from oasis.governance.messages import (
     CodedContractSpec,

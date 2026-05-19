@@ -1,4 +1,5 @@
 """P1 — Test governance table creation."""
+
 import sqlite3
 from pathlib import Path
 
@@ -6,23 +7,25 @@ import pytest
 
 from oasis.governance.schema import create_governance_tables
 
-EXPECTED_TABLES = sorted([
-    "agent_registry",
-    "bid",
-    "clerk_registry",
-    "constitution",
-    "contract_spec",
-    "dag_edge",
-    "dag_node",
-    "deliberation_round",
-    "legislative_session",
-    "message_log",
-    "proposal",
-    "regulatory_decision",
-    "reputation_ledger",
-    "straw_poll",
-    "vote",
-])
+EXPECTED_TABLES = sorted(
+    [
+        "agent_registry",
+        "bid",
+        "clerk_registry",
+        "constitution",
+        "contract_spec",
+        "dag_edge",
+        "dag_node",
+        "deliberation_round",
+        "legislative_session",
+        "message_log",
+        "proposal",
+        "regulatory_decision",
+        "reputation_ledger",
+        "straw_poll",
+        "vote",
+    ]
+)
 
 
 def _get_tables(db_path: Path) -> list[str]:

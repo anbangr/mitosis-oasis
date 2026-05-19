@@ -1,19 +1,13 @@
 """P9 tests — quorum inheritance across session depths."""
+
 from __future__ import annotations
 
 import json
 import sqlite3
 
-import pytest
 
 from oasis.governance.dag import trigger_child_session
-from oasis.governance.schema import (
-    create_governance_tables,
-    seed_clerks,
-    seed_constitution,
-)
 from oasis.governance.state_machine import (
-    GuardResult,
     LegislativeState,
     LegislativeStateMachine,
 )
@@ -22,6 +16,7 @@ from oasis.governance.state_machine import (
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _setup_parent_with_dag(db_path, session_id="parent-1"):
     """Create a parent session with a non-leaf DAG node."""
@@ -90,6 +85,7 @@ def _attest_identity(db_path, session_id, agent_dids):
 # Tests
 # ---------------------------------------------------------------------------
 
+
 class TestRecursiveQuorum:
     """Quorum rules apply identically at all session depths."""
 
@@ -99,9 +95,7 @@ class TestRecursiveQuorum:
         _register_producers(governance_db, 5)
 
         # Create child session
-        child_id = trigger_child_session(
-            "parent-1", "root-q", governance_db
-        )
+        child_id = trigger_child_session("parent-1", "root-q", governance_db)
 
         # The child session starts in SESSION_INIT — advance to IDENTITY_VERIFICATION
         sm = LegislativeStateMachine(child_id, governance_db)
@@ -111,7 +105,8 @@ class TestRecursiveQuorum:
 
         # Attest 3 of 5 producers (60% > 51% quorum)
         _attest_identity(
-            governance_db, child_id,
+            governance_db,
+            child_id,
             [f"did:mock:producer-{i}" for i in range(1, 4)],
         )
 
@@ -124,9 +119,7 @@ class TestRecursiveQuorum:
         _setup_parent_with_dag(governance_db)
         _register_producers(governance_db, 5)
 
-        child_id = trigger_child_session(
-            "parent-1", "root-q", governance_db
-        )
+        child_id = trigger_child_session("parent-1", "root-q", governance_db)
 
         sm = LegislativeStateMachine(child_id, governance_db)
         sm.transition(LegislativeState.IDENTITY_VERIFICATION)

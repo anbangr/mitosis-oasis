@@ -1,4 +1,5 @@
 """P8.2 — Identity API tests."""
+
 from __future__ import annotations
 
 

@@ -1,8 +1,8 @@
 """P1 — Test legislative_session table operations."""
+
 import sqlite3
 from pathlib import Path
 
-import pytest
 
 from oasis.governance.schema import create_governance_tables
 

@@ -1,4 +1,5 @@
 """P9 tests — depth tracking and max-depth enforcement."""
+
 from __future__ import annotations
 
 import json
@@ -11,18 +12,16 @@ from oasis.governance.dag import (
     get_session_depth,
     trigger_child_session,
 )
-from oasis.governance.schema import (
-    create_governance_tables,
-    seed_clerks,
-    seed_constitution,
-)
 
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _add_session_with_dag(db_path, session_id, parent_session_id=None, parent_node_id=None):
+
+def _add_session_with_dag(
+    db_path, session_id, parent_session_id=None, parent_node_id=None
+):
     """Insert a session + a simple non-leaf DAG node for chaining."""
     conn = sqlite3.connect(str(db_path))
     conn.execute("PRAGMA foreign_keys = ON")
@@ -58,8 +57,7 @@ def _add_session_with_dag(db_path, session_id, parent_session_id=None, parent_no
         (f"n2-{session_id}", prop_id),
     )
     conn.execute(
-        "INSERT INTO dag_edge (proposal_id, from_node_id, to_node_id) "
-        "VALUES (?, ?, ?)",
+        "INSERT INTO dag_edge (proposal_id, from_node_id, to_node_id) VALUES (?, ?, ?)",
         (prop_id, f"n1-{session_id}", f"n2-{session_id}"),
     )
     conn.commit()
@@ -69,6 +67,7 @@ def _add_session_with_dag(db_path, session_id, parent_session_id=None, parent_no
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
+
 
 class TestRecursiveDepth:
     """Depth tracking and max-depth enforcement."""
@@ -132,6 +131,8 @@ class TestRecursiveDepth:
         # max_depth=1 means only root (depth 0) is allowed, no children
         with pytest.raises(RecursionDepthError):
             trigger_child_session(
-                "root-session", "n1-root-session", governance_db,
+                "root-session",
+                "n1-root-session",
+                governance_db,
                 max_depth=1,
             )

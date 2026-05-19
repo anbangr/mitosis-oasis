@@ -1,7 +1,7 @@
 """E2E HTTP — full legislative pipeline via FastAPI TestClient."""
+
 from __future__ import annotations
 
-import json
 import sqlite3
 from pathlib import Path
 
@@ -10,7 +10,6 @@ from fastapi.testclient import TestClient
 
 from oasis.api import app
 from oasis.governance import endpoints as gov_ep
-from oasis.governance.schema import create_governance_tables, seed_clerks, seed_constitution
 from oasis.governance.state_machine import LegislativeState, LegislativeStateMachine
 
 
@@ -90,10 +89,22 @@ def test_full_pipeline_via_http(http_env):
     # 4. Submit proposal
     dag_spec = {
         "nodes": [
-            {"node_id": "h1", "label": "Task A", "service_id": "svc-a",
-             "pop_tier": 1, "token_budget": 500.0, "timeout_ms": 60000},
-            {"node_id": "h2", "label": "Task B", "service_id": "svc-b",
-             "pop_tier": 1, "token_budget": 200.0, "timeout_ms": 60000},
+            {
+                "node_id": "h1",
+                "label": "Task A",
+                "service_id": "svc-a",
+                "pop_tier": 1,
+                "token_budget": 500.0,
+                "timeout_ms": 60000,
+            },
+            {
+                "node_id": "h2",
+                "label": "Task B",
+                "service_id": "svc-b",
+                "pop_tier": 1,
+                "token_budget": 200.0,
+                "timeout_ms": 60000,
+            },
         ],
         "edges": [{"from_node_id": "h1", "to_node_id": "h2"}],
     }

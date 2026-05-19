@@ -29,13 +29,13 @@ Edge cases:
   EC2 — duplicate IDENTITY_ATTESTATION rows from the same sender_did must not
           be double-counted (guard uses COUNT DISTINCT).
 """
+
 from __future__ import annotations
 
 import inspect
 import sqlite3
 from pathlib import Path
 
-import pytest
 
 import oasis.governance.state_machine as sm_module
 from oasis.governance.schema import (

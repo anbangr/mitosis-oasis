@@ -1,4 +1,5 @@
 """P8.8 — Codification API tests."""
+
 from __future__ import annotations
 
 import sqlite3

@@ -1,4 +1,5 @@
 """Tests for constitutional behavioral parameter validation."""
+
 from pathlib import Path
 
 from oasis.governance.constitutional import ConstitutionalValidator
@@ -21,12 +22,14 @@ def _make_spec(collab: dict) -> CodedContractSpec:
 def test_all_params_in_range(governance_db: Path):
     """All behavioral params within valid ranges pass."""
     validator = ConstitutionalValidator(governance_db)
-    spec = _make_spec({
-        "deviation_sigma": 3.0,
-        "max_tools": 50,
-        "max_messages": 100,
-        "escalation_freeze_rounds": 5,
-    })
+    spec = _make_spec(
+        {
+            "deviation_sigma": 3.0,
+            "max_tools": 50,
+            "max_messages": 100,
+            "escalation_freeze_rounds": 5,
+        }
+    )
     result = validator._check_behavioral_params(spec)
     assert result == []
 
@@ -52,11 +55,13 @@ def test_tools_out_of_range(governance_db: Path):
 def test_multiple_violations(governance_db: Path):
     """Multiple out-of-range params produce multiple errors."""
     validator = ConstitutionalValidator(governance_db)
-    spec = _make_spec({
-        "deviation_sigma": 10,
-        "max_tools": 1,
-        "max_messages": 5,
-        "escalation_freeze_rounds": 20,
-    })
+    spec = _make_spec(
+        {
+            "deviation_sigma": 10,
+            "max_tools": 1,
+            "max_messages": 5,
+            "escalation_freeze_rounds": 20,
+        }
+    )
     errors = validator._check_behavioral_params(spec)
     assert len(errors) == 4

@@ -1,4 +1,5 @@
 """Tests for agent_balance — initial balance, lock, unlock, negative prevention."""
+
 from __future__ import annotations
 
 import sqlite3

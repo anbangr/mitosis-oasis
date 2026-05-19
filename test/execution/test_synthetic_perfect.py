@@ -1,4 +1,5 @@
 """Tests for SyntheticGenerator in 'perfect' quality mode."""
+
 from __future__ import annotations
 
 import json

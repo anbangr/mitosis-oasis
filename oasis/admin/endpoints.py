@@ -21,6 +21,7 @@ Provides FastAPI routes for mid-run experiment manipulation:
 These endpoints are called by the experiment orchestrator at shock_event.round
 (default: round 100) during AgentCity experiment runs.
 """
+
 from __future__ import annotations
 
 import hmac
@@ -121,11 +122,18 @@ class AgentBulkBody(BaseModel):
 
 
 class RemoveHighRepBody(BaseModel):
-    count: int = Field(..., ge=1, le=10_000, description="Number of highest-reputation agents to deactivate")
+    count: int = Field(
+        ...,
+        ge=1,
+        le=10_000,
+        description="Number of highest-reputation agents to deactivate",
+    )
 
 
 class MilestoneCrisisBody(BaseModel):
-    milestone_id: str = Field(..., min_length=1, description="Milestone identifier to mark as quality crisis")
+    milestone_id: str = Field(
+        ..., min_length=1, description="Milestone identifier to mark as quality crisis"
+    )
 
     @field_validator("milestone_id")
     @classmethod
@@ -152,6 +160,7 @@ _SHOCK_COALITION_REP: float = 0.5
 
 
 # ========================= Agent injection ===================================
+
 
 @_routes.post("/agents/bulk", status_code=201, response_model=dict[str, Any])
 async def bulk_register_agents(body: AgentBulkBody):
@@ -184,10 +193,14 @@ async def bulk_register_agents(body: AgentBulkBody):
         conn.commit()
     finally:
         conn.close()
-    return {"registered": len(body.agents), "agents": [a.agent_did for a in body.agents]}
+    return {
+        "registered": len(body.agents),
+        "agents": [a.agent_did for a in body.agents],
+    }
 
 
 # ========================= High-rep removal ==================================
+
 
 @_routes.post("/agents/remove-high-rep", status_code=200, response_model=dict[str, Any])
 async def remove_high_rep_agents(body: RemoveHighRepBody):
@@ -223,7 +236,10 @@ async def remove_high_rep_agents(body: RemoveHighRepBody):
 
 # ========================= Milestone quality crisis ==========================
 
-@_routes.post("/sessions/milestone-crisis", status_code=200, response_model=dict[str, Any])
+
+@_routes.post(
+    "/sessions/milestone-crisis", status_code=200, response_model=dict[str, Any]
+)
 async def mark_milestone_crisis(body: MilestoneCrisisBody):
     """Mark all sessions belonging to a milestone as having a quality crisis.
 
@@ -234,8 +250,7 @@ async def mark_milestone_crisis(body: MilestoneCrisisBody):
     conn = _connect()
     try:
         result = conn.execute(
-            "UPDATE legislative_session SET quality_crisis = 1 "
-            "WHERE milestone_id = ?",
+            "UPDATE legislative_session SET quality_crisis = 1 WHERE milestone_id = ?",
             (body.milestone_id,),
         )
         affected = result.rowcount
@@ -251,12 +266,17 @@ async def mark_milestone_crisis(body: MilestoneCrisisBody):
 
 # ========================= Shock event composite ============================
 
+
 class ShockEventBody(BaseModel):
     free_rider_count: int = Field(10, ge=0, le=1_000)
     coalition_size: int = Field(5, ge=0, le=1_000)
     high_rep_remove_count: int = Field(20, ge=0, le=10_000)
     fail_milestone: str | None = Field(None)
-    shock_id: str | None = Field(None, min_length=1, description="Idempotency key — same shock_id returns the cached result without re-applying")
+    shock_id: str | None = Field(
+        None,
+        min_length=1,
+        description="Idempotency key — same shock_id returns the cached result without re-applying",
+    )
 
     @field_validator("fail_milestone")
     @classmethod
@@ -331,8 +351,14 @@ async def apply_shock_event(body: ShockEventBody):
                     "INSERT OR REPLACE INTO agent_registry "
                     "(agent_did, agent_type, capability_tier, display_name, reputation_score, strategy, active) "
                     "VALUES (?, ?, ?, ?, ?, ?, 1)",
-                    (f"did:shock:free-rider-{i + 1}", "producer", "t1",
-                     f"Free-rider Agent {i + 1}", _SHOCK_FREE_RIDER_REP, "free_rider"),
+                    (
+                        f"did:shock:free-rider-{i + 1}",
+                        "producer",
+                        "t1",
+                        f"Free-rider Agent {i + 1}",
+                        _SHOCK_FREE_RIDER_REP,
+                        "free_rider",
+                    ),
                 )
             summary["free_riders_injected"] = body.free_rider_count
 
@@ -343,8 +369,14 @@ async def apply_shock_event(body: ShockEventBody):
                     "INSERT OR REPLACE INTO agent_registry "
                     "(agent_did, agent_type, capability_tier, display_name, reputation_score, strategy, active) "
                     "VALUES (?, ?, ?, ?, ?, ?, 1)",
-                    (f"did:shock:coalition-{i + 1}", "producer", "t3",
-                     f"Coalition Agent {i + 1}", _SHOCK_COALITION_REP, "coalition"),
+                    (
+                        f"did:shock:coalition-{i + 1}",
+                        "producer",
+                        "t3",
+                        f"Coalition Agent {i + 1}",
+                        _SHOCK_COALITION_REP,
+                        "coalition",
+                    ),
                 )
             summary["coalition_injected"] = body.coalition_size
 

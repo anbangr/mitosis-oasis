@@ -1,11 +1,12 @@
 """Tests for basic task routing — approved bids → task assignments."""
+
 from __future__ import annotations
 
 import json
 import sqlite3
 from pathlib import Path
 
-from oasis.execution.router import get_agent_tasks, get_session_tasks, route_tasks
+from oasis.execution.router import get_session_tasks, route_tasks
 
 
 def test_tasks_from_approved_bids(execution_db: Path, deployed_session: dict) -> None:

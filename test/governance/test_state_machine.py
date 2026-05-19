@@ -1,9 +1,9 @@
 """P2 — Test LegislativeStateMachine: transitions, guards, history, timeouts."""
+
 import json
 import sqlite3
 from pathlib import Path
 
-import pytest
 
 from oasis.governance.schema import (
     create_governance_tables,
@@ -11,16 +11,15 @@ from oasis.governance.schema import (
     seed_constitution,
 )
 from oasis.governance.state_machine import (
-    GuardResult,
     LegislativeState,
     LegislativeStateMachine,
-    TimeoutConfig,
 )
 
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _init_db(db_path: Path) -> Path:
     """Create tables + seeds."""
@@ -68,8 +67,9 @@ def _attest_agents(db_path: Path, session_id: str, dids: list[str]) -> None:
     conn.close()
 
 
-def _submit_proposal(db_path: Path, session_id: str, proposer_did: str,
-                     budget: float = 500.0) -> str:
+def _submit_proposal(
+    db_path: Path, session_id: str, proposer_did: str, budget: float = 500.0
+) -> str:
     """Insert a proposal with a simple 2-node DAG, return proposal_id."""
     pid = f"prop-{session_id}-1"
     conn = _connect(db_path)
@@ -112,8 +112,9 @@ def _submit_bids(db_path: Path, session_id: str, bidder_did: str) -> None:
     conn.close()
 
 
-def _add_regulatory_decision(db_path: Path, session_id: str,
-                              critical: bool = False) -> None:
+def _add_regulatory_decision(
+    db_path: Path, session_id: str, critical: bool = False
+) -> None:
     """Insert a regulatory decision."""
     flags = [{"severity": "CRITICAL", "msg": "bad"}] if critical else []
     conn = _connect(db_path)
@@ -127,13 +128,13 @@ def _add_regulatory_decision(db_path: Path, session_id: str,
     conn.close()
 
 
-def _add_contract_spec(db_path: Path, session_id: str,
-                       status: str = "validated") -> None:
+def _add_contract_spec(
+    db_path: Path, session_id: str, status: str = "validated"
+) -> None:
     """Insert a contract spec."""
     conn = _connect(db_path)
     conn.execute(
-        "INSERT INTO contract_spec (spec_id, session_id, status) "
-        "VALUES (?, ?, ?)",
+        "INSERT INTO contract_spec (spec_id, session_id, status) VALUES (?, ?, ?)",
         (f"spec-{session_id}", session_id, status),
     )
     conn.commit()
@@ -144,8 +145,8 @@ def _add_contract_spec(db_path: Path, session_id: str,
 # Tests: basic init and current_state
 # ---------------------------------------------------------------------------
 
-class TestStateMachineInit:
 
+class TestStateMachineInit:
     def test_new_session_starts_at_session_init(self, db_path: Path):
         _init_db(db_path)
         sm = LegislativeStateMachine("sess-1", db_path)
@@ -168,8 +169,8 @@ class TestStateMachineInit:
 # Tests: invalid transitions
 # ---------------------------------------------------------------------------
 
-class TestInvalidTransitions:
 
+class TestInvalidTransitions:
     def test_init_to_deployed_rejected(self, db_path: Path):
         _init_db(db_path)
         sm = LegislativeStateMachine("sess-inv", db_path)
@@ -248,8 +249,8 @@ class TestInvalidTransitions:
 # Tests: guard — identity verification
 # ---------------------------------------------------------------------------
 
-class TestGuardIdentity:
 
+class TestGuardIdentity:
     def test_no_producers_blocks_init_to_identity(self, db_path: Path):
         """Cannot advance if no producer agents registered."""
         _init_db(db_path)
@@ -288,8 +289,8 @@ class TestGuardIdentity:
         # Set one agent below reputation floor
         conn = _connect(db_path)
         conn.execute(
-            "UPDATE agent_registry SET reputation_score = 0.05 "
-            "WHERE agent_did = ?", (dids[0],)
+            "UPDATE agent_registry SET reputation_score = 0.05 WHERE agent_did = ?",
+            (dids[0],),
         )
         conn.commit()
         conn.close()
@@ -305,9 +306,11 @@ class TestGuardIdentity:
 # Tests: guard — proposal
 # ---------------------------------------------------------------------------
 
-class TestGuardProposal:
 
-    def _advance_to_proposal(self, db_path: Path, session_id: str) -> LegislativeStateMachine:
+class TestGuardProposal:
+    def _advance_to_proposal(
+        self, db_path: Path, session_id: str
+    ) -> LegislativeStateMachine:
         _init_db(db_path)
         dids = _register_producers(db_path, 3)
         sm = LegislativeStateMachine(session_id, db_path)
@@ -340,9 +343,11 @@ class TestGuardProposal:
 # Tests: guard — bidding
 # ---------------------------------------------------------------------------
 
-class TestGuardBidding:
 
-    def _advance_to_bidding(self, db_path: Path, session_id: str) -> LegislativeStateMachine:
+class TestGuardBidding:
+    def _advance_to_bidding(
+        self, db_path: Path, session_id: str
+    ) -> LegislativeStateMachine:
         _init_db(db_path)
         dids = _register_producers(db_path, 3)
         sm = LegislativeStateMachine(session_id, db_path)
@@ -371,9 +376,11 @@ class TestGuardBidding:
 # Tests: guard — regulatory
 # ---------------------------------------------------------------------------
 
-class TestGuardRegulatory:
 
-    def _advance_to_regulatory(self, db_path: Path, session_id: str) -> LegislativeStateMachine:
+class TestGuardRegulatory:
+    def _advance_to_regulatory(
+        self, db_path: Path, session_id: str
+    ) -> LegislativeStateMachine:
         _init_db(db_path)
         dids = _register_producers(db_path, 3)
         sm = LegislativeStateMachine(session_id, db_path)
@@ -410,9 +417,11 @@ class TestGuardRegulatory:
 # Tests: guard — codification
 # ---------------------------------------------------------------------------
 
-class TestGuardCodification:
 
-    def _advance_to_codification(self, db_path: Path, session_id: str) -> LegislativeStateMachine:
+class TestGuardCodification:
+    def _advance_to_codification(
+        self, db_path: Path, session_id: str
+    ) -> LegislativeStateMachine:
         _init_db(db_path)
         dids = _register_producers(db_path, 3)
         sm = LegislativeStateMachine(session_id, db_path)
@@ -451,9 +460,11 @@ class TestGuardCodification:
 # Tests: guard — approval
 # ---------------------------------------------------------------------------
 
-class TestGuardApproval:
 
-    def _advance_to_approval(self, db_path: Path, session_id: str) -> LegislativeStateMachine:
+class TestGuardApproval:
+    def _advance_to_approval(
+        self, db_path: Path, session_id: str
+    ) -> LegislativeStateMachine:
         _init_db(db_path)
         dids = _register_producers(db_path, 3)
         sm = LegislativeStateMachine(session_id, db_path)
@@ -493,8 +504,8 @@ class TestGuardApproval:
 # Tests: happy path (full traversal)
 # ---------------------------------------------------------------------------
 
-class TestHappyPath:
 
+class TestHappyPath:
     def test_full_session_init_to_deployed(self, db_path: Path):
         """Walk through all 8 states from SESSION_INIT to DEPLOYED."""
         _init_db(db_path)
@@ -538,8 +549,8 @@ class TestHappyPath:
 # Tests: history
 # ---------------------------------------------------------------------------
 
-class TestHistory:
 
+class TestHistory:
     def test_transitions_logged(self, db_path: Path):
         _init_db(db_path)
         _register_producers(db_path, 3)
@@ -568,9 +579,11 @@ class TestHistory:
 # Tests: re-proposal
 # ---------------------------------------------------------------------------
 
-class TestReproposal:
 
-    def _advance_to_regulatory(self, db_path: Path, session_id: str) -> LegislativeStateMachine:
+class TestReproposal:
+    def _advance_to_regulatory(
+        self, db_path: Path, session_id: str
+    ) -> LegislativeStateMachine:
         _init_db(db_path)
         dids = _register_producers(db_path, 3)
         sm = LegislativeStateMachine(session_id, db_path)
@@ -594,8 +607,8 @@ class TestReproposal:
 # Tests: failure transitions
 # ---------------------------------------------------------------------------
 
-class TestFailureTransitions:
 
+class TestFailureTransitions:
     def test_identity_to_failed(self, db_path: Path):
         _init_db(db_path)
         _register_producers(db_path, 3)

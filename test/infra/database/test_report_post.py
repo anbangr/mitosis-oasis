@@ -24,7 +24,6 @@ test_db_filepath = osp.join(parent_folder, "test.db")
 
 
 class MockChannel:
-
     def __init__(self):
         self.call_count = 0
         self.messages = []
@@ -102,21 +101,27 @@ async def test_report_post(setup_platform):
         conn = sqlite3.connect(test_db_filepath)
         cursor = conn.cursor()
         cursor.execute(
-            ("INSERT INTO user "
-             "(user_id, agent_id, user_name, num_followings, num_followers) "
-             "VALUES (?, ?, ?, ?, ?)"),
+            (
+                "INSERT INTO user "
+                "(user_id, agent_id, user_name, num_followings, num_followers) "
+                "VALUES (?, ?, ?, ?, ?)"
+            ),
             (1, 1, "user1", 0, 0),
         )
         cursor.execute(
-            ("INSERT INTO user "
-             "(user_id, agent_id, user_name, num_followings, num_followers) "
-             "VALUES (?, ?, ?, ?, ?)"),
+            (
+                "INSERT INTO user "
+                "(user_id, agent_id, user_name, num_followings, num_followers) "
+                "VALUES (?, ?, ?, ?, ?)"
+            ),
             (2, 2, "user2", 0, 0),
         )
         cursor.execute(
-            ("INSERT INTO user "
-             "(user_id, agent_id, user_name, num_followings, num_followers) "
-             "VALUES (?, ?, ?, ?, ?)"),
+            (
+                "INSERT INTO user "
+                "(user_id, agent_id, user_name, num_followings, num_followers) "
+                "VALUES (?, ?, ?, ?, ?)"
+            ),
             (3, 3, "user3", 0, 0),
         )
         conn.commit()
@@ -133,26 +138,23 @@ async def test_report_post(setup_platform):
         # Verify report on common post
         assert reports[0][1] == 2, "Reporter user ID should be 2"
         assert reports[0][2] == 1, "Reported post ID should be 1"
-        assert reports[0][3] == "Inappropriate content", (
-            "Report reason doesn't match")
+        assert reports[0][3] == "Inappropriate content", "Report reason doesn't match"
         assert reports[0][4] is not None, "Creation time should not be empty"
 
         # Verify report on repost
         assert reports[1][1] == 3, "Reporter user ID should be 3"
         assert reports[1][2] == 2, "Reported post ID should be 2"
-        assert reports[1][3] == "Spam content", ("Report reason doesn't match")
+        assert reports[1][3] == "Spam content", "Report reason doesn't match"
         assert reports[1][4] is not None, "Creation time should not be empty"
 
         # Verify report on quote post
         assert reports[2][1] == 1, "Reporter user ID should be 1"
         assert reports[2][2] == 3, "Reported post ID should be 3"
-        assert reports[2][3] == "Misinformation", (
-            "Report reason doesn't match")
+        assert reports[2][3] == "Misinformation", "Report reason doesn't match"
         assert reports[2][4] is not None, "Creation time should not be empty"
 
         # Verify post report counts
-        cursor.execute(
-            "SELECT post_id, num_reports FROM post ORDER BY post_id")
+        cursor.execute("SELECT post_id, num_reports FROM post ORDER BY post_id")
         post_reports = cursor.fetchall()
 
         # Should have report counts for all three posts

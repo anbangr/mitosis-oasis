@@ -1,4 +1,5 @@
 """Treasury — platform treasury accounting ledger."""
+
 from __future__ import annotations
 
 import sqlite3

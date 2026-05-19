@@ -4,6 +4,7 @@ Provides FastAPI routes for all phases of the AgentCity legislative protocol:
 sessions, identity, proposals, deliberation, voting, bidding, regulatory review,
 codification, approval, deployment, and constitution queries.
 """
+
 from __future__ import annotations
 
 import json
@@ -74,6 +75,7 @@ def _connect() -> sqlite3.Connection:
 # Clerk helpers
 # ---------------------------------------------------------------------------
 
+
 def _registrar() -> Registrar:
     return Registrar(db_path=_get_db(), clerk_did="did:oasis:clerk-registrar")
 
@@ -93,6 +95,7 @@ def _codifier() -> Codifier:
 # ---------------------------------------------------------------------------
 # State gate helper
 # ---------------------------------------------------------------------------
+
 
 def _require_state(session_id: str, *allowed: LegislativeState) -> LegislativeState:
     """Return the current session state if it is one of *allowed*, else 409."""
@@ -120,11 +123,16 @@ def _require_state(session_id: str, *allowed: LegislativeState) -> LegislativeSt
 # Pydantic request / response bodies
 # ---------------------------------------------------------------------------
 
+
 class CreateSessionBody(BaseModel):
     mission_budget_cap: float = Field(1000.0, gt=0)
     min_reputation: float = Field(0.1, ge=0.0, le=1.0)
-    governance_mode: str | None = Field(None, description="Override server governance_mode for this session")
-    milestone_id: str | None = Field(None, description="Milestone identifier for milestone-scoped sessions")
+    governance_mode: str | None = Field(
+        None, description="Override server governance_mode for this session"
+    )
+    milestone_id: str | None = Field(
+        None, description="Milestone identifier for milestone-scoped sessions"
+    )
 
     @field_validator("milestone_id")
     @classmethod
@@ -204,21 +212,35 @@ v1_router = APIRouter(prefix="/api/v1/governance", tags=["Governance"])
 
 # ========================= P8.1 Session management =========================
 
+
 @_routes.post("/sessions", status_code=201, response_model=dict[str, Any])
 async def create_session(body: CreateSessionBody):
     """Create a new legislative session."""
     # Resolve effective governance_mode: body > server config > default "full"
-    server_mode = (_platform_config.governance_mode if _platform_config else "full")
-    effective_mode = body.governance_mode if body.governance_mode is not None else server_mode
+    server_mode = _platform_config.governance_mode if _platform_config else "full"
+    effective_mode = (
+        body.governance_mode if body.governance_mode is not None else server_mode
+    )
 
     if effective_mode not in _VALID_GOVERNANCE_MODES:
-        raise HTTPException(400, f"Invalid governance_mode: {effective_mode!r}; must be one of {_VALID_GOVERNANCE_MODES}")
+        raise HTTPException(
+            400,
+            f"Invalid governance_mode: {effective_mode!r}; must be one of {_VALID_GOVERNANCE_MODES}",
+        )
     if server_mode == "none":
-        raise HTTPException(409, "Governance sessions are disabled in 'none' mode (Baseline configuration)")
+        raise HTTPException(
+            409,
+            "Governance sessions are disabled in 'none' mode (Baseline configuration)",
+        )
     if effective_mode == "none":
-        raise HTTPException(409, "Governance sessions are disabled in 'none' mode (Baseline configuration)")
+        raise HTTPException(
+            409,
+            "Governance sessions are disabled in 'none' mode (Baseline configuration)",
+        )
     _full = _GOVERNANCE_MODE_ORDER["full"]
-    if _GOVERNANCE_MODE_ORDER.get(effective_mode, _full) < _GOVERNANCE_MODE_ORDER.get(server_mode, _full):
+    if _GOVERNANCE_MODE_ORDER.get(effective_mode, _full) < _GOVERNANCE_MODE_ORDER.get(
+        server_mode, _full
+    ):
         raise HTTPException(
             409,
             f"Session governance_mode '{effective_mode}' is below the server minimum '{server_mode}'",
@@ -296,7 +318,12 @@ async def get_messages(session_id: str):
 
 # ========================= P8.2 Identity ===================================
 
-@_routes.post("/sessions/{session_id}/identity/request", status_code=200, response_model=dict[str, Any])
+
+@_routes.post(
+    "/sessions/{session_id}/identity/request",
+    status_code=200,
+    response_model=dict[str, Any],
+)
 async def request_identity_verification(session_id: str, body: IdentityRequestBody):
     """Registrar opens identity-verification phase (MSG1)."""
     _require_state(session_id, LegislativeState.SESSION_INIT)
@@ -328,7 +355,11 @@ async def request_identity_verification(session_id: str, body: IdentityRequestBo
     }
 
 
-@_routes.post("/sessions/{session_id}/identity/attest", status_code=200, response_model=dict[str, Any])
+@_routes.post(
+    "/sessions/{session_id}/identity/attest",
+    status_code=200,
+    response_model=dict[str, Any],
+)
 async def submit_attestation(session_id: str, body: AttestationBody):
     """Agent submits identity attestation (MSG2)."""
     _require_state(session_id, LegislativeState.IDENTITY_VERIFICATION)
@@ -349,7 +380,10 @@ async def submit_attestation(session_id: str, body: AttestationBody):
 
 # ========================= P8.3 Proposal ===================================
 
-@_routes.post("/sessions/{session_id}/proposals", status_code=201, response_model=dict[str, Any])
+
+@_routes.post(
+    "/sessions/{session_id}/proposals", status_code=201, response_model=dict[str, Any]
+)
 async def submit_proposal(session_id: str, body: ProposalBody):
     """Submit a DAG proposal (MSG3)."""
     _require_state(session_id, LegislativeState.PROPOSAL_OPEN)
@@ -369,7 +403,9 @@ async def submit_proposal(session_id: str, body: ProposalBody):
     return result
 
 
-@_routes.get("/sessions/{session_id}/proposals/{proposal_id}", response_model=dict[str, Any])
+@_routes.get(
+    "/sessions/{session_id}/proposals/{proposal_id}", response_model=dict[str, Any]
+)
 async def get_proposal(session_id: str, proposal_id: str):
     """Get proposal details."""
     conn = _connect()
@@ -397,7 +433,12 @@ async def get_proposal(session_id: str, proposal_id: str):
 
 # ========================= P8.4 Deliberation ================================
 
-@_routes.post("/sessions/{session_id}/deliberation/straw-poll", status_code=200, response_model=dict[str, Any])
+
+@_routes.post(
+    "/sessions/{session_id}/deliberation/straw-poll",
+    status_code=200,
+    response_model=dict[str, Any],
+)
 async def submit_straw_poll(session_id: str, body: StrawPollBody):
     """Submit straw poll ballots."""
     _require_state(
@@ -410,7 +451,11 @@ async def submit_straw_poll(session_id: str, body: StrawPollBody):
     return result
 
 
-@_routes.post("/sessions/{session_id}/deliberation/discuss", status_code=200, response_model=dict[str, Any])
+@_routes.post(
+    "/sessions/{session_id}/deliberation/discuss",
+    status_code=200,
+    response_model=dict[str, Any],
+)
 async def submit_discussion(session_id: str, body: DiscussBody):
     """Submit a deliberation message."""
     _require_state(
@@ -430,7 +475,9 @@ async def submit_discussion(session_id: str, body: DiscussBody):
         max_rounds = int(max_rounds_row[0]) if max_rounds_row else 3
 
         if body.round_number > max_rounds:
-            raise HTTPException(400, f"Round {body.round_number} exceeds max ({max_rounds})")
+            raise HTTPException(
+                400, f"Round {body.round_number} exceeds max ({max_rounds})"
+            )
 
         # Store the deliberation message
         conn.execute(
@@ -451,7 +498,9 @@ async def submit_discussion(session_id: str, body: DiscussBody):
     }
 
 
-@_routes.get("/sessions/{session_id}/deliberation/summary", response_model=dict[str, Any])
+@_routes.get(
+    "/sessions/{session_id}/deliberation/summary", response_model=dict[str, Any]
+)
 async def get_deliberation_summary(session_id: str):
     """Get deliberation summary for all rounds."""
     conn = _connect()
@@ -473,17 +522,19 @@ async def get_deliberation_summary(session_id: str):
                 (session_id, round_num),
             ).fetchall()
             if messages:
-                rounds_data.append({
-                    "round_number": round_num,
-                    "messages": [
-                        {
-                            "agent_did": m["agent_did"],
-                            "message": m["message"],
-                            "created_at": m["created_at"],
-                        }
-                        for m in messages
-                    ],
-                })
+                rounds_data.append(
+                    {
+                        "round_number": round_num,
+                        "messages": [
+                            {
+                                "agent_did": m["agent_did"],
+                                "message": m["message"],
+                                "created_at": m["created_at"],
+                            }
+                            for m in messages
+                        ],
+                    }
+                )
     finally:
         conn.close()
 
@@ -492,7 +543,10 @@ async def get_deliberation_summary(session_id: str):
 
 # ========================= P8.5 Voting =====================================
 
-@_routes.post("/sessions/{session_id}/vote", status_code=200, response_model=dict[str, Any])
+
+@_routes.post(
+    "/sessions/{session_id}/vote", status_code=200, response_model=dict[str, Any]
+)
 async def submit_vote(session_id: str, body: VoteBody):
     """Submit formal vote rankings."""
     _require_state(
@@ -555,7 +609,10 @@ async def get_vote_results(session_id: str):
 
 # ========================= P8.6 Bidding ====================================
 
-@_routes.post("/sessions/{session_id}/bids", status_code=201, response_model=dict[str, Any])
+
+@_routes.post(
+    "/sessions/{session_id}/bids", status_code=201, response_model=dict[str, Any]
+)
 async def submit_bid(session_id: str, body: BidBody):
     """Submit a bid on a task node (MSG4)."""
     _require_state(session_id, LegislativeState.BIDDING_OPEN)
@@ -619,21 +676,30 @@ async def list_bids(session_id: str):
 
 # ========================= P8.7 Regulatory =================================
 
-@_routes.post("/sessions/{session_id}/regulatory/decision", status_code=200, response_model=dict[str, Any])
+
+@_routes.post(
+    "/sessions/{session_id}/regulatory/decision",
+    status_code=200,
+    response_model=dict[str, Any],
+)
 async def submit_regulatory_decision(session_id: str, body: RegulatoryDecisionBody):
     """Regulator evaluates bids and produces MSG5."""
     _require_state(session_id, LegislativeState.REGULATORY_REVIEW)
 
     # Only the regulator clerk can submit
     if body.submitter_did != "did:oasis:clerk-regulator":
-        raise HTTPException(403, "Only the regulator clerk can submit regulatory decisions")
+        raise HTTPException(
+            403, "Only the regulator clerk can submit regulatory decisions"
+        )
 
     regulator = _regulator()
     result = regulator.evaluate_bids(session_id)
     return result
 
 
-@_routes.get("/sessions/{session_id}/regulatory/evidence", response_model=dict[str, Any])
+@_routes.get(
+    "/sessions/{session_id}/regulatory/evidence", response_model=dict[str, Any]
+)
 async def get_evidence(session_id: str):
     """Get evidence briefing for deliberation."""
     conn = _connect()
@@ -652,7 +718,12 @@ async def get_evidence(session_id: str):
 
 # ========================= P8.8 Codification ===============================
 
-@_routes.post("/sessions/{session_id}/codification/spec", status_code=201, response_model=dict[str, Any])
+
+@_routes.post(
+    "/sessions/{session_id}/codification/spec",
+    status_code=201,
+    response_model=dict[str, Any],
+)
 async def submit_spec(session_id: str, body: SpecBody):
     """Codifier compiles deployment spec (MSG6)."""
     _require_state(session_id, LegislativeState.CODIFICATION)
@@ -741,7 +812,10 @@ async def get_spec(session_id: str):
 
 # ========================= P8.9 Approval & deployment ======================
 
-@_routes.post("/sessions/{session_id}/approval", status_code=200, response_model=dict[str, Any])
+
+@_routes.post(
+    "/sessions/{session_id}/approval", status_code=200, response_model=dict[str, Any]
+)
 async def submit_approval(session_id: str, body: ApprovalBody):
     """Dual sign-off approval (MSG7)."""
     _require_state(session_id, LegislativeState.AWAITING_APPROVAL)
@@ -821,6 +895,7 @@ async def get_deployment_status(session_id: str):
 
 
 # ========================= P8.10 Constitution & agents ======================
+
 
 @_routes.get("/constitution", response_model=dict[str, Any])
 async def get_constitution():

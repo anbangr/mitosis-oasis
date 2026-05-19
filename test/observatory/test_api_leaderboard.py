@@ -1,4 +1,5 @@
 """Tests for the observatory leaderboard endpoint."""
+
 from __future__ import annotations
 
 import pytest

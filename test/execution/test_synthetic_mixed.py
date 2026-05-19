@@ -1,4 +1,5 @@
 """Tests for SyntheticGenerator in 'mixed' quality mode."""
+
 from __future__ import annotations
 
 import json
@@ -35,8 +36,7 @@ class TestSyntheticMixed:
         """~80% success rate (statistical test with tolerance)."""
         n = 500
         successes = sum(
-            1 for _ in range(n)
-            if generator.generate_output(sample_task).success
+            1 for _ in range(n) if generator.generate_output(sample_task).success
         )
         rate = successes / n
         # Allow generous tolerance for randomness

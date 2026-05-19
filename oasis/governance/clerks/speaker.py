@@ -10,6 +10,7 @@ Handles:
 - Layer 2: deliberation summarization, convergence/deadlock detection,
   minority position preservation
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -22,9 +23,16 @@ from typing import Any, Optional
 
 from oasis.governance.clerks.base import BaseClerk
 from oasis.governance.clerks.llm_interface import LLMError
-from oasis.governance.dag import DAGEdge, DAGNode, DAGSpec, CycleError, topological_sort, validate_dag
+from oasis.governance.dag import (
+    DAGEdge,
+    DAGNode,
+    DAGSpec,
+    CycleError,
+    topological_sort,
+    validate_dag,
+)
 from oasis.governance.messages import DAGProposal, log_message
-from oasis.governance.voting import CopelandVoting, coordination_detection, kendall_tau
+from oasis.governance.voting import CopelandVoting, coordination_detection
 
 
 class Speaker(BaseClerk):
@@ -164,9 +172,13 @@ class Speaker(BaseClerk):
                     "(node_id, proposal_id, label, service_id, pop_tier, "
                     "token_budget, timeout_ms) VALUES (?, ?, ?, ?, ?, ?, ?)",
                     (
-                        node.node_id, proposal_id, node.label,
-                        node.service_id, node.pop_tier,
-                        node.token_budget, node.timeout_ms,
+                        node.node_id,
+                        proposal_id,
+                        node.label,
+                        node.service_id,
+                        node.pop_tier,
+                        node.token_budget,
+                        node.timeout_ms,
                     ),
                 )
             for edge in edges:
@@ -179,7 +191,9 @@ class Speaker(BaseClerk):
         finally:
             conn.close()
 
-        log_message(self.db_path, session_id, proposal, sender_did=proposal.proposer_did)
+        log_message(
+            self.db_path, session_id, proposal, sender_did=proposal.proposer_did
+        )
 
         return {
             "passed": True,
@@ -326,7 +340,7 @@ class Speaker(BaseClerk):
             "participant_count": participant_count,
             "message_count": msg_count,
             "summary": f"Round {round_num} completed with {msg_count} messages "
-                       f"from {participant_count} participants",
+            f"from {participant_count} participants",
         }
 
     # ------------------------------------------------------------------
@@ -427,8 +441,7 @@ class Speaker(BaseClerk):
 
             # Load final vote rankings
             vote_rows = conn.execute(
-                "SELECT agent_did, preference_ranking FROM vote "
-                "WHERE session_id = ?",
+                "SELECT agent_did, preference_ranking FROM vote WHERE session_id = ?",
                 (session_id,),
             ).fetchall()
             final_rankings = {}
@@ -507,12 +520,16 @@ class Speaker(BaseClerk):
         participant_dids = context.get("participant_dids", [])
 
         # --- Heuristic analysis ---
-        positions = [m.get("position", "neutral") for m in messages if m.get("position")]
+        positions = [
+            m.get("position", "neutral") for m in messages if m.get("position")
+        ]
         position_counts = Counter(positions)
         total_positions = sum(position_counts.values()) or 1
 
         # Convergence: dominant position exceeds threshold
-        max_position = position_counts.most_common(1)[0] if position_counts else ("neutral", 0)
+        max_position = (
+            position_counts.most_common(1)[0] if position_counts else ("neutral", 0)
+        )
         convergence = max_position[1] / total_positions if total_positions > 0 else 0.0
 
         # Minority positions: any position held by < 25% of participants
@@ -525,7 +542,7 @@ class Speaker(BaseClerk):
         previous_rounds = context.get("previous_rounds", [])
         deadlock_detected = False
         if len(previous_rounds) >= self.DEADLOCK_ROUND_THRESHOLD:
-            recent = previous_rounds[-self.DEADLOCK_ROUND_THRESHOLD:]
+            recent = previous_rounds[-self.DEADLOCK_ROUND_THRESHOLD :]
             if all(r.get("position_counts") == dict(position_counts) for r in recent):
                 deadlock_detected = True
 

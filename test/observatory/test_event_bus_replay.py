@@ -1,4 +1,5 @@
 """Tests for EventBus replay functionality."""
+
 from __future__ import annotations
 
 from oasis.observatory.event_bus import EventBus

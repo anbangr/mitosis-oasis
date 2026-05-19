@@ -1,11 +1,10 @@
 """Observatory WebSocket handler — real-time event streaming."""
+
 from __future__ import annotations
 
 import asyncio
-import json
 import logging
 from collections import deque
-from typing import Any
 
 from fastapi import WebSocket, WebSocketDisconnect
 
@@ -49,7 +48,11 @@ async def websocket_events(ws: WebSocket, bus: EventBus) -> None:
     def _event_filter(event: Event) -> bool:
         """Filter events based on query params."""
         if allowed_types is not None:
-            val = event.event_type.value if isinstance(event.event_type, EventType) else event.event_type
+            val = (
+                event.event_type.value
+                if isinstance(event.event_type, EventType)
+                else event.event_type
+            )
             if val not in allowed_types:
                 return False
         if session_id is not None and event.session_id != session_id:

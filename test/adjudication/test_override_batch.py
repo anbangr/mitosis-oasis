@@ -1,12 +1,11 @@
 """Override panel batch processing tests (2 tests)."""
+
 from __future__ import annotations
 
 import sqlite3
 
-import pytest
 
 from oasis.adjudication.override_panel import OverridePanel
-from oasis.config import PlatformConfig
 
 
 class TestOverrideBatch:

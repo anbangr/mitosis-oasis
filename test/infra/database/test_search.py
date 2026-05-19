@@ -24,7 +24,6 @@ test_db_filepath = osp.join(parent_folder, "test.db")
 
 
 class MockChannel:
-
     def __init__(self):
         self.call_count = 0
         self.messages = []  # Used to store sent messages
@@ -33,12 +32,16 @@ class MockChannel:
         # Returns the command to search users on the first call
         if self.call_count == 0:
             self.call_count += 1
-            return ("id_", (1, "bob", "search_user")
-                    )  # Assuming the search keyword is "bob"
+            return (
+                "id_",
+                (1, "bob", "search_user"),
+            )  # Assuming the search keyword is "bob"
         if self.call_count == 1:
             self.call_count += 1
-            return ("id_", (2, "Bob", "search_posts")
-                    )  # Assuming the search keyword is "bob"
+            return (
+                "id_",
+                (2, "Bob", "search_posts"),
+            )  # Assuming the search keyword is "bob"
         # Returns the exit command on subsequent calls
         else:
             return ("id_", (None, None, "exit"))
@@ -50,23 +53,23 @@ class MockChannel:
             # Verify the search was successful and found at least one
             # matching user
             assert message[2]["success"] is True, "Search should be successful"
-            assert len(
-                message[2]["users"]) > 0, "Should find at least one user"
+            assert len(message[2]["users"]) > 0, "Should find at least one user"
             # You can add more assertions here to verify the correctness of
             # the returned user information
-            assert (message[2]["users"][0]["user_name"] == "user2"
-                    ), "The first matching user should be 'user2'"
+            assert message[2]["users"][0]["user_name"] == "user2", (
+                "The first matching user should be 'user2'"
+            )
         if self.call_count == 2:
             assert message[2]["success"] is True, "Search should be successful"
-            assert len(
-                message[2]["posts"]) > 0, "Should find at least one post"
+            assert len(message[2]["posts"]) > 0, "Should find at least one post"
             assert message[2]["posts"][0]["content"] == "Bob's first post!"
             assert message[2]["posts"][0]["comments"][0]["content"] == (
-                "Alice's comment")
-            assert message[2]["posts"][0]["comments"][1]["content"] == (
-                "Bob's comment")
+                "Alice's comment"
+            )
+            assert message[2]["posts"][0]["comments"][1]["content"] == ("Bob's comment")
             assert message[2]["posts"][0]["comments"][2]["content"] == (
-                "Charlie's comment")
+                "Charlie's comment"
+            )
 
 
 @pytest.fixture
@@ -92,14 +95,13 @@ async def test_search_user(setup_platform):
         conn = sqlite3.connect(test_db_filepath)
         cursor = conn.cursor()
         users_info = [
-            (1, 1, "user1", "Alice", "Bio of Alice", "2023-01-01 12:00:00", 10,
-             5),
+            (1, 1, "user1", "Alice", "Bio of Alice", "2023-01-01 12:00:00", 10, 5),
             (2, 2, "user2", "Bob", "Bio of Bob", "2023-01-02 12:00:00", 15, 8),
-            (3, 3, "user3", "Charlie", "Bio of Charlie", "2023-01-03 12:00:00",
-             20, 12),
+            (3, 3, "user3", "Charlie", "Bio of Charlie", "2023-01-03 12:00:00", 20, 12),
         ]
-        cursor.executemany("INSERT INTO user VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                           users_info)
+        cursor.executemany(
+            "INSERT INTO user VALUES (?, ?, ?, ?, ?, ?, ?, ?)", users_info
+        )
         posts_info = [
             # (user_id, content, created_at, num_likes)
             (1, "Hello World from Alice!", "2023-01-01 13:00:00", 100, 2),
@@ -109,8 +111,10 @@ async def test_search_user(setup_platform):
         # Assuming cursor is your cursor object already created and connected
         # to the database
         cursor.executemany(
-            ("INSERT INTO post (user_id, content, created_at, num_likes, "
-             "num_dislikes) VALUES (?, ?, ?, ?, ?)"),
+            (
+                "INSERT INTO post (user_id, content, created_at, num_likes, "
+                "num_dislikes) VALUES (?, ?, ?, ?, ?)"
+            ),
             posts_info,
         )
         conn.commit()

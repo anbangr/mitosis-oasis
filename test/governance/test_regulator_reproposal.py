@@ -1,4 +1,5 @@
 """P6 — Test Regulator.request_reproposal."""
+
 import sqlite3
 from pathlib import Path
 

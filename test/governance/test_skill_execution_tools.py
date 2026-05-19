@@ -1,10 +1,13 @@
 """P16 tests: Execution tool validation for SKILL.toml."""
+
 from pathlib import Path
 
 import tomli
 
 
-SKILL_TOML = Path(__file__).resolve().parents[2] / "skills" / "mitosis-governance" / "SKILL.toml"
+SKILL_TOML = (
+    Path(__file__).resolve().parents[2] / "skills" / "mitosis-governance" / "SKILL.toml"
+)
 
 EXECUTION_TOOLS = {
     "get_task",
@@ -38,6 +41,7 @@ def _load_skill():
 
 # ---------- Test 1: All 5 execution tools present ----------
 
+
 def test_execution_tools_present():
     """All 5 execution HTTP tools are defined in the TOML."""
     data = _load_skill()
@@ -47,6 +51,7 @@ def test_execution_tools_present():
 
 
 # ---------- Test 2: URL templates correct ----------
+
 
 def test_execution_url_templates():
     """Each execution tool URL template matches the canonical API endpoint."""
@@ -60,6 +65,7 @@ def test_execution_url_templates():
 
 
 # ---------- Test 3: Args documented with correct required fields ----------
+
 
 def test_execution_args_documented():
     """Each execution tool has documented arguments with descriptions."""

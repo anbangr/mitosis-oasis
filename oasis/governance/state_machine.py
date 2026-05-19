@@ -8,12 +8,12 @@ Implements the full legislative pipeline from the AgentCity paper (§3.4):
 With FAILED as a terminal state reachable from several states, and a
 REGULATORY_REVIEW → PROPOSAL_OPEN re-proposal loop (max 2 per epoch).
 """
+
 from __future__ import annotations
 
 import json
 import sqlite3
-import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 from typing import Any, Optional, Union
@@ -23,8 +23,10 @@ from typing import Any, Optional, Union
 # State enum
 # ---------------------------------------------------------------------------
 
+
 class LegislativeState(str, Enum):
     """The 9 states of the legislative protocol."""
+
     SESSION_INIT = "SESSION_INIT"
     IDENTITY_VERIFICATION = "IDENTITY_VERIFICATION"
     PROPOSAL_OPEN = "PROPOSAL_OPEN"
@@ -83,9 +85,11 @@ TRANSITIONS: dict[LegislativeState, set[LegislativeState]] = {
 # Guard result
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class GuardResult:
     """Result of evaluating a transition guard."""
+
     allowed: bool
     reason: str = ""
 
@@ -94,7 +98,10 @@ class GuardResult:
 # Transition guards
 # ---------------------------------------------------------------------------
 
-def _guard_init_to_identity(session_id: str, conn: sqlite3.Connection, **ctx: Any) -> GuardResult:
+
+def _guard_init_to_identity(
+    session_id: str, conn: sqlite3.Connection, **ctx: Any
+) -> GuardResult:
     """SESSION_INIT → IDENTITY_VERIFICATION: Registrar broadcasts MSG1."""
     # Guard: at least one agent must be registered (besides clerks)
     row = conn.execute(
@@ -106,13 +113,11 @@ def _guard_init_to_identity(session_id: str, conn: sqlite3.Connection, **ctx: An
     return GuardResult(True)
 
 
-def _guard_identity_to_proposal(session_id: str, conn: sqlite3.Connection, **ctx: Any) -> GuardResult:
+def _guard_identity_to_proposal(
+    session_id: str, conn: sqlite3.Connection, **ctx: Any
+) -> GuardResult:
     """IDENTITY_VERIFICATION → PROPOSAL_OPEN: quorum of agents attested identity."""
-<<<<<<< HEAD
-    # Check that enough agents have sent IDENTITY_ATTESTATION messages
-=======
     # Check that enough active producers have sent canonical identity attestations.
->>>>>>> da9c443 (fix(governance): exclude inactive/non-producer attestations from quorum)
     total = conn.execute(
         "SELECT COUNT(*) FROM agent_registry WHERE agent_type = 'producer' AND active = 1"
     ).fetchone()[0]
@@ -145,19 +150,25 @@ def _guard_identity_to_proposal(session_id: str, conn: sqlite3.Connection, **ctx
         (session_id, rep_floor),
     ).fetchone()[0]
     if below_floor > 0:
-        return GuardResult(False, f"{below_floor} agent(s) below reputation floor ({rep_floor})")
+        return GuardResult(
+            False, f"{below_floor} agent(s) below reputation floor ({rep_floor})"
+        )
     if attested / total < threshold:
         return GuardResult(False, f"Quorum not met: {attested}/{total} < {threshold}")
     return GuardResult(True)
 
 
-def _guard_identity_to_failed(session_id: str, conn: sqlite3.Connection, **ctx: Any) -> GuardResult:
+def _guard_identity_to_failed(
+    session_id: str, conn: sqlite3.Connection, **ctx: Any
+) -> GuardResult:
     """IDENTITY_VERIFICATION → FAILED: explicit failure (timeout or rejection)."""
     reason = ctx.get("reason", "Identity verification failed")
     return GuardResult(True, reason)
 
 
-def _guard_proposal_to_bidding(session_id: str, conn: sqlite3.Connection, **ctx: Any) -> GuardResult:
+def _guard_proposal_to_bidding(
+    session_id: str, conn: sqlite3.Connection, **ctx: Any
+) -> GuardResult:
     """PROPOSAL_OPEN → BIDDING_OPEN: valid MSG3 (ProposalSubmission) received."""
     proposals = conn.execute(
         "SELECT COUNT(*) FROM proposal WHERE session_id = ? AND status = 'submitted'",
@@ -175,16 +186,22 @@ def _guard_proposal_to_bidding(session_id: str, conn: sqlite3.Connection, **ctx:
         (session_id, budget_max),
     ).fetchone()[0]
     if over_budget > 0:
-        return GuardResult(False, f"{over_budget} proposal(s) exceed budget cap ({budget_max})")
+        return GuardResult(
+            False, f"{over_budget} proposal(s) exceed budget cap ({budget_max})"
+        )
     return GuardResult(True)
 
 
-def _guard_proposal_to_failed(session_id: str, conn: sqlite3.Connection, **ctx: Any) -> GuardResult:
+def _guard_proposal_to_failed(
+    session_id: str, conn: sqlite3.Connection, **ctx: Any
+) -> GuardResult:
     """PROPOSAL_OPEN → FAILED: timeout or invalid proposal."""
     return GuardResult(True, ctx.get("reason", "Proposal phase failed"))
 
 
-def _guard_bidding_to_regulatory(session_id: str, conn: sqlite3.Connection, **ctx: Any) -> GuardResult:
+def _guard_bidding_to_regulatory(
+    session_id: str, conn: sqlite3.Connection, **ctx: Any
+) -> GuardResult:
     """BIDDING_OPEN → REGULATORY_REVIEW: all task nodes have ≥1 valid bid."""
     # Find all dag_nodes for proposals in this session
     uncovered = conn.execute(
@@ -203,12 +220,16 @@ def _guard_bidding_to_regulatory(session_id: str, conn: sqlite3.Connection, **ct
     return GuardResult(True)
 
 
-def _guard_bidding_to_failed(session_id: str, conn: sqlite3.Connection, **ctx: Any) -> GuardResult:
+def _guard_bidding_to_failed(
+    session_id: str, conn: sqlite3.Connection, **ctx: Any
+) -> GuardResult:
     """BIDDING_OPEN → FAILED: uncovered nodes at timeout."""
     return GuardResult(True, ctx.get("reason", "Bidding phase failed"))
 
 
-def _guard_regulatory_to_codification(session_id: str, conn: sqlite3.Connection, **ctx: Any) -> GuardResult:
+def _guard_regulatory_to_codification(
+    session_id: str, conn: sqlite3.Connection, **ctx: Any
+) -> GuardResult:
     """REGULATORY_REVIEW → CODIFICATION: valid MSG5, no CRITICAL flags."""
     decisions = conn.execute(
         "SELECT compliance_flags FROM regulatory_decision WHERE session_id = ?",
@@ -227,7 +248,9 @@ def _guard_regulatory_to_codification(session_id: str, conn: sqlite3.Connection,
     return GuardResult(True)
 
 
-def _guard_regulatory_to_reproposal(session_id: str, conn: sqlite3.Connection, **ctx: Any) -> GuardResult:
+def _guard_regulatory_to_reproposal(
+    session_id: str, conn: sqlite3.Connection, **ctx: Any
+) -> GuardResult:
     """REGULATORY_REVIEW → PROPOSAL_OPEN: re-proposal requested (max 2 per epoch)."""
     row = conn.execute(
         "SELECT epoch FROM legislative_session WHERE session_id = ?",
@@ -240,16 +263,20 @@ def _guard_regulatory_to_reproposal(session_id: str, conn: sqlite3.Connection, *
         "SELECT COUNT(*) FROM message_log "
         "WHERE session_id = ? AND msg_type = 'StateTransition' "
         "AND payload LIKE '%REGULATORY_REVIEW%' "
-        "AND payload LIKE '%\"to_state\": \"PROPOSAL_OPEN\"%'",
+        'AND payload LIKE \'%"to_state": "PROPOSAL_OPEN"%\'',
         (session_id,),
     ).fetchone()[0]
     max_reproposals = 2
     if reproposals >= max_reproposals:
-        return GuardResult(False, f"Max re-proposals ({max_reproposals}) reached for this epoch")
+        return GuardResult(
+            False, f"Max re-proposals ({max_reproposals}) reached for this epoch"
+        )
     return GuardResult(True)
 
 
-def _guard_codification_to_approval(session_id: str, conn: sqlite3.Connection, **ctx: Any) -> GuardResult:
+def _guard_codification_to_approval(
+    session_id: str, conn: sqlite3.Connection, **ctx: Any
+) -> GuardResult:
     """CODIFICATION → AWAITING_APPROVAL: valid MSG6 passes constitutional validation."""
     specs = conn.execute(
         "SELECT status FROM contract_spec WHERE session_id = ?",
@@ -264,12 +291,16 @@ def _guard_codification_to_approval(session_id: str, conn: sqlite3.Connection, *
     return GuardResult(True)
 
 
-def _guard_codification_to_failed(session_id: str, conn: sqlite3.Connection, **ctx: Any) -> GuardResult:
+def _guard_codification_to_failed(
+    session_id: str, conn: sqlite3.Connection, **ctx: Any
+) -> GuardResult:
     """CODIFICATION → FAILED: validation fails after max retries."""
     return GuardResult(True, ctx.get("reason", "Codification failed"))
 
 
-def _guard_approval_to_deployed(session_id: str, conn: sqlite3.Connection, **ctx: Any) -> GuardResult:
+def _guard_approval_to_deployed(
+    session_id: str, conn: sqlite3.Connection, **ctx: Any
+) -> GuardResult:
     """AWAITING_APPROVAL → DEPLOYED: MSG7 with dual signatures (proposer + regulator)."""
     signatures = ctx.get("signatures", {})
     if not signatures.get("proposer"):
@@ -279,26 +310,64 @@ def _guard_approval_to_deployed(session_id: str, conn: sqlite3.Connection, **ctx
     return GuardResult(True)
 
 
-def _guard_approval_to_failed(session_id: str, conn: sqlite3.Connection, **ctx: Any) -> GuardResult:
+def _guard_approval_to_failed(
+    session_id: str, conn: sqlite3.Connection, **ctx: Any
+) -> GuardResult:
     """AWAITING_APPROVAL → FAILED: approval timeout."""
     return GuardResult(True, ctx.get("reason", "Approval timeout"))
 
 
 # Map: (from_state, to_state) → guard function
 GUARDS: dict[tuple[LegislativeState, LegislativeState], Any] = {
-    (LegislativeState.SESSION_INIT, LegislativeState.IDENTITY_VERIFICATION): _guard_init_to_identity,
-    (LegislativeState.IDENTITY_VERIFICATION, LegislativeState.PROPOSAL_OPEN): _guard_identity_to_proposal,
-    (LegislativeState.IDENTITY_VERIFICATION, LegislativeState.FAILED): _guard_identity_to_failed,
-    (LegislativeState.PROPOSAL_OPEN, LegislativeState.BIDDING_OPEN): _guard_proposal_to_bidding,
-    (LegislativeState.PROPOSAL_OPEN, LegislativeState.FAILED): _guard_proposal_to_failed,
-    (LegislativeState.BIDDING_OPEN, LegislativeState.REGULATORY_REVIEW): _guard_bidding_to_regulatory,
+    (
+        LegislativeState.SESSION_INIT,
+        LegislativeState.IDENTITY_VERIFICATION,
+    ): _guard_init_to_identity,
+    (
+        LegislativeState.IDENTITY_VERIFICATION,
+        LegislativeState.PROPOSAL_OPEN,
+    ): _guard_identity_to_proposal,
+    (
+        LegislativeState.IDENTITY_VERIFICATION,
+        LegislativeState.FAILED,
+    ): _guard_identity_to_failed,
+    (
+        LegislativeState.PROPOSAL_OPEN,
+        LegislativeState.BIDDING_OPEN,
+    ): _guard_proposal_to_bidding,
+    (
+        LegislativeState.PROPOSAL_OPEN,
+        LegislativeState.FAILED,
+    ): _guard_proposal_to_failed,
+    (
+        LegislativeState.BIDDING_OPEN,
+        LegislativeState.REGULATORY_REVIEW,
+    ): _guard_bidding_to_regulatory,
     (LegislativeState.BIDDING_OPEN, LegislativeState.FAILED): _guard_bidding_to_failed,
-    (LegislativeState.REGULATORY_REVIEW, LegislativeState.CODIFICATION): _guard_regulatory_to_codification,
-    (LegislativeState.REGULATORY_REVIEW, LegislativeState.PROPOSAL_OPEN): _guard_regulatory_to_reproposal,
-    (LegislativeState.CODIFICATION, LegislativeState.AWAITING_APPROVAL): _guard_codification_to_approval,
-    (LegislativeState.CODIFICATION, LegislativeState.FAILED): _guard_codification_to_failed,
-    (LegislativeState.AWAITING_APPROVAL, LegislativeState.DEPLOYED): _guard_approval_to_deployed,
-    (LegislativeState.AWAITING_APPROVAL, LegislativeState.FAILED): _guard_approval_to_failed,
+    (
+        LegislativeState.REGULATORY_REVIEW,
+        LegislativeState.CODIFICATION,
+    ): _guard_regulatory_to_codification,
+    (
+        LegislativeState.REGULATORY_REVIEW,
+        LegislativeState.PROPOSAL_OPEN,
+    ): _guard_regulatory_to_reproposal,
+    (
+        LegislativeState.CODIFICATION,
+        LegislativeState.AWAITING_APPROVAL,
+    ): _guard_codification_to_approval,
+    (
+        LegislativeState.CODIFICATION,
+        LegislativeState.FAILED,
+    ): _guard_codification_to_failed,
+    (
+        LegislativeState.AWAITING_APPROVAL,
+        LegislativeState.DEPLOYED,
+    ): _guard_approval_to_deployed,
+    (
+        LegislativeState.AWAITING_APPROVAL,
+        LegislativeState.FAILED,
+    ): _guard_approval_to_failed,
 }
 
 
@@ -306,15 +375,17 @@ GUARDS: dict[tuple[LegislativeState, LegislativeState], Any] = {
 # Timeout configuration
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class TimeoutConfig:
     """Configurable timeouts per state (milliseconds)."""
-    identity_verification_ms: int = 60_000       # 1 minute
-    proposal_ms: int = 300_000                    # 5 minutes
-    bidding_ms: int = 300_000                     # 5 minutes
-    regulatory_review_ms: int = 120_000           # 2 minutes
-    codification_ms: int = 120_000                # 2 minutes
-    approval_ms: int = 300_000                    # 5 minutes
+
+    identity_verification_ms: int = 60_000  # 1 minute
+    proposal_ms: int = 300_000  # 5 minutes
+    bidding_ms: int = 300_000  # 5 minutes
+    regulatory_review_ms: int = 120_000  # 2 minutes
+    codification_ms: int = 120_000  # 2 minutes
+    approval_ms: int = 300_000  # 5 minutes
 
     def get_timeout_for_state(self, state: LegislativeState) -> Optional[int]:
         """Return timeout in ms for a state, or None if no timeout."""
@@ -333,9 +404,11 @@ class TimeoutConfig:
 # State machine
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class TransitionRecord:
     """Record of a state transition."""
+
     from_state: LegislativeState
     to_state: LegislativeState
     timestamp: str
@@ -456,11 +529,13 @@ class LegislativeStateMachine:
                     (reason, self.session_id),
                 )
             # Log the transition in message_log
-            payload = json.dumps({
-                "from_state": current.value,
-                "to_state": target.value,
-                "context": {k: str(v) for k, v in context.items()},
-            })
+            payload = json.dumps(
+                {
+                    "from_state": current.value,
+                    "to_state": target.value,
+                    "context": {k: str(v) for k, v in context.items()},
+                }
+            )
             conn.execute(
                 "INSERT INTO message_log "
                 "(session_id, msg_type, sender_did, receiver, payload) "
@@ -486,12 +561,14 @@ class LegislativeStateMachine:
             records = []
             for row in rows:
                 data = json.loads(row["payload"])
-                records.append(TransitionRecord(
-                    from_state=LegislativeState(data["from_state"]),
-                    to_state=LegislativeState(data["to_state"]),
-                    timestamp=row["created_at"],
-                    context=data.get("context", {}),
-                ))
+                records.append(
+                    TransitionRecord(
+                        from_state=LegislativeState(data["from_state"]),
+                        to_state=LegislativeState(data["to_state"]),
+                        timestamp=row["created_at"],
+                        context=data.get("context", {}),
+                    )
+                )
             return records
         finally:
             conn.close()
@@ -518,6 +595,7 @@ class LegislativeStateMachine:
             # Compare elapsed time
             # updated_at is stored as CURRENT_TIMESTAMP (SQLite text format)
             import datetime
+
             updated = datetime.datetime.fromisoformat(row["updated_at"])
             now = datetime.datetime.now()
             elapsed_ms = (now - updated).total_seconds() * 1000

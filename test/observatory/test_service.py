@@ -16,6 +16,7 @@
 
 Tests the service layer directly (no HTTP), using a temp SQLite DB.
 """
+
 from __future__ import annotations
 
 import sqlite3
@@ -84,7 +85,9 @@ def populated_service(tmp_path: Path) -> ObservatoryService:
     conn.execute(
         "INSERT INTO agent_balance VALUES ('did:mock:agent-1', 100.0, 80.0, 20.0)"
     )
-    conn.execute("INSERT INTO treasury VALUES (NULL, 'reward', 10.0, 110.0, CURRENT_TIMESTAMP)")
+    conn.execute(
+        "INSERT INTO treasury VALUES (NULL, 'reward', 10.0, 110.0, CURRENT_TIMESTAMP)"
+    )
     conn.execute(
         "INSERT INTO legislative_session VALUES ('sess-1', 'OPEN', CURRENT_TIMESTAMP)"
     )
@@ -134,7 +137,9 @@ class TestObservatoryServiceSummary:
         assert "treasury_balance" in result
         assert "active_alerts" in result
 
-    def test_summary_defaults_to_zero_on_empty_db(self, service: ObservatoryService) -> None:
+    def test_summary_defaults_to_zero_on_empty_db(
+        self, service: ObservatoryService
+    ) -> None:
         result = service.get_summary()
         assert result["tasks_in_progress"] == 0
         assert result["treasury_balance"] == 0.0
@@ -153,16 +158,22 @@ class TestObservatoryServiceLeaderboard:
         result = service.get_leaderboard()
         assert result == []
 
-    def test_leaderboard_returns_list(self, populated_service: ObservatoryService) -> None:
+    def test_leaderboard_returns_list(
+        self, populated_service: ObservatoryService
+    ) -> None:
         result = populated_service.get_leaderboard()
         assert isinstance(result, list)
 
-    def test_leaderboard_rank_starts_at_one(self, populated_service: ObservatoryService) -> None:
+    def test_leaderboard_rank_starts_at_one(
+        self, populated_service: ObservatoryService
+    ) -> None:
         result = populated_service.get_leaderboard()
         assert len(result) >= 1
         assert result[0]["rank"] == 1
 
-    def test_leaderboard_filter_by_type(self, populated_service: ObservatoryService) -> None:
+    def test_leaderboard_filter_by_type(
+        self, populated_service: ObservatoryService
+    ) -> None:
         result = populated_service.get_leaderboard(agent_type="producer")
         assert all(r["agent_type"] == "producer" for r in result)
 
@@ -175,7 +186,9 @@ class TestObservatoryServiceTimeseries:
     def test_reputation_timeseries_empty(self, service: ObservatoryService) -> None:
         assert service.get_reputation_timeseries() == []
 
-    def test_reputation_timeseries_populated(self, populated_service: ObservatoryService) -> None:
+    def test_reputation_timeseries_populated(
+        self, populated_service: ObservatoryService
+    ) -> None:
         result = populated_service.get_reputation_timeseries()
         assert len(result) == 1
         assert result[0]["agent_did"] == "did:mock:agent-1"
@@ -183,13 +196,17 @@ class TestObservatoryServiceTimeseries:
     def test_reputation_timeseries_filter_agent(
         self, populated_service: ObservatoryService
     ) -> None:
-        result = populated_service.get_reputation_timeseries(agent_did="did:mock:nobody")
+        result = populated_service.get_reputation_timeseries(
+            agent_did="did:mock:nobody"
+        )
         assert result == []
 
     def test_treasury_timeseries_empty(self, service: ObservatoryService) -> None:
         assert service.get_treasury_timeseries() == []
 
-    def test_treasury_timeseries_populated(self, populated_service: ObservatoryService) -> None:
+    def test_treasury_timeseries_populated(
+        self, populated_service: ObservatoryService
+    ) -> None:
         result = populated_service.get_treasury_timeseries()
         assert len(result) == 1
         assert result[0]["balance_after"] == 110.0
@@ -204,11 +221,15 @@ class TestObservatoryServiceEvents:
         assert len(result) == 1
         assert result[0]["event_type"] == "session.open"
 
-    def test_get_events_filter_type(self, populated_service: ObservatoryService) -> None:
+    def test_get_events_filter_type(
+        self, populated_service: ObservatoryService
+    ) -> None:
         result = populated_service.get_events(event_type="no.such.event")
         assert result == []
 
-    def test_get_events_since_filters(self, populated_service: ObservatoryService) -> None:
+    def test_get_events_since_filters(
+        self, populated_service: ObservatoryService
+    ) -> None:
         result = populated_service.get_events(since=999)
         assert result == []
 
@@ -217,7 +238,9 @@ class TestObservatoryServiceSessionsTimeline:
     def test_sessions_timeline_empty(self, service: ObservatoryService) -> None:
         assert service.get_sessions_timeline() == []
 
-    def test_sessions_timeline_populated(self, populated_service: ObservatoryService) -> None:
+    def test_sessions_timeline_populated(
+        self, populated_service: ObservatoryService
+    ) -> None:
         result = populated_service.get_sessions_timeline()
         assert len(result) == 2
         assert all("session_id" in r for r in result)

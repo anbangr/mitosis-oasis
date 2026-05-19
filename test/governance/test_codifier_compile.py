@@ -1,4 +1,5 @@
 """P6 — Test Codifier.compile_spec."""
+
 import sqlite3
 from pathlib import Path
 
@@ -30,10 +31,22 @@ def _make_proposal() -> DAGProposal:
         proposer_did="did:mock:proposer-1",
         dag_spec={
             "nodes": [
-                {"node_id": "root", "label": "Root", "service_id": "svc-a",
-                 "pop_tier": 1, "token_budget": 100.0, "timeout_ms": 60000},
-                {"node_id": "task-a", "label": "Task A", "service_id": "svc-b",
-                 "pop_tier": 1, "token_budget": 50.0, "timeout_ms": 30000},
+                {
+                    "node_id": "root",
+                    "label": "Root",
+                    "service_id": "svc-a",
+                    "pop_tier": 1,
+                    "token_budget": 100.0,
+                    "timeout_ms": 60000,
+                },
+                {
+                    "node_id": "task-a",
+                    "label": "Task A",
+                    "service_id": "svc-b",
+                    "pop_tier": 1,
+                    "token_budget": 50.0,
+                    "timeout_ms": 30000,
+                },
             ],
             "edges": [
                 {"from_node_id": "root", "to_node_id": "task-a"},

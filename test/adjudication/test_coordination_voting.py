@@ -1,10 +1,10 @@
 """Voting coordination detection tests (3 tests)."""
+
 from __future__ import annotations
 
 import json
 import sqlite3
 
-import pytest
 
 from oasis.adjudication.coordination import CoordinationDetector
 
@@ -58,10 +58,14 @@ class TestCoordinationVoting:
         conn.close()
 
         proposals = ["prop-A", "prop-B", "prop-C"]
-        self._setup_votes(adjudication_db, session_id, [
-            (agents[0]["agent_did"], proposals),  # A, B, C
-            (agents[1]["agent_did"], proposals),  # A, B, C — identical
-        ])
+        self._setup_votes(
+            adjudication_db,
+            session_id,
+            [
+                (agents[0]["agent_did"], proposals),  # A, B, C
+                (agents[1]["agent_did"], proposals),  # A, B, C — identical
+            ],
+        )
 
         detector = CoordinationDetector(threshold=0.8)
         results = detector.detect_voting_coordination(session_id, adjudication_db)
@@ -82,10 +86,14 @@ class TestCoordinationVoting:
         conn.commit()
         conn.close()
 
-        self._setup_votes(adjudication_db, session_id, [
-            (agents[0]["agent_did"], ["prop-X", "prop-Y", "prop-Z"]),
-            (agents[1]["agent_did"], ["prop-Z", "prop-Y", "prop-X"]),  # reversed
-        ])
+        self._setup_votes(
+            adjudication_db,
+            session_id,
+            [
+                (agents[0]["agent_did"], ["prop-X", "prop-Y", "prop-Z"]),
+                (agents[1]["agent_did"], ["prop-Z", "prop-Y", "prop-X"]),  # reversed
+            ],
+        )
 
         detector = CoordinationDetector(threshold=0.8)
         results = detector.detect_voting_coordination(session_id, adjudication_db)
@@ -105,15 +113,25 @@ class TestCoordinationVoting:
         conn.close()
 
         # Partially correlated: A,B,C vs A,C,B → τ = 0.333
-        self._setup_votes(adjudication_db, session_id, [
-            (agents[0]["agent_did"], ["prop-1", "prop-2", "prop-3"]),
-            (agents[1]["agent_did"], ["prop-1", "prop-3", "prop-2"]),
-        ])
+        self._setup_votes(
+            adjudication_db,
+            session_id,
+            [
+                (agents[0]["agent_did"], ["prop-1", "prop-2", "prop-3"]),
+                (agents[1]["agent_did"], ["prop-1", "prop-3", "prop-2"]),
+            ],
+        )
 
         # High threshold — not flagged
         detector_high = CoordinationDetector(threshold=0.8)
-        assert len(detector_high.detect_voting_coordination(session_id, adjudication_db)) == 0
+        assert (
+            len(detector_high.detect_voting_coordination(session_id, adjudication_db))
+            == 0
+        )
 
         # Low threshold — flagged
         detector_low = CoordinationDetector(threshold=0.2)
-        assert len(detector_low.detect_voting_coordination(session_id, adjudication_db)) >= 1
+        assert (
+            len(detector_low.detect_voting_coordination(session_id, adjudication_db))
+            >= 1
+        )

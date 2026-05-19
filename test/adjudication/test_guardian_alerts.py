@@ -1,9 +1,10 @@
 """Tests for Guardian alert creation based on validation results."""
+
 from __future__ import annotations
 
 from pathlib import Path
 
-from oasis.adjudication.guardian import Guardian, GuardianAlert
+from oasis.adjudication.guardian import Guardian
 from oasis.config import PlatformConfig
 
 
@@ -14,6 +15,7 @@ def test_schema_failure_critical(adjudication_db: Path, config: PlatformConfig) 
     # Disable FK for this direct alert test by using a raw task_id
     # Actually guardian_alert has FK to task_assignment, so we need to seed one
     import sqlite3
+
     conn = sqlite3.connect(str(adjudication_db))
     conn.execute("PRAGMA foreign_keys = ON")
     conn.execute(
@@ -49,6 +51,7 @@ def test_timeout_warning(adjudication_db: Path, config: PlatformConfig) -> None:
     """Timeout failure produces a WARNING alert."""
     guardian = Guardian(config, adjudication_db)
     import sqlite3
+
     conn = sqlite3.connect(str(adjudication_db))
     conn.execute("PRAGMA foreign_keys = ON")
     conn.execute(
@@ -80,10 +83,13 @@ def test_timeout_warning(adjudication_db: Path, config: PlatformConfig) -> None:
     assert alert.alert_type == "timeout"
 
 
-def test_quality_below_threshold_warning(adjudication_db: Path, config: PlatformConfig) -> None:
+def test_quality_below_threshold_warning(
+    adjudication_db: Path, config: PlatformConfig
+) -> None:
     """Quality below threshold produces a WARNING alert."""
     guardian = Guardian(config, adjudication_db)
     import sqlite3
+
     conn = sqlite3.connect(str(adjudication_db))
     conn.execute("PRAGMA foreign_keys = ON")
     conn.execute(

@@ -21,6 +21,7 @@ Provides FastAPI routes for the execution branch:
 - Settlement results
 - Session and agent task listings
 """
+
 from __future__ import annotations
 
 from typing import Any

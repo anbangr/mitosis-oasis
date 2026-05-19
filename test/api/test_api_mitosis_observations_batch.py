@@ -32,7 +32,9 @@ def test_batch_observations_matches_single_agent_shapes():
 
         single_feed = client.get("/api/feed", params={"agent_id": 1})
         single_tasks = client.get("/api/v1/execution/agents/did:mock:agent-1/tasks")
-        single_balance = client.get("/api/v1/adjudication/agents/did:mock:agent-1/balance")
+        single_balance = client.get(
+            "/api/v1/adjudication/agents/did:mock:agent-1/balance"
+        )
         assert single_feed.status_code == 200, single_feed.text
         assert single_tasks.status_code == 200, single_tasks.text
         assert single_balance.status_code == 200, single_balance.text
@@ -42,7 +44,9 @@ def test_batch_observations_matches_single_agent_shapes():
 
         assert observation["agent_id"] == "agent-1"
         assert observation["environment"]["type"] == "oasis_social_simulation"
-        assert observation["environment"]["social_feed"] == _normalize_feed_payload(single_feed.json())
+        assert observation["environment"]["social_feed"] == _normalize_feed_payload(
+            single_feed.json()
+        )
         assert observation["environment"]["mission_board"] == single_tasks.json()
         assert observation["environment"]["state"]["agent_balance"] == expected_balance
         assert observation["private_context"] == {"balance": expected_balance}
@@ -65,5 +69,7 @@ def test_batch_observations_handles_invalid_ids_without_corrupting_valid_ones():
 
         assert "agent-2" in observations
         assert "invalid-agent" in observations
-        assert observations["agent-2"]["environment"]["type"] == "oasis_social_simulation"
+        assert (
+            observations["agent-2"]["environment"]["type"] == "oasis_social_simulation"
+        )
         assert observations["invalid-agent"]["environment"]["social_feed"] == []

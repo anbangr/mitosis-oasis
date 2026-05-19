@@ -1,4 +1,5 @@
 """Bidding coordination detection tests (3 tests)."""
+
 from __future__ import annotations
 
 import sqlite3
@@ -58,10 +59,14 @@ class TestCoordinationBidding:
         """Two agents bidding on identical targets are flagged."""
         session_id = "coord-sess-bid-1"
         targets = ["node-A", "node-B", "node-C"]
-        self._setup_bids(adjudication_db, session_id, [
-            (agents[0]["agent_did"], targets),
-            (agents[1]["agent_did"], targets),  # identical targets
-        ])
+        self._setup_bids(
+            adjudication_db,
+            session_id,
+            [
+                (agents[0]["agent_did"], targets),
+                (agents[1]["agent_did"], targets),  # identical targets
+            ],
+        )
 
         detector = CoordinationDetector(threshold=0.8)
         results = detector.detect_bidding_coordination(session_id, adjudication_db)
@@ -72,10 +77,14 @@ class TestCoordinationBidding:
     def test_diverse_bids_not_flagged(self, adjudication_db, agents):
         """Two agents with completely different targets are not flagged."""
         session_id = "coord-sess-bid-2"
-        self._setup_bids(adjudication_db, session_id, [
-            (agents[0]["agent_did"], ["node-X", "node-Y"]),
-            (agents[1]["agent_did"], ["node-Z", "node-W"]),
-        ])
+        self._setup_bids(
+            adjudication_db,
+            session_id,
+            [
+                (agents[0]["agent_did"], ["node-X", "node-Y"]),
+                (agents[1]["agent_did"], ["node-Z", "node-W"]),
+            ],
+        )
 
         detector = CoordinationDetector(threshold=0.8)
         results = detector.detect_bidding_coordination(session_id, adjudication_db)
@@ -92,8 +101,8 @@ class TestCoordinationBidding:
             {"a", "b"}, {"a", "b"}
         ) == pytest.approx(1.0)
 
-        assert CoordinationDetector.jaccard_similarity(
-            {"a"}, {"b"}
-        ) == pytest.approx(0.0)
+        assert CoordinationDetector.jaccard_similarity({"a"}, {"b"}) == pytest.approx(
+            0.0
+        )
 
         assert CoordinationDetector.jaccard_similarity(set(), set()) == 0.0

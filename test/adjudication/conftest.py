@@ -1,4 +1,5 @@
 """Shared fixtures for adjudication tests."""
+
 from __future__ import annotations
 
 import sqlite3
@@ -20,6 +21,7 @@ from oasis.adjudication.schema import create_adjudication_tables
 # ---------------------------------------------------------------------------
 # Core DB fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture()
 def db_path(tmp_path: Path) -> Path:
@@ -163,9 +165,12 @@ def seeded_task(adjudication_db: Path, agents: list[dict]) -> dict:
         "INSERT OR IGNORE INTO task_output "
         "(output_id, task_id, agent_did, output_data, latency_ms) "
         "VALUES ('adj-out-001', ?, ?, ?, 100)",
-        (task_id, agent["agent_did"],
-         '{"task_id": "adj-task-001", "result": "ok", "status": "success", '
-         '"metrics": {"accuracy": 0.9, "completeness": 0.8}}'),
+        (
+            task_id,
+            agent["agent_did"],
+            '{"task_id": "adj-task-001", "result": "ok", "status": "success", '
+            '"metrics": {"accuracy": 0.9, "completeness": 0.8}}',
+        ),
     )
 
     # Output validation

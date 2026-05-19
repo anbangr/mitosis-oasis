@@ -1,11 +1,16 @@
 """Tests for invalid DAG specifications."""
+
 from oasis.governance.dag import DAGEdge, DAGNode, DAGSpec, validate_dag
 
 
 def _node(nid: str, budget: float = 100.0, **kw) -> DAGNode:
     return DAGNode(
-        node_id=nid, label=nid, service_id=f"svc-{nid}",
-        token_budget=budget, timeout_ms=60000, **kw,
+        node_id=nid,
+        label=nid,
+        service_id=f"svc-{nid}",
+        token_budget=budget,
+        timeout_ms=60000,
+        **kw,
     )
 
 

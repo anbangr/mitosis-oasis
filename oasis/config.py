@@ -1,4 +1,5 @@
 """Platform configuration for the Mitosis-OASIS execution engine."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -69,7 +70,9 @@ class PlatformConfig:
 
     # System scaling & modules
     max_agents: int = 1000
-    active_modules: list[str] = field(default_factory=lambda: ["reputation", "treasury"])
+    active_modules: list[str] = field(
+        default_factory=lambda: ["reputation", "treasury"]
+    )
 
     def __post_init__(self) -> None:
         if self.governance_mode not in _VALID_GOVERNANCE_MODES:

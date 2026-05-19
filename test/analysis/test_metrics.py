@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Tests for analysis/metrics.py — the 6 §5.6 governance metrics."""
+
 import sqlite3
 from pathlib import Path
 

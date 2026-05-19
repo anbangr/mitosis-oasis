@@ -4,6 +4,7 @@ Provides a full 3-branch database (governance + execution + adjudication)
 and helpers to drive the legislative pipeline, route tasks, execute them,
 validate outputs, and settle — covering the complete lifecycle.
 """
+
 from __future__ import annotations
 
 import copy
@@ -38,13 +39,12 @@ from oasis.execution.commitment import commit_to_task
 from oasis.execution.runner import ExecutionDispatcher
 from oasis.adjudication.schema import create_adjudication_tables
 from oasis.adjudication.settlement import SettlementCalculator
-from oasis.adjudication.guardian import Guardian
-from oasis.adjudication.treasury import Treasury
 
 
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture()
 def cross_db(tmp_path: Path) -> Path:
@@ -147,6 +147,7 @@ def _make_unique_dag(dag: dict, prefix: str) -> dict:
 # ---------------------------------------------------------------------------
 # Helper: drive legislative pipeline to DEPLOYED
 # ---------------------------------------------------------------------------
+
 
 def drive_to_deployed(
     db_path: Path,
@@ -317,6 +318,7 @@ def drive_to_deployed(
 # Helper: route + commit + execute + validate + settle all tasks
 # ---------------------------------------------------------------------------
 
+
 def execute_all_tasks(
     db_path: Path,
     session_id: str,
@@ -342,7 +344,7 @@ def execute_all_tasks(
         commit_to_task(task_id, task["agent_did"], db)
 
         # Dispatch (synthetic mode generates + validates)
-        dispatch_result = dispatcher.dispatch_task(task_id)
+        dispatcher.dispatch_task(task_id)
 
         # Settle
         settlement = settler.settle_task(task_id, db)
@@ -379,12 +381,14 @@ def execute_all_tasks_llm(
         dispatcher.dispatch_task(task_id)
 
         # Submit output via API
-        output_data = json.dumps({
-            "task_id": task_id,
-            "result": f"LLM output for {task_id}",
-            "status": "success",
-            "metrics": {"accuracy": 0.9, "completeness": 0.85},
-        })
+        output_data = json.dumps(
+            {
+                "task_id": task_id,
+                "result": f"LLM output for {task_id}",
+                "status": "success",
+                "metrics": {"accuracy": 0.9, "completeness": 0.85},
+            }
+        )
         dispatcher.receive_output(task_id, output_data, agent_did)
 
         # Settle

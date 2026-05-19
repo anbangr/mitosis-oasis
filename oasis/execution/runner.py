@@ -1,16 +1,16 @@
 """Execution dispatcher — routes tasks to LLM agents or synthetic generator."""
+
 from __future__ import annotations
 
-import json
 import sqlite3
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Union
+from typing import Union
 
 from oasis.config import PlatformConfig
 from oasis.execution.synthetic import SyntheticGenerator, SyntheticOutput
-from oasis.execution.validator import OutputValidator, ValidationResult
+from oasis.execution.validator import OutputValidator
 
 
 @dataclass
@@ -118,9 +118,7 @@ class ExecutionDispatcher:
                     "expected 'executing'"
                 )
             if task["agent_did"] != agent_did:
-                raise ValueError(
-                    f"Agent {agent_did} is not assigned to task {task_id}"
-                )
+                raise ValueError(f"Agent {agent_did} is not assigned to task {task_id}")
         finally:
             conn.close()
 
@@ -144,15 +142,21 @@ class ExecutionDispatcher:
             if task is None:
                 raise ValueError(f"Task not found: {task_id}")
 
-            has_output = conn.execute(
-                "SELECT 1 FROM task_output WHERE task_id = ?",
-                (task_id,),
-            ).fetchone() is not None
+            has_output = (
+                conn.execute(
+                    "SELECT 1 FROM task_output WHERE task_id = ?",
+                    (task_id,),
+                ).fetchone()
+                is not None
+            )
 
-            has_validation = conn.execute(
-                "SELECT 1 FROM output_validation WHERE task_id = ?",
-                (task_id,),
-            ).fetchone() is not None
+            has_validation = (
+                conn.execute(
+                    "SELECT 1 FROM output_validation WHERE task_id = ?",
+                    (task_id,),
+                ).fetchone()
+                is not None
+            )
 
             return TaskStatus(
                 task_id=task_id,
@@ -197,9 +201,11 @@ class ExecutionDispatcher:
         )
 
         # Update task status based on validation
-        final_status = "completed" if (
-            validation.schema_valid and validation.timeout_valid
-        ) else "failed"
+        final_status = (
+            "completed"
+            if (validation.schema_valid and validation.timeout_valid)
+            else "failed"
+        )
 
         conn = self._connect()
         try:

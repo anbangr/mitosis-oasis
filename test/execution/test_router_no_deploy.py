@@ -1,4 +1,5 @@
 """Tests for routing rejection — non-DEPLOYED and missing decision."""
+
 from __future__ import annotations
 
 import sqlite3

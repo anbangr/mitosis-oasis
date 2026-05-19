@@ -1,10 +1,13 @@
 """P11 tests: SKILL.toml parsing and structure validation."""
+
 from pathlib import Path
 
 import tomli
 
 
-SKILL_TOML = Path(__file__).resolve().parents[2] / "skills" / "mitosis-governance" / "SKILL.toml"
+SKILL_TOML = (
+    Path(__file__).resolve().parents[2] / "skills" / "mitosis-governance" / "SKILL.toml"
+)
 
 
 def _load_skill():
@@ -13,6 +16,7 @@ def _load_skill():
 
 
 # ---------- Test 1: TOML parses without error ----------
+
 
 def test_skill_toml_parses():
     """SKILL.toml is valid TOML and can be loaded."""
@@ -48,12 +52,12 @@ def test_all_ten_tools_present():
     data = _load_skill()
     tool_names = {t["name"] for t in data["tools"]}
     assert tool_names == EXPECTED_TOOLS, (
-        f"Missing: {EXPECTED_TOOLS - tool_names}, "
-        f"Extra: {tool_names - EXPECTED_TOOLS}"
+        f"Missing: {EXPECTED_TOOLS - tool_names}, Extra: {tool_names - EXPECTED_TOOLS}"
     )
 
 
 # ---------- Test 3: All tools have kind='http' ----------
+
 
 def test_all_tools_have_http_kind():
     """Every tool entry must have kind='http'."""

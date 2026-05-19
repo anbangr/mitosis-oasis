@@ -1,10 +1,10 @@
 """Tests for SanctionEngine freeze/unfreeze operations."""
+
 from __future__ import annotations
 
 import sqlite3
 from pathlib import Path
 
-import pytest
 
 from oasis.adjudication.sanctions import SanctionEngine
 from oasis.config import PlatformConfig

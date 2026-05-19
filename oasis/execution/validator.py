@@ -1,12 +1,13 @@
 """Output validation — schema checks, timeout checks, quality scoring, guardian alerts."""
+
 from __future__ import annotations
 
 import json
 import sqlite3
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Union
+from typing import Union
 
 
 @dataclass
@@ -79,9 +80,7 @@ class OutputValidator:
 
             # Run checks
             schema_valid = self._check_schema(output_data)
-            timeout_valid = self._check_timeout(
-                output.get("latency_ms", 0), timeout_ms
-            )
+            timeout_valid = self._check_timeout(output.get("latency_ms", 0), timeout_ms)
             quality_score = self._check_quality(output_data)
 
             # Emit guardian alerts for failures
@@ -96,7 +95,10 @@ class OutputValidator:
                 )
             elif quality_score < self.QUALITY_THRESHOLD:
                 alert_id = self._emit_guardian_alert(
-                    conn, task_id, "quality_below_threshold", "WARNING",
+                    conn,
+                    task_id,
+                    "quality_below_threshold",
+                    "WARNING",
                     details=f"quality_score={quality_score:.2f}",
                 )
 
@@ -134,9 +136,7 @@ class OutputValidator:
             return False
         return self.EXPECTED_OUTPUT_FIELDS.issubset(output_data.keys())
 
-    def _check_timeout(
-        self, latency_ms: int, timeout_ms: int | None
-    ) -> bool:
+    def _check_timeout(self, latency_ms: int, timeout_ms: int | None) -> bool:
         """Check that latency is within the node's timeout."""
         if timeout_ms is None:
             # No timeout constraint defined — pass

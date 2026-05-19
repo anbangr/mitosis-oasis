@@ -1,4 +1,5 @@
 """Tests for execution HTTP endpoints."""
+
 from __future__ import annotations
 
 import json
@@ -25,6 +26,7 @@ from .conftest import EXEC_PRODUCERS, drive_to_deployed
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture()
 def exec_db(tmp_path):
     """Set up a full DB with governance + execution tables, wired into endpoints."""
@@ -36,6 +38,7 @@ def exec_db(tmp_path):
 
     # Also init governance endpoints module
     from oasis.governance import endpoints as gov_ep
+
     gov_ep.init_governance_db(str(db))
 
     config = PlatformConfig(execution_mode="llm")
@@ -74,6 +77,7 @@ def routed_tasks(exec_db, api_producers):
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
+
 
 class TestExecutionAPI:
     def test_get_task_details(self, client, routed_tasks):
@@ -135,9 +139,7 @@ class TestExecutionAPI:
     def test_list_session_tasks(self, client, routed_tasks):
         """GET /api/execution/sessions/{session_id}/tasks lists tasks."""
         tasks, info = routed_tasks
-        resp = client.get(
-            f"/api/execution/sessions/{info['session_id']}/tasks"
-        )
+        resp = client.get(f"/api/execution/sessions/{info['session_id']}/tasks")
         assert resp.status_code == 200
         data = resp.json()
         assert len(data["tasks"]) == len(tasks)

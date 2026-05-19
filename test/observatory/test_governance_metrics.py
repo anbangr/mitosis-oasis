@@ -9,6 +9,7 @@ Covers GET /api/v1/observatory/governance/metrics:
 - OPA (Override Panel Activation count)
 - ECP (Endogenous Compliance Premium)
 """
+
 from __future__ import annotations
 
 import sqlite3

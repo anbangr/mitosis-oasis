@@ -1,4 +1,5 @@
 """Tests: message logging to DB, filtering by type, chronological order (3 tests)."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -18,6 +19,7 @@ def test_message_logged_to_db(governance_db: Path):
     session_id = "sess-log-001"
     # Create session row for FK
     import sqlite3
+
     conn = sqlite3.connect(str(governance_db))
     conn.execute(
         "INSERT INTO legislative_session (session_id, state, epoch) VALUES (?, ?, ?)",
@@ -30,7 +32,9 @@ def test_message_logged_to_db(governance_db: Path):
         session_id=session_id,
         min_reputation=0.2,
     )
-    log_id = log_message(governance_db, session_id, msg, sender_did="did:oasis:clerk-registrar")
+    log_id = log_message(
+        governance_db, session_id, msg, sender_did="did:oasis:clerk-registrar"
+    )
     assert log_id is not None
     assert log_id > 0
 
@@ -43,6 +47,7 @@ def test_messages_filterable_by_type(governance_db: Path):
     """get_session_messages returns only messages of the requested type."""
     session_id = "sess-log-002"
     import sqlite3
+
     conn = sqlite3.connect(str(governance_db))
     conn.execute(
         "INSERT INTO legislative_session (session_id, state, epoch) VALUES (?, ?, ?)",
@@ -71,7 +76,9 @@ def test_messages_filterable_by_type(governance_db: Path):
     all_msgs = get_session_messages(governance_db, session_id)
     assert len(all_msgs) == 2
 
-    bids_only = get_session_messages(governance_db, session_id, msg_type=MessageType.TASK_BID)
+    bids_only = get_session_messages(
+        governance_db, session_id, msg_type=MessageType.TASK_BID
+    )
     assert len(bids_only) == 1
     assert bids_only[0]["msg_type"] == MessageType.TASK_BID.value
 
@@ -80,6 +87,7 @@ def test_messages_chronological_order(governance_db: Path):
     """Messages are returned in insertion (chronological) order."""
     session_id = "sess-log-003"
     import sqlite3
+
     conn = sqlite3.connect(str(governance_db))
     conn.execute(
         "INSERT INTO legislative_session (session_id, state, epoch) VALUES (?, ?, ?)",

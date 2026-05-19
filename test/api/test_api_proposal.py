@@ -1,4 +1,5 @@
 """P8.3 — Proposal API tests."""
+
 from __future__ import annotations
 
 
@@ -7,8 +8,14 @@ def test_submit_proposal(client, session_factory):
     session_id = session_factory("PROPOSAL_OPEN")
     dag_spec = {
         "nodes": [
-            {"node_id": "a", "label": "Step A", "service_id": "svc",
-             "pop_tier": 1, "token_budget": 50.0, "timeout_ms": 30000},
+            {
+                "node_id": "a",
+                "label": "Step A",
+                "service_id": "svc",
+                "pop_tier": 1,
+                "token_budget": 50.0,
+                "timeout_ms": 30000,
+            },
         ],
         "edges": [],
     }
@@ -33,8 +40,14 @@ def test_get_proposal_details(client, session_factory):
     session_id = session_factory("PROPOSAL_OPEN")
     dag_spec = {
         "nodes": [
-            {"node_id": "x", "label": "X", "service_id": "svc",
-             "pop_tier": 1, "token_budget": 100.0, "timeout_ms": 60000},
+            {
+                "node_id": "x",
+                "label": "X",
+                "service_id": "svc",
+                "pop_tier": 1,
+                "token_budget": 100.0,
+                "timeout_ms": 60000,
+            },
         ],
         "edges": [],
     }
@@ -60,10 +73,22 @@ def test_invalid_dag_400(client, session_factory):
     session_id = session_factory("PROPOSAL_OPEN")
     dag_spec = {
         "nodes": [
-            {"node_id": "a", "label": "A", "service_id": "svc",
-             "pop_tier": 1, "token_budget": 50.0, "timeout_ms": 30000},
-            {"node_id": "b", "label": "B", "service_id": "svc",
-             "pop_tier": 1, "token_budget": 50.0, "timeout_ms": 30000},
+            {
+                "node_id": "a",
+                "label": "A",
+                "service_id": "svc",
+                "pop_tier": 1,
+                "token_budget": 50.0,
+                "timeout_ms": 30000,
+            },
+            {
+                "node_id": "b",
+                "label": "B",
+                "service_id": "svc",
+                "pop_tier": 1,
+                "token_budget": 50.0,
+                "timeout_ms": 30000,
+            },
         ],
         "edges": [
             {"from_node_id": "a", "to_node_id": "b"},
@@ -88,8 +113,14 @@ def test_budget_exceeded_400(client, session_factory):
     session_id = session_factory("PROPOSAL_OPEN")
     dag_spec = {
         "nodes": [
-            {"node_id": "a", "label": "A", "service_id": "svc",
-             "pop_tier": 1, "token_budget": 2_000_000.0, "timeout_ms": 30000},
+            {
+                "node_id": "a",
+                "label": "A",
+                "service_id": "svc",
+                "pop_tier": 1,
+                "token_budget": 2_000_000.0,
+                "timeout_ms": 30000,
+            },
         ],
         "edges": [],
     }

@@ -1,4 +1,5 @@
 """E2E: Full 3-branch pipeline — legislate → execute (synthetic) → settle → reputation."""
+
 from __future__ import annotations
 
 import sqlite3

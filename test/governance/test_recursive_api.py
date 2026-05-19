@@ -4,21 +4,16 @@ Since governance endpoints are stubs (P8 not yet implemented), these tests
 exercise recursive decomposition at the module level, verifying that the
 functions can be called programmatically in a flow that mimics API usage.
 """
+
 from __future__ import annotations
 
 import json
 import sqlite3
 
-import pytest
 
 from oasis.governance.dag import (
     get_session_tree,
     trigger_child_session,
-)
-from oasis.governance.schema import (
-    create_governance_tables,
-    seed_clerks,
-    seed_constitution,
 )
 from oasis.governance.state_machine import (
     LegislativeState,
@@ -30,8 +25,10 @@ from oasis.governance.state_machine import (
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _create_full_session(db_path, session_id, parent_session_id=None,
-                         parent_node_id=None, budget=1000.0):
+
+def _create_full_session(
+    db_path, session_id, parent_session_id=None, parent_node_id=None, budget=1000.0
+):
     """Create a session with a non-leaf DAG and advance it to DEPLOYED."""
     conn = sqlite3.connect(str(db_path))
     conn.execute("PRAGMA foreign_keys = ON")
@@ -74,8 +71,7 @@ def _create_full_session(db_path, session_id, parent_session_id=None,
         (f"task-{session_id}", prop_id, budget / 2),
     )
     conn.execute(
-        "INSERT INTO dag_edge (proposal_id, from_node_id, to_node_id) "
-        "VALUES (?, ?, ?)",
+        "INSERT INTO dag_edge (proposal_id, from_node_id, to_node_id) VALUES (?, ?, ?)",
         (prop_id, f"root-{session_id}", f"task-{session_id}"),
     )
     conn.commit()
@@ -85,6 +81,7 @@ def _create_full_session(db_path, session_id, parent_session_id=None,
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
+
 
 class TestRecursiveAPI:
     """Module-level API tests for recursive decomposition."""
@@ -119,7 +116,9 @@ class TestRecursiveAPI:
         """Child session is accessible via get_session_tree after creation."""
         _create_full_session(governance_db, "api-parent-2")
         child_id = trigger_child_session(
-            "api-parent-2", "root-api-parent-2", governance_db,
+            "api-parent-2",
+            "root-api-parent-2",
+            governance_db,
             child_budget=500.0,
         )
 

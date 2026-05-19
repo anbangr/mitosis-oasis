@@ -1,4 +1,5 @@
 """E2E: Bad output → guardian alert → override panel freeze → stake slash → reputation reduction."""
+
 from __future__ import annotations
 
 import json
@@ -11,7 +12,6 @@ from oasis.execution.runner import ExecutionDispatcher
 from oasis.adjudication.guardian import Guardian
 from oasis.adjudication.override_panel import OverridePanel
 from oasis.adjudication.sanctions import SanctionEngine
-from oasis.adjudication.settlement import SettlementCalculator
 from oasis.governance.state_machine import LegislativeState
 
 from .conftest import drive_to_deployed
@@ -21,7 +21,7 @@ def test_guardian_freeze_pipeline(cross_db, producers):
     """Bad output triggers: guardian alert → override freeze → slash → rep reduction."""
     config = PlatformConfig(
         execution_mode="llm",
-        freeze_threshold=0.5,   # quality < 0.5 triggers FREEZE
+        freeze_threshold=0.5,  # quality < 0.5 triggers FREEZE
         warn_threshold=0.3,
     )
 
@@ -47,11 +47,13 @@ def test_guardian_freeze_pipeline(cross_db, producers):
     dispatcher.dispatch_task(task_id)
 
     # Submit BAD output (malicious payload with schema failure)
-    bad_output = json.dumps({
-        "task_id": task_id,
-        "wrong_field": "this is bad data",
-        # Missing 'result' and 'status' — schema failure
-    })
+    bad_output = json.dumps(
+        {
+            "task_id": task_id,
+            "wrong_field": "this is bad data",
+            # Missing 'result' and 'status' — schema failure
+        }
+    )
     output_result = dispatcher.receive_output(task_id, bad_output, agent_did)
 
     # Validation should have failed
@@ -60,24 +62,28 @@ def test_guardian_freeze_pipeline(cross_db, producers):
 
     # Phase 3: Guardian processes the validation
     guardian = Guardian(config, db)
-    alert = guardian.process_validation({
-        "task_id": task_id,
-        "schema_valid": False,
-        "timeout_valid": True,
-        "quality_score": 0.0,
-    })
+    alert = guardian.process_validation(
+        {
+            "task_id": task_id,
+            "schema_valid": False,
+            "timeout_valid": True,
+            "quality_score": 0.0,
+        }
+    )
     assert alert is not None
     assert alert.severity in ("CRITICAL", "WARNING")
 
     # Override panel evaluates alert
     panel = OverridePanel(config, db)
-    decision = panel.decide({
-        "type": "alert",
-        "alert_id": alert.alert_id,
-        "task_id": task_id,
-        "quality_score": 0.0,
-        "agent_did": agent_did,
-    })
+    decision = panel.decide(
+        {
+            "type": "alert",
+            "alert_id": alert.alert_id,
+            "task_id": task_id,
+            "quality_score": 0.0,
+            "agent_did": agent_did,
+        }
+    )
     # With quality 0.0 < freeze_threshold 0.5, should FREEZE
     assert decision.decision_type in ("freeze", "slash")
 

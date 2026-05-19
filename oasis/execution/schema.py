@@ -10,6 +10,7 @@ Tables
 6. agent_balance       — agent token balances and locked stakes
 7. guardian_alert      — alerts emitted by the output validator
 """
+
 from __future__ import annotations
 
 import sqlite3

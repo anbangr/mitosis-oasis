@@ -3,6 +3,7 @@
 All fixtures create isolated state per test (tmp_path) so tests never
 interfere with each other.
 """
+
 from __future__ import annotations
 
 import json
@@ -22,6 +23,7 @@ from oasis.governance.schema import (
 # ---------------------------------------------------------------------------
 # Core database fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture()
 def db_path(tmp_path: Path) -> Path:
@@ -66,11 +68,13 @@ SAMPLE_CLERK_AGENTS = [
         "display_name": f"Clerk ({role.title()})",
         "human_principal": "platform@mitosis.dev",
         "clerk_role": role,
-        "authority_envelope": json.dumps({
-            "role": role,
-            "permissions": [f"{role}:*"],
-            "issued_at": "2026-01-01T00:00:00Z",
-        }),
+        "authority_envelope": json.dumps(
+            {
+                "role": role,
+                "permissions": [f"{role}:*"],
+                "issued_at": "2026-01-01T00:00:00Z",
+            }
+        ),
     }
     for role in SAMPLE_CLERK_ROLES
 ]
@@ -90,12 +94,30 @@ SAMPLE_CONSTITUTION_PARAMS = {
 
 SAMPLE_DAG = {
     "nodes": [
-        {"node_id": "root", "label": "Coordinate", "service_id": "coordinator",
-         "pop_tier": 1, "token_budget": 100.0, "timeout_ms": 60000},
-        {"node_id": "task-a", "label": "Data Collection", "service_id": "scraper",
-         "pop_tier": 2, "token_budget": 200.0, "timeout_ms": 120000},
-        {"node_id": "task-b", "label": "Analysis", "service_id": "analyzer",
-         "pop_tier": 2, "token_budget": 300.0, "timeout_ms": 180000},
+        {
+            "node_id": "root",
+            "label": "Coordinate",
+            "service_id": "coordinator",
+            "pop_tier": 1,
+            "token_budget": 100.0,
+            "timeout_ms": 60000,
+        },
+        {
+            "node_id": "task-a",
+            "label": "Data Collection",
+            "service_id": "scraper",
+            "pop_tier": 2,
+            "token_budget": 200.0,
+            "timeout_ms": 120000,
+        },
+        {
+            "node_id": "task-b",
+            "label": "Analysis",
+            "service_id": "analyzer",
+            "pop_tier": 2,
+            "token_budget": 300.0,
+            "timeout_ms": 180000,
+        },
     ],
     "edges": [
         {"from_node_id": "root", "to_node_id": "task-a"},
@@ -128,6 +150,7 @@ def sample_dag() -> dict:
 # ---------------------------------------------------------------------------
 # DB connection helper
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture()
 def db_conn(governance_db: Path) -> Generator[sqlite3.Connection, None, None]:

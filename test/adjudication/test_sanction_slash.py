@@ -1,4 +1,5 @@
 """Tests for SanctionEngine stake slashing."""
+
 from __future__ import annotations
 
 import sqlite3

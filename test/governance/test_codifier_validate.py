@@ -1,4 +1,5 @@
 """P6 — Test Codifier.run_constitutional_validation."""
+
 from pathlib import Path
 
 from oasis.governance.clerks.codifier import Codifier
@@ -20,8 +21,14 @@ def _make_valid_spec(session_id: str = "sess-val") -> CodedContractSpec:
         service_contract_specs={
             "dag_spec": {
                 "nodes": [
-                    {"node_id": "root", "label": "Root", "service_id": "svc",
-                     "pop_tier": 1, "token_budget": 100.0, "timeout_ms": 60000},
+                    {
+                        "node_id": "root",
+                        "label": "Root",
+                        "service_id": "svc",
+                        "pop_tier": 1,
+                        "token_budget": 100.0,
+                        "timeout_ms": 60000,
+                    },
                 ],
                 "edges": [],
             },
@@ -64,8 +71,14 @@ def test_failure_with_structured_errors(governance_db: Path):
         service_contract_specs={
             "dag_spec": {
                 "nodes": [
-                    {"node_id": "root", "label": "Root", "service_id": "svc",
-                     "pop_tier": 1, "token_budget": 100.0, "timeout_ms": 60000},
+                    {
+                        "node_id": "root",
+                        "label": "Root",
+                        "service_id": "svc",
+                        "pop_tier": 1,
+                        "token_budget": 100.0,
+                        "timeout_ms": 60000,
+                    },
                 ],
                 "edges": [],
             },

@@ -3,16 +3,21 @@ import pytest
 import tempfile
 import os
 
-from oasis.execution.commitment import commit_to_task, validate_commitment, release_stake
+from oasis.execution.commitment import (
+    commit_to_task,
+    validate_commitment,
+    release_stake,
+)
+
 
 @pytest.fixture
 def db_path():
     fd, path = tempfile.mkstemp(suffix=".sqlite")
     os.close(fd)
-    
+
     conn = sqlite3.connect(path)
     conn.execute("PRAGMA foreign_keys = ON")
-    
+
     # Create required schemas for commitment
     conn.executescript("""
         CREATE TABLE task_assignment (node_id TEXT, task_id TEXT PRIMARY KEY, agent_did TEXT, status TEXT, session_id TEXT);
@@ -21,7 +26,7 @@ def db_path():
         CREATE TABLE bid (session_id TEXT, task_node_id TEXT, bidder_did TEXT, stake_amount REAL, status TEXT);
         CREATE TABLE task_commitment (commitment_id TEXT PRIMARY KEY, task_id TEXT, agent_did TEXT, stake_amount REAL);
     """)
-    
+
     # Seed initial test data
     conn.executescript("""
         INSERT INTO agent_registry VALUES ('agent_1', 1);
@@ -45,7 +50,7 @@ def db_path():
     """)
     conn.commit()
     conn.close()
-    
+
     yield path
     os.remove(path)
 
@@ -55,15 +60,19 @@ def test_commit_to_task_success(db_path):
     assert res["status"] == "committed"
     assert res["agent_did"] == "agent_1"
     assert res["stake_amount"] == 10.0
-    
+
     # Verify DB state
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
-    bal = conn.execute("SELECT * FROM agent_balance WHERE agent_did = 'agent_1'").fetchone()
+    bal = conn.execute(
+        "SELECT * FROM agent_balance WHERE agent_did = 'agent_1'"
+    ).fetchone()
     assert bal["locked_stake"] == 10.0
     assert bal["available_balance"] == 90.0
-    
-    task = conn.execute("SELECT * FROM task_assignment WHERE task_id = 'task_1'").fetchone()
+
+    task = conn.execute(
+        "SELECT * FROM task_assignment WHERE task_id = 'task_1'"
+    ).fetchone()
     assert task["status"] == "committed"
     conn.close()
 
@@ -90,18 +99,20 @@ def test_commit_to_task_insufficient_balance(db_path):
 
 def test_validate_commitment(db_path):
     # First, make a commitment
-    res = commit_to_task("task_1", "agent_1", db_path)
-    
+    commit_to_task("task_1", "agent_1", db_path)
+
     val = validate_commitment("task_1", db_path)
     assert val["valid"] is True
     assert len(val["errors"]) == 0
-    
+
     # Manually invalidate it by modifying status
     conn = sqlite3.connect(db_path)
-    conn.execute("UPDATE task_assignment SET status = 'pending' WHERE task_id = 'task_1'")
+    conn.execute(
+        "UPDATE task_assignment SET status = 'pending' WHERE task_id = 'task_1'"
+    )
     conn.commit()
     conn.close()
-    
+
     val = validate_commitment("task_1", db_path)
     assert val["valid"] is False
     assert "expected 'committed'" in val["errors"][0]
@@ -110,25 +121,30 @@ def test_validate_commitment(db_path):
 def test_release_stake(db_path):
     # Setup
     commit_to_task("task_1", "agent_1", db_path)
-    
+
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
-    bal1 = conn.execute("SELECT * FROM agent_balance WHERE agent_did = 'agent_1'").fetchone()
+    bal1 = conn.execute(
+        "SELECT * FROM agent_balance WHERE agent_did = 'agent_1'"
+    ).fetchone()
     assert bal1["available_balance"] == 90.0
     assert bal1["locked_stake"] == 10.0
     conn.close()
-    
+
     # Act
     res = release_stake("task_1", db_path)
     assert res["released_amount"] == 10.0
-    
+
     # Verify unlocked
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
-    bal2 = conn.execute("SELECT * FROM agent_balance WHERE agent_did = 'agent_1'").fetchone()
+    bal2 = conn.execute(
+        "SELECT * FROM agent_balance WHERE agent_did = 'agent_1'"
+    ).fetchone()
     assert bal2["available_balance"] == 100.0
     assert bal2["locked_stake"] == 0.0
     conn.close()
+
 
 def test_release_stake_no_commitment(db_path):
     with pytest.raises(ValueError, match="No commitment found"):

@@ -11,15 +11,16 @@ app = FastAPI()
 app.include_router(router)
 client = TestClient(app)
 
+
 @pytest.fixture
 def db_path():
     fd, path = tempfile.mkstemp(suffix=".sqlite")
     os.close(fd)
-    
+
     # Init DB and create schemas
     init_observatory_db(path)
     conn = sqlite3.connect(path)
-    
+
     # Create missing tables for summary, leaderboard, timeseries, heatmap
     conn.executescript("""
         CREATE TABLE legislative_session (session_id TEXT, state TEXT, created_at TEXT);
@@ -30,7 +31,7 @@ def db_path():
         CREATE TABLE guardian_alert (alert_id TEXT);
         CREATE TABLE reputation_ledger (entry_id INTEGER PRIMARY KEY, agent_did TEXT, old_score REAL, new_score REAL, performance_score REAL, reason TEXT, created_at TEXT);
     """)
-    
+
     # Seed data
     conn.executescript("""
         INSERT INTO legislative_session VALUES ('sess1', 'active', '2023-01-01T00:00:00Z');
@@ -56,9 +57,9 @@ def db_path():
     """)
     conn.commit()
     conn.close()
-    
+
     yield path
-    
+
     os.remove(path)
 
 
@@ -75,7 +76,9 @@ def test_get_summary(db_path):
 
 
 def test_get_leaderboard(db_path):
-    response = client.get("/api/observatory/agents/leaderboard?sort_by=reputation_score&limit=10")
+    response = client.get(
+        "/api/observatory/agents/leaderboard?sort_by=reputation_score&limit=10"
+    )
     assert response.status_code == 200
     data = response.json()
     assert len(data) == 2
@@ -130,8 +133,10 @@ def test_get_execution_heatmap(db_path):
     assert data["agents"]["did:agent:1"]["task1"] == "in_progress"
     assert len(data["rows"]) == 2
 
+
 def test_db_not_initialized_returns_503():
     import oasis.observatory.endpoints as endpoints
+
     old_service = endpoints._service
     endpoints._service = None
     try:
@@ -140,12 +145,14 @@ def test_db_not_initialized_returns_503():
         endpoints._service = old_service
     assert response.status_code == 503
 
+
 def test_get_events_pagination(db_path):
     response = client.get("/api/observatory/events?limit=1&offset=0")
     assert response.status_code == 200
     data = response.json()
     assert len(data) == 1
     assert data[0]["sequence_number"] == 1
+
 
 def test_get_leaderboard_filtering(db_path):
     response = client.get("/api/observatory/agents/leaderboard?type=voter")

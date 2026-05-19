@@ -1,11 +1,10 @@
 """Synthetic output generator for testing execution without real LLM agents."""
+
 from __future__ import annotations
 
 import json
 import random
-import uuid
-from dataclasses import dataclass, field
-from typing import Any
+from dataclasses import dataclass
 
 from oasis.config import PlatformConfig
 
@@ -64,9 +63,7 @@ class SyntheticGenerator:
             success=True,
         )
 
-    def _mixed_output(
-        self, task: dict, success_rate: float
-    ) -> SyntheticOutput:
+    def _mixed_output(self, task: dict, success_rate: float) -> SyntheticOutput:
         """Generate output with configurable failure modes.
 
         With probability ``success_rate`` produces a valid output; otherwise
@@ -82,13 +79,15 @@ class SyntheticGenerator:
         """Generate adversarial outputs: high failure rate, malicious patterns."""
         # 80% chance of failure
         if random.random() < 0.8:
-            failure_mode = random.choice([
-                "timeout",
-                "schema_mismatch",
-                "malicious_payload",
-                "inflated_metrics",
-                "contradictory_data",
-            ])
+            failure_mode = random.choice(
+                [
+                    "timeout",
+                    "schema_mismatch",
+                    "malicious_payload",
+                    "inflated_metrics",
+                    "contradictory_data",
+                ]
+            )
             return self._make_failure(task, failure_mode)
 
         # Even "successful" adversarial outputs have inflated metrics
@@ -114,11 +113,13 @@ class SyntheticGenerator:
         if mode == "timeout":
             # Latency exceeds expected timeout by a large margin
             latency = hi * 10
-            output_data = json.dumps({
-                "task_id": task_id,
-                "result": None,
-                "status": "timeout",
-            })
+            output_data = json.dumps(
+                {
+                    "task_id": task_id,
+                    "result": None,
+                    "status": "timeout",
+                }
+            )
             return SyntheticOutput(
                 task_id=task_id,
                 output_data=output_data,
@@ -130,10 +131,12 @@ class SyntheticGenerator:
         if mode == "schema_mismatch":
             latency = random.randint(lo, hi)
             # Wrong schema: missing required fields, wrong types
-            output_data = json.dumps({
-                "wrong_field": 42,
-                "unexpected": True,
-            })
+            output_data = json.dumps(
+                {
+                    "wrong_field": 42,
+                    "unexpected": True,
+                }
+            )
             return SyntheticOutput(
                 task_id=task_id,
                 output_data=output_data,
@@ -144,12 +147,14 @@ class SyntheticGenerator:
 
         if mode == "partial_output":
             latency = random.randint(lo, hi)
-            output_data = json.dumps({
-                "task_id": task_id,
-                "result": None,
-                "status": "partial",
-                "metrics": {},
-            })
+            output_data = json.dumps(
+                {
+                    "task_id": task_id,
+                    "result": None,
+                    "status": "partial",
+                    "metrics": {},
+                }
+            )
             return SyntheticOutput(
                 task_id=task_id,
                 output_data=output_data,
@@ -160,13 +165,15 @@ class SyntheticGenerator:
 
         if mode == "malicious_payload":
             latency = random.randint(lo, hi)
-            output_data = json.dumps({
-                "task_id": task_id,
-                "result": "<script>alert('xss')</script>",
-                "status": "success",
-                "metrics": {"accuracy": -999, "completeness": -999},
-                "__admin__": True,
-            })
+            output_data = json.dumps(
+                {
+                    "task_id": task_id,
+                    "result": "<script>alert('xss')</script>",
+                    "status": "success",
+                    "metrics": {"accuracy": -999, "completeness": -999},
+                    "__admin__": True,
+                }
+            )
             return SyntheticOutput(
                 task_id=task_id,
                 output_data=output_data,
@@ -177,12 +184,14 @@ class SyntheticGenerator:
 
         if mode == "inflated_metrics":
             latency = random.randint(lo, hi)
-            output_data = json.dumps({
-                "task_id": task_id,
-                "result": f"inflated-{task_id}",
-                "status": "success",
-                "metrics": {"accuracy": 999.99, "completeness": 999.99},
-            })
+            output_data = json.dumps(
+                {
+                    "task_id": task_id,
+                    "result": f"inflated-{task_id}",
+                    "status": "success",
+                    "metrics": {"accuracy": 999.99, "completeness": 999.99},
+                }
+            )
             return SyntheticOutput(
                 task_id=task_id,
                 output_data=output_data,
@@ -193,12 +202,14 @@ class SyntheticGenerator:
 
         if mode == "contradictory_data":
             latency = random.randint(lo, hi)
-            output_data = json.dumps({
-                "task_id": task_id,
-                "result": f"contradictory-{task_id}",
-                "status": "failed",
-                "metrics": {"accuracy": 1.0, "completeness": 1.0},
-            })
+            output_data = json.dumps(
+                {
+                    "task_id": task_id,
+                    "result": f"contradictory-{task_id}",
+                    "status": "failed",
+                    "metrics": {"accuracy": 1.0, "completeness": 1.0},
+                }
+            )
             return SyntheticOutput(
                 task_id=task_id,
                 output_data=output_data,

@@ -25,7 +25,6 @@ test_db_filepath = osp.join(parent_folder, "test.db")
 
 
 class MockChannel:
-
     def __init__(self):
         self.call_count = 0
         self.messages = []  # Used to store sent messages
@@ -73,9 +72,11 @@ async def test_search_user(setup_platform):
         conn = sqlite3.connect(test_db_filepath)
         cursor = conn.cursor()
         cursor.execute(
-            ("INSERT INTO user "
-             "(user_id, agent_id, user_name, num_followings, num_followers) "
-             "VALUES (?, ?, ?, ?, ?)"),
+            (
+                "INSERT INTO user "
+                "(user_id, agent_id, user_name, num_followings, num_followers) "
+                "VALUES (?, ?, ?, ?, ?)"
+            ),
             (1, 1, "user1", 0, 0),
         )
         conn.commit()
@@ -87,13 +88,16 @@ async def test_search_user(setup_platform):
         today = platform.start_time
         # Generate a list of timestamps starting from today and going back 10
         # days
-        posts_info = [(
-            1,
-            f"Post {9-i}",
-            (today - timedelta(days=9 - i)).strftime("%Y-%m-%d %H:%M:%S.%f"),
-            (9 - i),
-            0,
-        ) for i in range(10)]
+        posts_info = [
+            (
+                1,
+                f"Post {9 - i}",
+                (today - timedelta(days=9 - i)).strftime("%Y-%m-%d %H:%M:%S.%f"),
+                (9 - i),
+                0,
+            )
+            for i in range(10)
+        ]
 
         cursor.executemany(
             "INSERT INTO post (user_id, content, created_at, num_likes, "
@@ -102,8 +106,7 @@ async def test_search_user(setup_platform):
         )
         conn.commit()
 
-        comments_info = [(i + 1, 1, "Comment", datetime.now())
-                         for i in range(10)]
+        comments_info = [(i + 1, 1, "Comment", datetime.now()) for i in range(10)]
 
         cursor.executemany(
             "INSERT INTO comment (post_id, user_id, content, created_at) "

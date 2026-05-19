@@ -1,4 +1,5 @@
 """Stake commitment — lock/unlock agent stakes for task execution."""
+
 from __future__ import annotations
 
 import sqlite3
@@ -53,9 +54,7 @@ def commit_to_task(
 
         # 2. Validate agent is the assignee
         if task["agent_did"] != agent_did:
-            raise ValueError(
-                f"Agent {agent_did} is not assigned to task {task_id}"
-            )
+            raise ValueError(f"Agent {agent_did} is not assigned to task {task_id}")
 
         # 3. Validate agent is active
         agent = conn.execute(

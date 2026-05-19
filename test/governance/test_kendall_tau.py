@@ -1,5 +1,4 @@
 """Kendall τ correlation coefficient tests — 5 tests."""
-import pytest
 
 from oasis.governance.voting import kendall_tau
 

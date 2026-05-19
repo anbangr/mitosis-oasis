@@ -25,6 +25,7 @@ Edge cases (spec §1.7):
     N=3, 2 attestations → quorum met   (2/3 = 0.667 ≥ 0.60)
     N=3, 1 attestation  → quorum NOT met (1/3 = 0.333 < 0.60)
 """
+
 from __future__ import annotations
 
 import sqlite3
@@ -55,8 +56,7 @@ def test_t1_seeded_quorum_threshold_is_spec_value(governance_db: Path):
         conn.close()
     assert row is not None, "quorum_threshold row is missing from constitution"
     assert row["param_value"] == pytest.approx(SPEC_QUORUM_THRESHOLD), (
-        f"Expected quorum_threshold={SPEC_QUORUM_THRESHOLD}, "
-        f"got {row['param_value']!r}"
+        f"Expected quorum_threshold={SPEC_QUORUM_THRESHOLD}, got {row['param_value']!r}"
     )
 
 

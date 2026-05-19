@@ -18,6 +18,7 @@ AgentCity v0.97 deepdive specs.  Fixtures here expose spec-exact
 constants that test files import; no test should hard-code a magic
 number that the spec also names.
 """
+
 from __future__ import annotations
 
 import sqlite3
@@ -32,20 +33,20 @@ from oasis.governance.schema import create_governance_tables, seed_constitution
 # Spec-exact Constitutional Parameters cited verbatim from v0.97 deepdives
 # ---------------------------------------------------------------------------
 
-SPEC_QUORUM_THRESHOLD = 0.60           # leg §1.7, votingQuorum
-SPEC_FAIRNESS_HHI_MIN = 600            # leg §1.6, fairnessMinimum (1000 scale)
-SPEC_PROTOCOL_FEE_BPS = 200            # exec §8.1, f_p
-SPEC_REPUTATION_INITIAL = 500          # exec §2.4, rho_0 (1000 scale)
-SPEC_REPUTATION_ALPHA_DEFAULT = 0.5    # exec §2.6, multiplier slope
-SPEC_REPUTATION_LAMBDA_DEFAULT = 0.5   # exec §2.2-2.3, EMA smoothing
+SPEC_QUORUM_THRESHOLD = 0.60  # leg §1.7, votingQuorum
+SPEC_FAIRNESS_HHI_MIN = 600  # leg §1.6, fairnessMinimum (1000 scale)
+SPEC_PROTOCOL_FEE_BPS = 200  # exec §8.1, f_p
+SPEC_REPUTATION_INITIAL = 500  # exec §2.4, rho_0 (1000 scale)
+SPEC_REPUTATION_ALPHA_DEFAULT = 0.5  # exec §2.6, multiplier slope
+SPEC_REPUTATION_LAMBDA_DEFAULT = 0.5  # exec §2.2-2.3, EMA smoothing
 SPEC_TIER3_TIMEOUT_FLOOR_MS = 300_000  # leg §1.5, 5-minute human floor
-SPEC_GUARDIAN_DEVIATION_SIGMA = 2.0    # exec §0.3
-SPEC_BID_WEIGHT_Q = 0.6                # exec §1.2
-SPEC_BID_WEIGHT_P = 0.4                # exec §1.2
-SPEC_SPONSORSHIP_MIN = 5               # leg §4
-SPEC_PROPOSAL_TIMEOUT_MS = 600_000     # leg §0.8, 10 min
-SPEC_BIDDING_WINDOW_MS = 900_000       # leg §0.8, 15 min
-SPEC_APPROVAL_TIMEOUT_MS = 300_000     # leg §0.8, 5 min
+SPEC_GUARDIAN_DEVIATION_SIGMA = 2.0  # exec §0.3
+SPEC_BID_WEIGHT_Q = 0.6  # exec §1.2
+SPEC_BID_WEIGHT_P = 0.4  # exec §1.2
+SPEC_SPONSORSHIP_MIN = 5  # leg §4
+SPEC_PROPOSAL_TIMEOUT_MS = 600_000  # leg §0.8, 10 min
+SPEC_BIDDING_WINDOW_MS = 900_000  # leg §0.8, 15 min
+SPEC_APPROVAL_TIMEOUT_MS = 300_000  # leg §0.8, 5 min
 
 
 # ---------------------------------------------------------------------------

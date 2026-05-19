@@ -4,6 +4,7 @@ Tables
 ------
 1. event_log — append-only log of all observatory events
 """
+
 from __future__ import annotations
 
 import sqlite3

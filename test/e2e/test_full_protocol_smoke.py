@@ -4,6 +4,7 @@ Step 8.2 from the source plan: proves the guard reads the same enum the
 Registrar writes (``IDENTITY_ATTESTATION``), not the legacy response
 string used by the pre-bundle-0 protocol.
 """
+
 from __future__ import annotations
 
 import sqlite3
@@ -17,7 +18,6 @@ from oasis.governance.schema import create_governance_tables, seed_constitution
 from oasis.governance.state_machine import (
     GuardResult,
     LegislativeState,
-    LegislativeStateMachine,
     _guard_identity_to_proposal,
 )
 
@@ -76,8 +76,7 @@ def _insert_session(db_path: Path, session_id: str) -> None:
     conn = sqlite3.connect(str(db_path))
     conn.execute("PRAGMA foreign_keys = ON")
     conn.execute(
-        "INSERT INTO legislative_session (session_id, state, epoch) "
-        "VALUES (?, ?, ?)",
+        "INSERT INTO legislative_session (session_id, state, epoch) VALUES (?, ?, ?)",
         (session_id, LegislativeState.IDENTITY_VERIFICATION.value, 0),
     )
     conn.commit()
@@ -145,7 +144,9 @@ class TestGuardIdentityToProposal:
         assert result.allowed is False
         assert "quorum" in result.reason.lower()
 
-    def test_no_active_producers_blocks(self, gov_db: Path, gov_conn: sqlite3.Connection):
+    def test_no_active_producers_blocks(
+        self, gov_db: Path, gov_conn: sqlite3.Connection
+    ):
         """Guard blocks when there are zero active producers."""
         session_id = "e2e-no-prod"
         _insert_session(gov_db, session_id)
@@ -177,7 +178,9 @@ class TestGuardIdentityToProposal:
         assert result.allowed is False
         assert "reputation floor" in result.reason.lower()
 
-    def test_inactive_producer_not_counted(self, gov_db: Path, gov_conn: sqlite3.Connection):
+    def test_inactive_producer_not_counted(
+        self, gov_db: Path, gov_conn: sqlite3.Connection
+    ):
         """Attestations from inactive producers must not count toward quorum."""
         session_id = "e2e-inactive"
         dids = _register_producers(gov_db, 5)
@@ -200,7 +203,9 @@ class TestGuardIdentityToProposal:
         # 4/4 active producers attested = 100% ≥ 0.60
         assert result.allowed is True
 
-    def test_inactive_producer_cannot_supply_quorum(self, gov_db: Path, gov_conn: sqlite3.Connection):
+    def test_inactive_producer_cannot_supply_quorum(
+        self, gov_db: Path, gov_conn: sqlite3.Connection
+    ):
         """Inactive producer attestations must not make a failing quorum pass."""
         session_id = "e2e-inactive-quorum"
         dids = _register_producers(gov_db, 10)
@@ -222,7 +227,9 @@ class TestGuardIdentityToProposal:
         assert result.allowed is False
         assert "quorum" in result.reason.lower()
 
-    def test_quorum_edge_exact_threshold(self, gov_db: Path, gov_conn: sqlite3.Connection):
+    def test_quorum_edge_exact_threshold(
+        self, gov_db: Path, gov_conn: sqlite3.Connection
+    ):
         """Exactly 60% of 10 = 6 should clear the 0.60 threshold."""
         session_id = "e2e-edge"
         dids = _register_producers(gov_db, 10)

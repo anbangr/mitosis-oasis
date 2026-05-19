@@ -14,6 +14,7 @@ Message Types
 6. CodedContractSpec            (MSG6) — Codifier emits deployment spec
 7. LegislativeApproval          (MSG7) — Dual-signed final approval
 """
+
 from __future__ import annotations
 
 import json
@@ -30,8 +31,10 @@ from pydantic import BaseModel, Field, field_validator
 # Message type enum
 # ---------------------------------------------------------------------------
 
+
 class MessageType(str, Enum):
     """The 7 protocol message types (§3.4 of the AgentCity paper)."""
+
     IDENTITY_VERIFICATION_REQUEST = "IDENTITY_VERIFICATION_REQUEST"
     IDENTITY_ATTESTATION = "IDENTITY_ATTESTATION"
     DAG_PROPOSAL = "DAG_PROPOSAL"
@@ -45,6 +48,7 @@ class MessageType(str, Enum):
 # Helper: default timestamp
 # ---------------------------------------------------------------------------
 
+
 def _utcnow() -> datetime:
     return datetime.now(timezone.utc)
 
@@ -53,8 +57,10 @@ def _utcnow() -> datetime:
 # MSG1 — IdentityVerificationRequest
 # ---------------------------------------------------------------------------
 
+
 class IdentityVerificationRequest(BaseModel):
     """MSG1: Registrar opens the identity-verification phase."""
+
     msg_type: MessageType = MessageType.IDENTITY_VERIFICATION_REQUEST
     session_id: str = Field(..., min_length=1)
     min_reputation: float = Field(..., ge=0.0, le=1.0)
@@ -65,8 +71,10 @@ class IdentityVerificationRequest(BaseModel):
 # MSG2 — IdentityAttestation
 # ---------------------------------------------------------------------------
 
+
 class IdentityAttestation(BaseModel):
     """MSG2: An agent attests its identity and reputation."""
+
     msg_type: MessageType = MessageType.IDENTITY_ATTESTATION
     session_id: str = Field(..., min_length=1)
     agent_did: str = Field(..., min_length=1)
@@ -80,8 +88,10 @@ class IdentityAttestation(BaseModel):
 # MSG3 — DAGProposal
 # ---------------------------------------------------------------------------
 
+
 class DAGProposal(BaseModel):
     """MSG3: A producer submits a task-DAG proposal."""
+
     msg_type: MessageType = MessageType.DAG_PROPOSAL
     session_id: str = Field(..., min_length=1)
     proposer_did: str = Field(..., min_length=1)
@@ -103,8 +113,10 @@ class DAGProposal(BaseModel):
 # MSG4 — TaskBid
 # ---------------------------------------------------------------------------
 
+
 class TaskBid(BaseModel):
     """MSG4: A producer bids on a task node."""
+
     msg_type: MessageType = MessageType.TASK_BID
     session_id: str = Field(..., min_length=1)
     task_node_id: str = Field(..., min_length=1)
@@ -123,8 +135,10 @@ class TaskBid(BaseModel):
 # MSG5 — RegulatoryDecision
 # ---------------------------------------------------------------------------
 
+
 class RegulatoryDecision(BaseModel):
     """MSG5: Regulator's approval/rejection of bid set."""
+
     msg_type: MessageType = MessageType.REGULATORY_DECISION
     session_id: str = Field(..., min_length=1)
     approved_bids: list[str] = Field(default_factory=list)
@@ -139,8 +153,10 @@ class RegulatoryDecision(BaseModel):
 # MSG6 — CodedContractSpec
 # ---------------------------------------------------------------------------
 
+
 class CodedContractSpec(BaseModel):
     """MSG6: Codifier emits the full deployment specification."""
+
     msg_type: MessageType = MessageType.CODED_CONTRACT_SPEC
     session_id: str = Field(..., min_length=1)
     collaboration_contract_spec: dict = Field(...)
@@ -156,8 +172,10 @@ class CodedContractSpec(BaseModel):
 # MSG7 — LegislativeApproval
 # ---------------------------------------------------------------------------
 
+
 class LegislativeApproval(BaseModel):
     """MSG7: Dual-signed final approval to deploy."""
+
     msg_type: MessageType = MessageType.LEGISLATIVE_APPROVAL
     session_id: str = Field(..., min_length=1)
     spec_id: str = Field(..., min_length=1)
@@ -195,6 +213,7 @@ MESSAGE_MODELS: dict[MessageType, type[BaseModel]] = {
 # ---------------------------------------------------------------------------
 # Validation
 # ---------------------------------------------------------------------------
+
 
 def validate_message(msg: ProtocolMessage) -> list[str]:
     """Run type-specific validation on a protocol message.
@@ -250,6 +269,7 @@ def validate_message(msg: ProtocolMessage) -> list[str]:
 # Logging
 # ---------------------------------------------------------------------------
 
+
 def log_message(
     db_path: Union[str, Path],
     session_id: str,
@@ -281,6 +301,7 @@ def log_message(
 # Retrieval
 # ---------------------------------------------------------------------------
 
+
 def get_session_messages(
     db_path: Union[str, Path],
     session_id: str,
@@ -304,9 +325,7 @@ def get_session_messages(
             ).fetchall()
         else:
             rows = conn.execute(
-                "SELECT * FROM message_log "
-                "WHERE session_id = ? "
-                "ORDER BY log_id ASC",
+                "SELECT * FROM message_log WHERE session_id = ? ORDER BY log_id ASC",
                 (session_id,),
             ).fetchall()
 
@@ -317,15 +336,17 @@ def get_session_messages(
                 payload = json.loads(payload_raw) if payload_raw else None
             except (json.JSONDecodeError, TypeError):
                 payload = payload_raw
-            results.append({
-                "log_id": row["log_id"],
-                "session_id": row["session_id"],
-                "msg_type": row["msg_type"],
-                "sender_did": row["sender_did"],
-                "receiver": row["receiver"],
-                "payload": payload,
-                "created_at": row["created_at"],
-            })
+            results.append(
+                {
+                    "log_id": row["log_id"],
+                    "session_id": row["session_id"],
+                    "msg_type": row["msg_type"],
+                    "sender_did": row["sender_did"],
+                    "receiver": row["receiver"],
+                    "payload": payload,
+                    "created_at": row["created_at"],
+                }
+            )
         return results
     finally:
         conn.close()

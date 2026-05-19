@@ -1,4 +1,5 @@
 """Copeland edge case tests — 3 tests."""
+
 from oasis.governance.voting import CopelandVoting
 
 

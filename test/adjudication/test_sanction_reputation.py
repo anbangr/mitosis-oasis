@@ -1,4 +1,5 @@
 """Tests for SanctionEngine reputation reduction (EMA update)."""
+
 from __future__ import annotations
 
 import sqlite3

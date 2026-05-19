@@ -1,4 +1,5 @@
 """P8.10 — Constitution & agents API tests."""
+
 from __future__ import annotations
 
 

@@ -24,7 +24,6 @@ test_db_filepath = osp.join(parent_folder, "test.db")
 
 
 class MockChannel:
-
     def __init__(self):
         self.call_count = 0
         self.messages = []
@@ -71,18 +70,16 @@ class MockChannel:
             return ("id_", (3, 2, "repost"))
         elif self.call_count == 12:
             self.call_count += 1
-            return ("id_", (1, (1, 'I like the post.'), "quote_post"))
+            return ("id_", (1, (1, "I like the post."), "quote_post"))
         elif self.call_count == 13:
             self.call_count += 1
-            return ("id_", (2, (2, 'I quote to the reposted post.'),
-                            "quote_post"))
+            return ("id_", (2, (2, "I quote to the reposted post."), "quote_post"))
         elif self.call_count == 14:
             self.call_count += 1
             return ("id_", (1, 4, "repost"))
         elif self.call_count == 15:
             self.call_count += 1
-            return ("id_", (2, (4, 'I quote to the quoted post.'),
-                            "quote_post"))
+            return ("id_", (2, (4, "I quote to the quoted post."), "quote_post"))
         # Returns the exit command
         else:
             return ("id_", (None, None, "exit"))
@@ -172,21 +169,27 @@ async def test_create_repost_like_unlike_post(setup_platform):
         conn = sqlite3.connect(test_db_filepath)
         cursor = conn.cursor()
         cursor.execute(
-            ("INSERT INTO user "
-             "(user_id, agent_id, user_name, num_followings, num_followers) "
-             "VALUES (?, ?, ?, ?, ?)"),
+            (
+                "INSERT INTO user "
+                "(user_id, agent_id, user_name, num_followings, num_followers) "
+                "VALUES (?, ?, ?, ?, ?)"
+            ),
             (1, 1, "user1", 0, 0),
         )
         cursor.execute(
-            ("INSERT INTO user "
-             "(user_id, agent_id, user_name, num_followings, num_followers) "
-             "VALUES (?, ?, ?, ?, ?)"),
+            (
+                "INSERT INTO user "
+                "(user_id, agent_id, user_name, num_followings, num_followers) "
+                "VALUES (?, ?, ?, ?, ?)"
+            ),
             (2, 2, "user2", 2, 4),
         )
         cursor.execute(
-            ("INSERT INTO user "
-             "(user_id, agent_id, user_name, num_followings, num_followers) "
-             "VALUES (?, ?, ?, ?, ?)"),
+            (
+                "INSERT INTO user "
+                "(user_id, agent_id, user_name, num_followings, num_followers) "
+                "VALUES (?, ?, ?, ?, ?)"
+            ),
             (3, 3, "user3", 2, 4),
         )
         conn.commit()
@@ -211,15 +214,15 @@ async def test_create_repost_like_unlike_post(setup_platform):
         repost = posts[1]
         assert repost[1] == 2  # Repost user ID is 2
         assert repost[2] == 1  # Original post ID is 1
-        assert repost[3] == ''  # Reposted post is empty
-        print('created_at:', repost[5])
+        assert repost[3] == ""  # Reposted post is empty
+        print("created_at:", repost[5])
         assert repost[5] is not None  # created_at
         assert repost[6] == 0  # num_likes
 
         repost_2 = posts[2]
         assert repost_2[1] == 3  # Repost user ID is 2
         assert repost_2[2] == 1  # Original post ID is 1
-        assert repost_2[3] == ''  # Reposted post is empty
+        assert repost_2[3] == ""  # Reposted post is empty
         assert repost[5] is not None  # created_at
 
         quote_post = posts[3]

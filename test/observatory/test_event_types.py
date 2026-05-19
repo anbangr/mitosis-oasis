@@ -1,22 +1,42 @@
 """Tests for event types, serialization, and sequence numbering."""
+
 from __future__ import annotations
 
 import json
 
-from oasis.observatory.events import Event, EventType, serialize_event, deserialize_event
+from oasis.observatory.events import (
+    Event,
+    EventType,
+    serialize_event,
+    deserialize_event,
+)
 from oasis.observatory.event_bus import EventBus
 
 
 def test_all_event_types_defined():
     """All 22 expected event types are defined in the enum."""
     expected = {
-        "SESSION_CREATED", "SESSION_STATE_CHANGED", "IDENTITY_VERIFIED",
-        "PROPOSAL_SUBMITTED", "DELIBERATION_ROUND", "VOTE_CAST",
-        "BID_SUBMITTED", "REGULATORY_DECISION_MADE", "SPEC_COMPILED",
-        "SESSION_DEPLOYED", "TASK_ASSIGNED", "TASK_COMMITTED",
-        "TASK_EXECUTED", "TASK_VALIDATED", "TASK_SETTLED",
-        "GUARDIAN_ALERT_RAISED", "AGENT_FROZEN", "AGENT_UNFROZEN",
-        "STAKE_SLASHED", "REPUTATION_UPDATED", "COORDINATION_FLAGGED",
+        "SESSION_CREATED",
+        "SESSION_STATE_CHANGED",
+        "IDENTITY_VERIFIED",
+        "PROPOSAL_SUBMITTED",
+        "DELIBERATION_ROUND",
+        "VOTE_CAST",
+        "BID_SUBMITTED",
+        "REGULATORY_DECISION_MADE",
+        "SPEC_COMPILED",
+        "SESSION_DEPLOYED",
+        "TASK_ASSIGNED",
+        "TASK_COMMITTED",
+        "TASK_EXECUTED",
+        "TASK_VALIDATED",
+        "TASK_SETTLED",
+        "GUARDIAN_ALERT_RAISED",
+        "AGENT_FROZEN",
+        "AGENT_UNFROZEN",
+        "STAKE_SLASHED",
+        "REPUTATION_UPDATED",
+        "COORDINATION_FLAGGED",
         "TREASURY_ENTRY",
     }
     actual = {e.value for e in EventType}

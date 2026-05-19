@@ -1,4 +1,5 @@
 """Tests: JSON round-trip, payload integrity, timestamp preservation (3 tests)."""
+
 from __future__ import annotations
 
 import json
@@ -10,7 +11,6 @@ from oasis.governance.messages import (
     IdentityAttestation,
     IdentityVerificationRequest,
     LegislativeApproval,
-    MessageType,
     RegulatoryDecision,
     TaskBid,
 )
@@ -21,24 +21,39 @@ def test_json_round_trip():
     messages = [
         IdentityVerificationRequest(session_id="s1", min_reputation=0.3),
         IdentityAttestation(
-            session_id="s1", agent_did="did:mock:p1", signature="sig",
-            reputation_score=0.6, agent_type="producer",
+            session_id="s1",
+            agent_did="did:mock:p1",
+            signature="sig",
+            reputation_score=0.6,
+            agent_type="producer",
         ),
         DAGProposal(
-            session_id="s1", proposer_did="did:mock:p1",
+            session_id="s1",
+            proposer_did="did:mock:p1",
             dag_spec={"nodes": [{"id": "n1"}], "edges": []},
-            rationale="test", token_budget_total=100.0, deadline_ms=60000,
+            rationale="test",
+            token_budget_total=100.0,
+            deadline_ms=60000,
         ),
         TaskBid(
-            session_id="s1", task_node_id="n1", bidder_did="did:mock:p2",
-            service_id="svc1", proposed_code_hash="hash1",
-            stake_amount=5.0, estimated_latency_ms=2000,
-            quoted_price=5.0, capability_match=0.8,
+            session_id="s1",
+            task_node_id="n1",
+            bidder_did="did:mock:p2",
+            service_id="svc1",
+            proposed_code_hash="hash1",
+            stake_amount=5.0,
+            estimated_latency_ms=2000,
+            quoted_price=5.0,
+            capability_match=0.8,
             pop_tier_acceptance=1,
         ),
         RegulatoryDecision(
-            session_id="s1", approved_bids=["b1"], rejected_bids=[],
-            fairness_score=0.9, compliance_flags=[], regulatory_signature="sig-r",
+            session_id="s1",
+            approved_bids=["b1"],
+            rejected_bids=[],
+            fairness_score=0.9,
+            compliance_flags=[],
+            regulatory_signature="sig-r",
         ),
         CodedContractSpec(
             session_id="s1",
@@ -50,8 +65,10 @@ def test_json_round_trip():
             validation_proof="proof",
         ),
         LegislativeApproval(
-            session_id="s1", spec_id="spec1",
-            speaker_signature="sig-s", regulator_signature="sig-r",
+            session_id="s1",
+            spec_id="spec1",
+            speaker_signature="sig-s",
+            regulator_signature="sig-r",
         ),
     ]
 

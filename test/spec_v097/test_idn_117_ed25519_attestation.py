@@ -224,6 +224,10 @@ def test_nullable_columns_accept_null_rows(tmp_path: Path):
     conn.execute("PRAGMA foreign_keys = ON")
     try:
         conn.execute(
+            "INSERT INTO legislative_session (session_id, state) VALUES (?, ?)",
+            ("sess", "SESSION_INIT"),
+        )
+        conn.execute(
             "INSERT INTO message_log "
             "(session_id, msg_type, sender_did, payload, signature, payload_json) "
             "VALUES (?, ?, ?, ?, ?, ?)",
@@ -278,6 +282,7 @@ def test_nested_dict_sort_keys_recursively():
         dag_spec={
             "z_key": 1,
             "a_key": {"nested_z": 2, "nested_a": 3},
+            "nodes": [],
         },
         rationale="test",
         token_budget_total=100.0,

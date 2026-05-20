@@ -334,6 +334,19 @@ def create_governance_tables(db_path: Union[str, Path]) -> None:
             except sqlite3.OperationalError:
                 # Column already exists — second invocation is a no-op
                 pass
+
+        # Idempotent column additions for crypto foundation (spec IDN-117)
+        for column_sql in [
+            "ALTER TABLE agent_registry ADD COLUMN public_key TEXT",
+            "ALTER TABLE message_log ADD COLUMN signature TEXT",
+            "ALTER TABLE message_log ADD COLUMN payload_json TEXT",
+        ]:
+            try:
+                conn.execute(column_sql)
+                conn.commit()
+            except sqlite3.OperationalError:
+                # Column already exists — second invocation is a no-op
+                pass
     finally:
         conn.close()
 

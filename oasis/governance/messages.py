@@ -13,6 +13,38 @@ Message Types
 5. RegulatoryDecision           (MSG5) — Regulator approves/rejects bid set
 6. CodedContractSpec            (MSG6) — Codifier emits deployment spec
 7. LegislativeApproval          (MSG7) — Dual-signed final approval
+
+Canonical signed-bytes specification
+--------------------------------------
+For each signed MSG type, the canonical bytes that the sender computes and
+signs are::
+
+    canonical_bytes(msg) =
+        json.dumps({
+            "msg_type":   msg.msg_type.value,
+            "session_id": msg.session_id,
+            # all SIGNED FIELDS for this message type, in the order listed below
+        }, sort_keys=True, separators=(",", ":")).encode("utf-8")
+
+Field sets per MSG type (the signature covers these fields only —
+``timestamp`` and any server-set/replay-protection fields are EXCLUDED so
+signatures stay stable across re-logging and clock skew):
+
+| MSG  | Class | Signed fields (in addition to ``msg_type`` + ``session_id``) |
+|------|-------|--------------------------------------------------------------|
+| MSG1 | ``IdentityVerificationRequest`` | ``min_reputation`` |
+| MSG2 | ``IdentityAttestation`` | ``agent_did``, ``reputation_score`` (formatted via ``format(value, ".6f")``), ``agent_type`` |
+| MSG3 | ``DAGProposal`` | ``proposer_did``, ``dag_spec`` (JSON-canonicalised dict; ``sort_keys=True`` is applied recursively), ``rationale``, ``token_budget_total`` (``.6f``), ``deadline_ms`` |
+| MSG4 | ``TaskBid`` | ``task_node_id``, ``bidder_did``, ``service_id``, ``proposed_code_hash``, ``stake_amount`` (``.6f``), ``estimated_latency_ms``, ``quoted_price`` (``.6f``), ``capability_match`` (``.6f``), ``pop_tier_acceptance`` |
+| MSG5 | ``RegulatoryDecision`` | ``approved_bids`` (list), ``rejected_bids`` (list), ``fairness_score`` (``.6f``), ``compliance_flags`` (list) |
+| MSG6 | ``CodedContractSpec`` | ``collaboration_contract_spec``, ``guardian_module_spec``, ``verification_module_spec``, ``gate_module_spec``, ``service_contract_specs``, ``validation_proof`` |
+| MSG7 | ``LegislativeApproval`` | ``spec_id`` — proposer/speaker side; the regulator co-signs the SAME canonical bytes |
+
+``canonical_signed_bytes(msg)`` is centralised so EVERY signer and verifier
+calls the same function. Floats are formatted via ``format(v, ".6f")`` so the
+canonical encoding is deterministic across Python's repr drift; lists are
+JSON-encoded with order preserved (list order is semantically meaningful for
+``approved_bids`` etc.).
 """
 
 from __future__ import annotations
@@ -208,6 +240,101 @@ MESSAGE_MODELS: dict[MessageType, type[BaseModel]] = {
     MessageType.CODED_CONTRACT_SPEC: CodedContractSpec,
     MessageType.LEGISLATIVE_APPROVAL: LegislativeApproval,
 }
+
+
+# ---------------------------------------------------------------------------
+# Canonical signed bytes
+# ---------------------------------------------------------------------------
+
+_SIGNED_FIELDS: dict[MessageType, list[str]] = {
+    MessageType.IDENTITY_VERIFICATION_REQUEST: ["min_reputation"],
+    MessageType.IDENTITY_ATTESTATION: [
+        "agent_did",
+        "reputation_score",
+        "agent_type",
+    ],
+    MessageType.DAG_PROPOSAL: [
+        "proposer_did",
+        "dag_spec",
+        "rationale",
+        "token_budget_total",
+        "deadline_ms",
+    ],
+    MessageType.TASK_BID: [
+        "task_node_id",
+        "bidder_did",
+        "service_id",
+        "proposed_code_hash",
+        "stake_amount",
+        "estimated_latency_ms",
+        "quoted_price",
+        "capability_match",
+        "pop_tier_acceptance",
+    ],
+    MessageType.REGULATORY_DECISION: [
+        "approved_bids",
+        "rejected_bids",
+        "fairness_score",
+        "compliance_flags",
+    ],
+    MessageType.CODED_CONTRACT_SPEC: [
+        "collaboration_contract_spec",
+        "guardian_module_spec",
+        "verification_module_spec",
+        "gate_module_spec",
+        "service_contract_specs",
+        "validation_proof",
+    ],
+    MessageType.LEGISLATIVE_APPROVAL: ["spec_id"],
+}
+
+
+def _canonicalize_value(obj: Any) -> Any:
+    """Recursively canonicalise a value for stable JSON encoding.
+
+    * ``float`` → formatted string ``format(v, ".6f")``
+    * ``dict``  → recursively canonicalised values with sorted keys
+    * ``list``  → recursively canonicalised elements (order preserved)
+    * everything else → returned unchanged
+    """
+    if isinstance(obj, float):
+        return format(obj, ".6f")
+    if isinstance(obj, dict):
+        return {k: _canonicalize_value(v) for k, v in sorted(obj.items())}
+    if isinstance(obj, list):
+        return [_canonicalize_value(v) for v in obj]
+    return obj
+
+
+def canonical_signed_bytes(msg: ProtocolMessage) -> bytes:
+    """Return the canonical UTF-8 bytes that must be signed for *msg*.
+
+    The bytes are produced by JSON-serialising a dict that contains
+    ``msg_type``, ``session_id``, and the signed-field subset for the
+    message's type, then encoding with ``sort_keys=True`` and compact
+    separators.
+
+    Raises:
+        TypeError: if the message type is not one of the seven protocol
+        message types.
+    """
+    msg_type = getattr(msg, "msg_type", None)
+    if msg_type not in _SIGNED_FIELDS:
+        raise TypeError(
+            f"Unsupported message type: {msg_type!r}"
+        )
+
+    payload: dict[str, Any] = {
+        "msg_type": msg_type.value,
+        "session_id": msg.session_id,
+    }
+    for field in _SIGNED_FIELDS[msg_type]:
+        payload[field] = getattr(msg, field)
+
+    canonical = _canonicalize_value(payload)
+    return json.dumps(
+        canonical, sort_keys=True, separators=(",", ":")
+    ).encode("utf-8")
 
 
 # ---------------------------------------------------------------------------

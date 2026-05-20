@@ -13,8 +13,11 @@ from __future__ import annotations
 import sqlite3
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel
 
+from oasis.api_auth import require_eip712_sig
+from oasis.adjudication.sanctions import SanctionEngine
 from oasis.config import PlatformConfig
 
 # ---------------------------------------------------------------------------
@@ -268,6 +271,44 @@ async def get_decision(decision_id: str):
         }
     finally:
         conn.close()
+
+
+# ========================= Sanctions =======================================
+
+
+class SanctionRequest(BaseModel):
+    target_did: str
+    amount_wei: int
+    reason: str
+    nonce: int
+
+
+@_routes.post("/slash", dependencies=[Depends(require_eip712_sig)])
+async def slash(body: SanctionRequest) -> dict[str, Any]:
+    """Slash an agent's locked stake."""
+    engine = SanctionEngine(_config)
+    decision = engine.slash_stake(
+        body.target_did, float(body.amount_wei), body.reason, _get_db()
+    )
+    return {
+        "decision_id": decision.decision_id,
+        "decision_type": decision.decision_type,
+        "agent_did": decision.agent_did,
+        "reason": decision.reason,
+    }
+
+
+@_routes.post("/freeze", dependencies=[Depends(require_eip712_sig)])
+async def freeze(body: SanctionRequest) -> dict[str, Any]:
+    """Freeze an agent, blocking them from new tasks."""
+    engine = SanctionEngine(_config)
+    decision = engine.freeze_agent(body.target_did, body.reason, _get_db())
+    return {
+        "decision_id": decision.decision_id,
+        "decision_type": decision.decision_type,
+        "agent_did": decision.agent_did,
+        "reason": decision.reason,
+    }
 
 
 # ========================= Agent balance & sanctions ========================

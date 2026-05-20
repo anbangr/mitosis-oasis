@@ -20,7 +20,9 @@ def _make_spec() -> CodedContractSpec:
 
 def test_matching_spec_passes(governance_db: Path):
     """Deployed contract matching spec passes verification."""
-    cod = Codifier(str(governance_db), "did:oasis:clerk-codifier")
+    cod = Codifier(
+        str(governance_db), "did:key:z6Mkqa2BXHD2A1yYPvv2gWLRZCMdgvEroqCEXb8ZsGzbqxH9"
+    )
     spec = _make_spec()
     deployed = {
         "collaboration_contract_spec": {
@@ -39,7 +41,9 @@ def test_matching_spec_passes(governance_db: Path):
 
 def test_mismatched_param_fails(governance_db: Path):
     """Deployed contract with different params fails verification."""
-    cod = Codifier(str(governance_db), "did:oasis:clerk-codifier")
+    cod = Codifier(
+        str(governance_db), "did:key:z6Mkqa2BXHD2A1yYPvv2gWLRZCMdgvEroqCEXb8ZsGzbqxH9"
+    )
     spec = _make_spec()
     deployed = {
         "collaboration_contract_spec": {
@@ -59,7 +63,9 @@ def test_mismatched_param_fails(governance_db: Path):
 
 def test_missing_field_fails(governance_db: Path):
     """Deployed contract missing a field fails verification."""
-    cod = Codifier(str(governance_db), "did:oasis:clerk-codifier")
+    cod = Codifier(
+        str(governance_db), "did:key:z6Mkqa2BXHD2A1yYPvv2gWLRZCMdgvEroqCEXb8ZsGzbqxH9"
+    )
     spec = _make_spec()
     deployed = {
         "collaboration_contract_spec": {

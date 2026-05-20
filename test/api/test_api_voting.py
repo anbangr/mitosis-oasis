@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
+from oasis.crypto import ed25519
+from oasis.governance.messages import DAGProposal, canonical_signed_bytes
 
-def test_submit_ranking(client, session_factory):
+
+def test_submit_ranking(client, session_factory, registered_producers):
     """POST /vote submits valid rankings and returns a winner."""
     session_id = session_factory("PROPOSAL_OPEN")
 
     # Create two proposals as candidates
+    proposer = registered_producers[0]
     for label in ["X", "Y"]:
         dag = {
             "nodes": [
@@ -22,14 +26,26 @@ def test_submit_ranking(client, session_factory):
             ],
             "edges": [],
         }
+        proposal = DAGProposal(
+            session_id=session_id,
+            proposer_did=proposer["agent_did"],
+            dag_spec=dag,
+            rationale=label,
+            token_budget_total=50.0,
+            deadline_ms=30000,
+        )
+        sig = ed25519.sign(
+            proposer["private_key"], canonical_signed_bytes(proposal)
+        ).hex()
         resp = client.post(
             f"/api/governance/sessions/{session_id}/proposals",
             json={
-                "proposer_did": "did:mock:producer-1",
+                "proposer_did": proposer["agent_did"],
                 "dag_spec": dag,
                 "rationale": label,
                 "token_budget_total": 50.0,
                 "deadline_ms": 30000,
+                "signature": sig,
             },
         )
         assert resp.status_code == 201
@@ -51,9 +67,9 @@ def test_submit_ranking(client, session_factory):
         f"/api/governance/sessions/{session_id}/vote",
         json={
             "ballots": {
-                "did:mock:producer-1": candidates,
-                "did:mock:producer-2": list(reversed(candidates)),
-                "did:mock:producer-3": candidates,
+                registered_producers[0]["agent_did"]: candidates,
+                registered_producers[1]["agent_did"]: list(reversed(candidates)),
+                registered_producers[2]["agent_did"]: candidates,
             }
         },
     )
@@ -73,7 +89,7 @@ def test_get_results(client, session_factory):
     assert "total_votes" in data
 
 
-def test_incomplete_ranking_400(client, session_factory):
+def test_incomplete_ranking_400(client, session_factory, registered_producers):
     """POST /vote rejects inconsistent rankings."""
     session_id = session_factory("PROPOSAL_OPEN")
 
@@ -81,15 +97,15 @@ def test_incomplete_ranking_400(client, session_factory):
         f"/api/governance/sessions/{session_id}/vote",
         json={
             "ballots": {
-                "did:mock:producer-1": ["p1", "p2"],
-                "did:mock:producer-2": ["p1"],  # missing p2
+                registered_producers[0]["agent_did"]: ["p1", "p2"],
+                registered_producers[1]["agent_did"]: ["p1"],  # missing p2
             }
         },
     )
     assert resp.status_code == 400
 
 
-def test_quorum_check(client, session_factory):
+def test_quorum_check(client, session_factory, registered_producers):
     """POST /vote with one voter still returns result (quorum checked)."""
     session_id = session_factory("PROPOSAL_OPEN")
 
@@ -97,7 +113,7 @@ def test_quorum_check(client, session_factory):
         f"/api/governance/sessions/{session_id}/vote",
         json={
             "ballots": {
-                "did:mock:producer-1": ["cand-a", "cand-b"],
+                registered_producers[0]["agent_did"]: ["cand-a", "cand-b"],
             }
         },
     )

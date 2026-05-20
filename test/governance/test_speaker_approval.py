@@ -7,10 +7,12 @@ from oasis.governance.clerks.speaker import Speaker
 
 def test_signature_generated(governance_db: Path):
     """issue_approval generates a valid speaker signature."""
-    sp = Speaker(str(governance_db), "did:oasis:clerk-speaker")
+    sp = Speaker(
+        str(governance_db), "did:key:z6Mknpo1FQJ19grCZsqJcsRBBKegBS8EQ8H6pk6hxiFtoWSK"
+    )
     result = sp.issue_approval("sess-approve", "spec-abc")
     assert result["speaker_signature"] is not None
-    assert len(result["speaker_signature"]) == 64  # SHA-256 hex
+    assert len(result["speaker_signature"]) == 128  # Ed25519 hex
     assert result["spec_id"] == "spec-abc"
     assert "timestamp" in result
 
@@ -18,7 +20,9 @@ def test_signature_generated(governance_db: Path):
 def test_unauthorized_action_rejected(governance_db: Path):
     """Non-speaker clerk cannot issue approval."""
     # Use registrar DID — should fail authority check for speaker action
-    sp = Speaker(str(governance_db), "did:oasis:clerk-registrar")
+    sp = Speaker(
+        str(governance_db), "did:key:z6Mkkwz2P6pxvfqPxgdssMRZ9UNThiuMueGdV4awUacowDLd"
+    )
     result = sp.issue_approval("sess-approve", "spec-abc")
     assert result["speaker_signature"] is None
     assert "error" in result

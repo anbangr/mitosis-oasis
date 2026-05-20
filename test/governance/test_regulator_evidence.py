@@ -28,7 +28,9 @@ def test_evidence_briefing_generated(governance_db: Path):
     conn.commit()
     conn.close()
 
-    reg = Regulator(str(governance_db), "did:oasis:clerk-regulator")
+    reg = Regulator(
+        str(governance_db), "did:key:z6Mkop5toaiwyZq5Lm7Ldr6MFdYtvb3gtQ2B4U5ZRXNkXyuN"
+    )
     briefing = reg.publish_evidence("sess-ev")
     assert "bidder_performance" in briefing
     assert "published_at" in briefing
@@ -46,7 +48,9 @@ def test_empty_data_handled(governance_db: Path):
     conn.commit()
     conn.close()
 
-    reg = Regulator(str(governance_db), "did:oasis:clerk-regulator")
+    reg = Regulator(
+        str(governance_db), "did:key:z6Mkop5toaiwyZq5Lm7Ldr6MFdYtvb3gtQ2B4U5ZRXNkXyuN"
+    )
     briefing = reg.publish_evidence("sess-ev2")
     assert briefing["bidder_performance"] == {}
     assert "published_at" in briefing

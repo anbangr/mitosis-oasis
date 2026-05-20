@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 
-def test_bid_in_proposal_open_409(client, session_factory):
+def test_bid_in_proposal_open_409(client, session_factory, registered_producers):
     """Bidding endpoint returns 409 when session is in PROPOSAL_OPEN."""
     session_id = session_factory("PROPOSAL_OPEN")
 
@@ -11,7 +11,7 @@ def test_bid_in_proposal_open_409(client, session_factory):
         f"/api/governance/sessions/{session_id}/bids",
         json={
             "task_node_id": "n1",
-            "bidder_did": "did:mock:producer-1",
+            "bidder_did": registered_producers[0]["agent_did"],
             "service_id": "svc",
             "proposed_code_hash": "abcdef1234567890",
             "stake_amount": 0.5,
@@ -24,14 +24,14 @@ def test_bid_in_proposal_open_409(client, session_factory):
     assert resp.status_code == 409
 
 
-def test_proposal_in_bidding_409(client, session_factory):
+def test_proposal_in_bidding_409(client, session_factory, registered_producers):
     """Proposal endpoint returns 409 when session is in BIDDING_OPEN."""
     session_id = session_factory("BIDDING_OPEN")
 
     resp = client.post(
         f"/api/governance/sessions/{session_id}/proposals",
         json={
-            "proposer_did": "did:mock:producer-1",
+            "proposer_did": registered_producers[0]["agent_did"],
             "dag_spec": {
                 "nodes": [
                     {
@@ -62,7 +62,7 @@ def test_approval_in_codification_409(client, session_factory):
         json={
             "spec_id": "some-spec",
             "proposer_signature": "sig1",
-            "regulator_signature": "sig2",
+            "regulator_signature": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
         },
     )
     assert resp.status_code == 409

@@ -31,6 +31,9 @@ from oasis.execution.runner import ExecutionDispatcher
 from oasis.adjudication.schema import create_adjudication_tables
 from oasis.adjudication.settlement import SettlementCalculator
 from oasis.adjudication.treasury import Treasury
+from oasis.crypto import ed25519
+from oasis.crypto.did import did_from_pubkey
+from oasis.governance.messages import canonical_signed_bytes
 
 
 # 20-task DAG: root node (budget covers children) + 19 leaf tasks
@@ -87,22 +90,30 @@ def test_scale_50_agents_20_tasks(tmp_path):
     create_adjudication_tables(db_path)
     db = str(db_path)
 
-    # Register 50 agents
+    # Register 50 agents with real Ed25519 keypairs
     agents = []
     conn = sqlite3.connect(db)
     conn.execute("PRAGMA foreign_keys = ON")
     for i in range(1, 51):
+        priv, pub = ed25519.generate_keypair()
         agent = {
-            "agent_did": f"did:scale:agent-{i}",
+            "agent_did": did_from_pubkey(pub),
+            "public_key": pub.hex(),
+            "private_key": priv,
             "display_name": f"Scale Agent {i}",
             "reputation_score": 0.5,
         }
         agents.append(agent)
         conn.execute(
             "INSERT OR IGNORE INTO agent_registry "
-            "(agent_did, agent_type, display_name, human_principal, reputation_score) "
-            "VALUES (?, 'producer', ?, 'human@example.com', ?)",
-            (agent["agent_did"], agent["display_name"], agent["reputation_score"]),
+            "(agent_did, agent_type, display_name, human_principal, reputation_score, public_key) "
+            "VALUES (?, 'producer', ?, 'human@example.com', ?, ?)",
+            (
+                agent["agent_did"],
+                agent["display_name"],
+                agent["reputation_score"],
+                agent["public_key"],
+            ),
         )
     conn.commit()
     conn.close()
@@ -116,10 +127,18 @@ def test_scale_50_agents_20_tasks(tmp_path):
     dag = _make_unique_dag(SCALE_DAG, sid)
 
     # Clerk instances
-    registrar = Registrar(db_path=db, clerk_did="did:oasis:clerk-registrar")
-    speaker = Speaker(db_path=db, clerk_did="did:oasis:clerk-speaker")
-    regulator = Regulator(db_path=db, clerk_did="did:oasis:clerk-regulator")
-    codifier = Codifier(db_path=db, clerk_did="did:oasis:clerk-codifier")
+    registrar = Registrar(
+        db_path=db, clerk_did="did:key:z6Mkkwz2P6pxvfqPxgdssMRZ9UNThiuMueGdV4awUacowDLd"
+    )
+    speaker = Speaker(
+        db_path=db, clerk_did="did:key:z6Mknpo1FQJ19grCZsqJcsRBBKegBS8EQ8H6pk6hxiFtoWSK"
+    )
+    regulator = Regulator(
+        db_path=db, clerk_did="did:key:z6Mkop5toaiwyZq5Lm7Ldr6MFdYtvb3gtQ2B4U5ZRXNkXyuN"
+    )
+    codifier = Codifier(
+        db_path=db, clerk_did="did:key:z6Mkqa2BXHD2A1yYPvv2gWLRZCMdgvEroqCEXb8ZsGzbqxH9"
+    )
 
     # Create session
     conn = sqlite3.connect(db)
@@ -139,15 +158,18 @@ def test_scale_50_agents_20_tasks(tmp_path):
     registrar.open_session(sid, 0.1)
     sm.transition(LegislativeState.IDENTITY_VERIFICATION)
 
-    # Attest all 50 agents
+    # Attest all 50 agents with real signatures
     for a in agents:
         att = IdentityAttestation(
             session_id=sid,
             agent_did=a["agent_did"],
-            signature="scale-sig",
+            signature="ab" * 64,
             reputation_score=a["reputation_score"],
             agent_type="producer",
         )
+        att.signature = ed25519.sign(
+            a["private_key"], canonical_signed_bytes(att)
+        ).hex()
         registrar.verify_identity(att)
 
     # Insert identity responses
@@ -175,6 +197,9 @@ def test_scale_50_agents_20_tasks(tmp_path):
         token_budget_total=5000.0,
         deadline_ms=120000,
     )
+    proposal.signature = ed25519.sign(
+        agents[0]["private_key"], canonical_signed_bytes(proposal)
+    ).hex()
     prop_result = speaker.receive_proposal(sid, proposal)
     assert prop_result["passed"]
 
@@ -196,6 +221,9 @@ def test_scale_50_agents_20_tasks(tmp_path):
             capability_match=bidder.get("reputation_score", 0.5),
             pop_tier_acceptance=1,
         )
+        bid.signature = ed25519.sign(
+            bidder["private_key"], canonical_signed_bytes(bid)
+        ).hex()
         bid_result = regulator.receive_bid(sid, bid)
         assert bid_result["passed"]
 

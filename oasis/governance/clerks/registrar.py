@@ -17,9 +17,12 @@ from typing import Any, Optional
 
 from oasis.governance.clerks.base import BaseClerk
 from oasis.governance.clerks.llm_interface import LLMError
+from oasis.crypto import ed25519
+from oasis.crypto.did import resolve as did_resolve
 from oasis.governance.messages import (
     IdentityAttestation,
     IdentityVerificationRequest,
+    canonical_signed_bytes,
     log_message,
 )
 
@@ -112,30 +115,68 @@ class Registrar(BaseClerk):
     # ------------------------------------------------------------------
 
     def verify_identity(self, attestation: IdentityAttestation) -> dict:
-        """Verify an agent's identity attestation.
+        """Verify an agent's identity attestation using real Ed25519.
 
         Checks:
-        1. DID format valid (starts with "did:")
-        2. Signature valid (mock: non-empty accepted)
-        3. Reputation >= session min_reputation
-        4. No duplicate DID in same session
-        5. Agent type matches declared type
+        1. DID format valid (starts with "did:key:")
+        2. Registry has a non-null public_key for agent_did
+        3. did.resolve(agent_did) matches registered public_key
+        4. Ed25519 signature is valid over canonical_signed_bytes(attestation)
+        5. Reputation >= session min_reputation
+        6. No duplicate DID in same session
+        7. Agent type matches declared type
         """
         errors: list[str] = []
         session_id = attestation.session_id
         agent_did = attestation.agent_did
 
-        # 1. DID format
-        if not agent_did.startswith("did:"):
-            errors.append(f"Invalid DID format: {agent_did}")
+        # 1. DID format — must be did:key:
+        if not agent_did.startswith("did:key:"):
+            errors.append(f"Invalid DID format (expected did:key:zXXX): {agent_did}")
 
-        # 2. Signature check (mock: non-empty is valid)
-        if not attestation.signature:
-            errors.append("Empty signature")
+        # 2-4. Signature verification (only if DID format is valid so far)
+        if not any(e.startswith("Invalid DID format") for e in errors):
+            conn = self._connect()
+            try:
+                # 2. Fetch public_key from registry
+                row = conn.execute(
+                    "SELECT public_key FROM agent_registry WHERE agent_did = ?",
+                    (agent_did,),
+                ).fetchone()
+                if row is None or row["public_key"] is None:
+                    errors.append(f"No registered public_key for {agent_did}")
+                else:
+                    public_key_hex = row["public_key"]
+                    # 3. Cross-check did.resolve(agent_did) == bytes.fromhex(public_key)
+                    try:
+                        resolved_pubkey = did_resolve(agent_did)
+                    except ValueError as exc:
+                        errors.append(f"invalid did:key: {exc}")
+                    else:
+                        if resolved_pubkey != bytes.fromhex(public_key_hex):
+                            errors.append(
+                                "did:key encoding does not match registered public_key "
+                                f"for {agent_did}"
+                            )
+                        else:
+                            # 4. Verify Ed25519 signature
+                            canonical = canonical_signed_bytes(attestation)
+                            try:
+                                sig = bytes.fromhex(attestation.signature)
+                            except ValueError:
+                                errors.append("signature is not valid hex")
+                            else:
+                                if not ed25519.verify(resolved_pubkey, canonical, sig):
+                                    errors.append(
+                                        "Ed25519 signature verification failed"
+                                    )
+            finally:
+                conn.close()
 
-        # 3. Reputation check — load min_reputation from MSG1
+        # 5-7. Existing Bundle-0 checks
         conn = self._connect()
         try:
+            # 5. Reputation check — load min_reputation from MSG1
             min_rep = self._get_session_min_reputation(conn, session_id)
             if attestation.reputation_score < min_rep:
                 errors.append(
@@ -143,7 +184,7 @@ class Registrar(BaseClerk):
                     f"below minimum {min_rep:.2f}"
                 )
 
-            # 4. Duplicate DID check
+            # 6. Duplicate DID check
             dup = conn.execute(
                 "SELECT COUNT(*) FROM message_log "
                 "WHERE session_id = ? AND msg_type = 'IDENTITY_ATTESTATION' "
@@ -153,7 +194,7 @@ class Registrar(BaseClerk):
             if dup > 0:
                 errors.append(f"Duplicate DID in session: {agent_did}")
 
-            # 5. Agent type check — verify against registry if registered
+            # 7. Agent type check — verify against registry if registered
             reg_row = conn.execute(
                 "SELECT agent_type FROM agent_registry WHERE agent_did = ?",
                 (agent_did,),
@@ -179,6 +220,7 @@ class Registrar(BaseClerk):
 
         return {
             "passed": passed,
+            "valid": passed,
             "agent_did": agent_did,
             "reputation_score": attestation.reputation_score,
             "errors": errors,
@@ -187,13 +229,16 @@ class Registrar(BaseClerk):
     def _get_session_min_reputation(self, conn: Any, session_id: str) -> float:
         """Get min_reputation from the MSG1 for this session."""
         row = conn.execute(
-            "SELECT payload FROM message_log "
+            "SELECT payload, payload_json FROM message_log "
             "WHERE session_id = ? AND msg_type = 'IDENTITY_VERIFICATION_REQUEST' "
             "ORDER BY log_id ASC LIMIT 1",
             (session_id,),
         ).fetchone()
-        if row and row["payload"]:
-            data = json.loads(row["payload"])
+        payload_raw = None
+        if row:
+            payload_raw = row["payload_json"] or row["payload"]
+        if payload_raw:
+            data = json.loads(payload_raw)
             return data.get("min_reputation", 0.1)
         # Fallback: use constitution reputation_floor
         floor_row = conn.execute(
@@ -277,6 +322,7 @@ class Registrar(BaseClerk):
         agent_type: str,
         display_name: str,
         human_principal: str = "",
+        public_key: str | None = None,
         profile: dict[str, Any] | None = None,
     ) -> None:
         """Register a new agent in the global agent_registry.
@@ -289,10 +335,23 @@ class Registrar(BaseClerk):
         try:
             conn.execute(
                 "INSERT OR IGNORE INTO agent_registry "
-                "(agent_did, agent_type, capability_tier, display_name, human_principal) "
-                "VALUES (?, ?, ?, ?, ?)",
-                (agent_did, agent_type, tier, display_name, human_principal),
+                "(agent_did, agent_type, capability_tier, display_name, human_principal, public_key) "
+                "VALUES (?, ?, ?, ?, ?, ?)",
+                (
+                    agent_did,
+                    agent_type,
+                    tier,
+                    display_name,
+                    human_principal,
+                    public_key,
+                ),
             )
+            # Backfill public_key for previously-registered agents (Bundle-0 compat)
+            if public_key is not None:
+                conn.execute(
+                    "UPDATE agent_registry SET public_key = ? WHERE agent_did = ?",
+                    (public_key, agent_did),
+                )
             conn.commit()
         finally:
             conn.close()
@@ -392,14 +451,15 @@ class Registrar(BaseClerk):
         conn = self._connect()
         try:
             rows = conn.execute(
-                "SELECT sender_did, created_at, payload FROM message_log "
+                "SELECT sender_did, created_at, payload, payload_json FROM message_log "
                 "WHERE session_id = ? AND msg_type = 'IDENTITY_ATTESTATION' "
                 "ORDER BY created_at ASC",
                 (session_id,),
             ).fetchall()
             results = []
             for r in rows:
-                payload = json.loads(r["payload"]) if r["payload"] else {}
+                payload_raw = r["payload_json"] if r["payload_json"] else r["payload"]
+                payload = json.loads(payload_raw) if payload_raw else {}
                 results.append(
                     {
                         "agent_did": r["sender_did"],

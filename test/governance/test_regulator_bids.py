@@ -3,13 +3,17 @@
 import sqlite3
 from pathlib import Path
 
+from oasis.crypto import ed25519
+from oasis.crypto.did import did_from_pubkey
 from oasis.governance.clerks.regulator import Regulator
-from oasis.governance.messages import TaskBid
+from oasis.governance.messages import TaskBid, canonical_signed_bytes
 
 
 def _setup(governance_db: Path) -> Regulator:
     """Create regulator with session, proposal, and DAG nodes."""
-    reg = Regulator(str(governance_db), "did:oasis:clerk-regulator")
+    reg = Regulator(
+        str(governance_db), "did:key:z6Mkop5toaiwyZq5Lm7Ldr6MFdYtvb3gtQ2B4U5ZRXNkXyuN"
+    )
     conn = sqlite3.connect(str(governance_db))
     conn.execute("PRAGMA foreign_keys = ON")
     conn.execute(
@@ -37,11 +41,28 @@ def _setup(governance_db: Path) -> Regulator:
     return reg
 
 
-def _make_bid(**overrides) -> TaskBid:
+def _register_bidder(governance_db: Path) -> tuple[str, bytes]:
+    """Register a bidder agent with a real Ed25519 keypair."""
+    priv, pub = ed25519.generate_keypair()
+    did = did_from_pubkey(pub)
+    conn = sqlite3.connect(str(governance_db))
+    conn.execute("PRAGMA foreign_keys = ON")
+    conn.execute(
+        "INSERT OR IGNORE INTO agent_registry "
+        "(agent_did, agent_type, display_name, human_principal, reputation_score, public_key) "
+        "VALUES (?, 'producer', 'Bidder', 'test@example.com', 0.5, ?)",
+        (did, pub.hex()),
+    )
+    conn.commit()
+    conn.close()
+    return did, priv
+
+
+def _make_bid(bidder_did: str, bidder_priv: bytes, **overrides) -> TaskBid:
     defaults = dict(
         session_id="sess-bid",
         task_node_id="node-1",
-        bidder_did="did:mock:bidder-1",
+        bidder_did=bidder_did,
         service_id="svc-data",
         proposed_code_hash="a1b2c3d4e5f6g7h8",
         stake_amount=1.0,
@@ -51,13 +72,17 @@ def _make_bid(**overrides) -> TaskBid:
         pop_tier_acceptance=2,
     )
     defaults.update(overrides)
-    return TaskBid(**defaults)
+    bid = TaskBid(**defaults)
+    canonical = canonical_signed_bytes(bid)
+    bid.signature = ed25519.sign(bidder_priv, canonical).hex()
+    return bid
 
 
 def test_valid_bid_accepted(governance_db: Path):
     """Bid matching all constraints is accepted."""
     reg = _setup(governance_db)
-    bid = _make_bid()
+    bidder_did, bidder_priv = _register_bidder(governance_db)
+    bid = _make_bid(bidder_did, bidder_priv)
     result = reg.receive_bid("sess-bid", bid)
     assert result["passed"] is True
     assert result["bid_id"] is not None
@@ -66,7 +91,8 @@ def test_valid_bid_accepted(governance_db: Path):
 def test_low_stake_rejected(governance_db: Path):
     """Bid with stake below minimum is rejected."""
     reg = _setup(governance_db)
-    bid = _make_bid(stake_amount=0.01)  # Below reputation_floor (0.1)
+    bidder_did, bidder_priv = _register_bidder(governance_db)
+    bid = _make_bid(bidder_did, bidder_priv, stake_amount=0.01)
     result = reg.receive_bid("sess-bid", bid)
     assert result["passed"] is False
     assert any("stake" in e.lower() for e in result["errors"])
@@ -75,7 +101,8 @@ def test_low_stake_rejected(governance_db: Path):
 def test_wrong_pop_tier_rejected(governance_db: Path):
     """Bid with wrong PoP tier acceptance is rejected."""
     reg = _setup(governance_db)
-    bid = _make_bid(pop_tier_acceptance=1)  # Node requires tier 2
+    bidder_did, bidder_priv = _register_bidder(governance_db)
+    bid = _make_bid(bidder_did, bidder_priv, pop_tier_acceptance=1)
     result = reg.receive_bid("sess-bid", bid)
     assert result["passed"] is False
     assert any("tier" in e.lower() for e in result["errors"])
@@ -84,7 +111,8 @@ def test_wrong_pop_tier_rejected(governance_db: Path):
 def test_unregistered_service_rejected(governance_db: Path):
     """Bid with service_id not matching node's service is rejected."""
     reg = _setup(governance_db)
-    bid = _make_bid(service_id="wrong-service")
+    bidder_did, bidder_priv = _register_bidder(governance_db)
+    bid = _make_bid(bidder_did, bidder_priv, service_id="wrong-service")
     result = reg.receive_bid("sess-bid", bid)
     assert result["passed"] is False
     assert any(
@@ -95,7 +123,8 @@ def test_unregistered_service_rejected(governance_db: Path):
 def test_code_hash_mismatch(governance_db: Path):
     """Bid with too-short code hash is rejected."""
     reg = _setup(governance_db)
-    bid = _make_bid(proposed_code_hash="abc")  # < 8 chars
+    bidder_did, bidder_priv = _register_bidder(governance_db)
+    bid = _make_bid(bidder_did, bidder_priv, proposed_code_hash="abc")
     result = reg.receive_bid("sess-bid", bid)
     assert result["passed"] is False
     assert any("hash" in e.lower() for e in result["errors"])

@@ -2,6 +2,71 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.0] - 2026-05-20
+
+**Bundle 1 — Cryptographic Foundation release.** Replaces v0.2.x mock crypto
+(empty signatures, `did:mock:` strings, no typed-data) with production-grade
+Ed25519 + secp256k1 + W3C `did:key` + EIP-712 typed-data binding across the
+entire OASIS protocol stack.
+
+### Added
+- **Ed25519 signing primitives** (`oasis/crypto/ed25519.py`) via `pynacl ^1.5.0`:
+  `generate_keypair()`, `keypair_from_seed()`, `sign()`, `verify()` — deterministic
+  test fixtures derived from `sha256(test_node_name)`.
+- **secp256k1 primitives** (`oasis/crypto/secp256k1.py`) wrapping
+  `eth-account >=0.10.0,<0.14.0` for EIP-712 envelope signing and recovery.
+- **W3C `did:key` resolver** (`oasis/crypto/did.py`) — pure-Python, multicodec
+  `0xed01` + base58-btc encoding, no Rust toolchain required (`base58 ^2.1.0`).
+- **EIP-712 typed-data layer** (`oasis/crypto/eip712.py` + `typed_data.py`) with
+  full envelope digest via `Account.sign_message(encode_typed_data(...))` —
+  signatures are bitwise-identical to MetaMask / Rabby / Frame for the same
+  typed data. Exposes `SanctionTypedData`, `ConstitutionAmendmentTypedData`,
+  and `ImpeachmentTypedData` schemas.
+- **EIP-712 FastAPI middleware** (`oasis/api_auth.py`) — `require_eip712_sig`
+  dependency factory gates Rules Hub (`POST /slash`, `POST /freeze`) and
+  Override Panel (`PUT /constitution`) binding actions via
+  `X-EIP712-Signature` + `X-EIP712-Signer` headers.
+- **`agent_registry.public_key` column** — 32-byte Ed25519 pubkey stored as
+  lowercase hex, populated at agent registration.
+- **`message_log.signature` + `message_log.payload_json` columns** — detached
+  Ed25519 sig (128-char hex) and full Pydantic JSON stored alongside the
+  canonical signed bytes.
+- **`oasis.governance.messages.canonical_signed_bytes(msg)` helper** — single
+  source of truth for what bytes are signed; uses `json.dumps(sort_keys=True,
+  separators=(",", ":"))` for deterministic cross-platform canonicalisation.
+- **Clerk `did:key` keypair persistence** (`oasis/governance/clerks/bootstrap.py`)
+  via `ensure_clerk_keys(db_path, keys_dir)` — mints or reloads Ed25519 keypairs
+  for Registrar, Speaker, Regulator, Codifier; deletes legacy
+  `did:oasis:clerk-{role}` rows and re-inserts under `did:key:zXXX` with
+  `public_key` populated. Key files written at mode `0o600`, directory at
+  `0o700`; `data/clerk_keys/` is gitignored.
+- **Deterministic test fixtures** (`test/conftest.py`): `ed25519_keypair` and
+  `eth_account_signer` fixtures seeded from test node names.
+- **≥10 spec_v097 rubric tests** across IDN-114 (`did:key` resolution),
+  IDN-117 (Ed25519 attestation), ADJ-105 (EIP-712 binding), ADJ-106
+  (session-auth observation).
+
+### Breaking
+- **Clerk DIDs migrated** from `did:oasis:clerk-{role}` to `did:key:zXXX`
+  derived from persisted Ed25519 pubkeys. Any caller hardcoding the old
+  strings must look up the role via `ensure_clerk_keys` instead.
+- **Agents registering without a `public_key`** are rejected by
+  `verify_identity`. `IdentityAttestation.agent_did` must start with
+  `did:key:`; legacy `did:mock:` / `did:oasis:` formats are rejected.
+- **All MSG2–MSG7 signature fields** tightened to exactly 64-byte lowercase hex
+  (`min_length=128, max_length=128, pattern=r"^[0-9a-f]{128}$"`) — no more
+  empty-string placeholder signatures.
+- **`message_log.payload` now carries canonical signed bytes (hex)** rather than
+  Pydantic JSON. JSON moved to `message_log.payload_json`. Any reader doing
+  `json.loads(row["payload"])` must switch to `row["payload_json"]`.
+- **Slash / freeze endpoints** accept canonical `SanctionTypedData` body
+  `{"target_did", "amount_wei", "reason", "nonce"}` — the legacy `amount: float`
+  field is removed. Constitution PUT accepts
+  `{"param_name", "param_value", "nonce"}`.
+- **All binding routes** require `X-EIP712-Signature` + `X-EIP712-Signer`
+  headers; read-only routes (`GET /treasury`, `/decisions`, `/alerts`) remain
+  unprotected.
+
 ## [0.3.0] - 2026-05-19
 
 **Bundle 0 — AgentCity v0.97 parity bug-fix release.** Closes nine

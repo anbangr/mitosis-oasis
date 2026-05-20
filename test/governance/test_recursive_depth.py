@@ -39,7 +39,14 @@ def _add_session_with_dag(
         "(proposal_id, session_id, proposer_did, dag_spec, "
         " token_budget_total, deadline_ms) "
         "VALUES (?, ?, ?, ?, ?, ?)",
-        (prop_id, session_id, "did:oasis:clerk-registrar", dag_spec, 1000.0, 60000),
+        (
+            prop_id,
+            session_id,
+            "did:key:z6Mkkwz2P6pxvfqPxgdssMRZ9UNThiuMueGdV4awUacowDLd",
+            dag_spec,
+            1000.0,
+            60000,
+        ),
     )
     # n1 is non-leaf (has outgoing edge to n2)
     conn.execute(
@@ -96,7 +103,14 @@ class TestRecursiveDepth:
             "(proposal_id, session_id, proposer_did, dag_spec, "
             " token_budget_total, deadline_ms) "
             "VALUES (?, ?, ?, ?, ?, ?)",
-            (prop_id, child_id, "did:oasis:clerk-registrar", dag_spec, 500.0, 60000),
+            (
+                prop_id,
+                child_id,
+                "did:key:z6Mkkwz2P6pxvfqPxgdssMRZ9UNThiuMueGdV4awUacowDLd",
+                dag_spec,
+                500.0,
+                60000,
+            ),
         )
         conn.execute(
             "INSERT INTO dag_node "

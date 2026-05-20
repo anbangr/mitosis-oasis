@@ -24,7 +24,7 @@ class TestLayer1Deterministic:
             session_id="sess-determ",
             agent_did="did:mock:producer-1",
             agent_type="producer",
-            signature="valid-sig",
+            signature="ab" * 64,
             reputation_score=0.5,
         )
 
@@ -110,7 +110,7 @@ class TestCombinedResultDocumented:
             session_id="sess-combined",
             agent_did="did:mock:producer-1",
             agent_type="producer",
-            signature="valid-sig",
+            signature="ab" * 64,
             reputation_score=0.5,
         )
 

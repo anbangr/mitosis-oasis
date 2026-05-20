@@ -89,7 +89,7 @@ def _insert_attestations(db_path: Path, session_id: str, dids: list[str]) -> Non
         att = IdentityAttestation(
             session_id=session_id,
             agent_did=did,
-            signature="e2e-sig",
+            signature="ab" * 64,
             reputation_score=0.5,
             agent_type="producer",
         )

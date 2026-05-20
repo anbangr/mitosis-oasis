@@ -9,7 +9,9 @@ def test_submit_decision(client, session_factory):
 
     resp = client.post(
         f"/api/governance/sessions/{session_id}/regulatory/decision",
-        json={"submitter_did": "did:oasis:clerk-regulator"},
+        json={
+            "submitter_did": "did:key:z6Mkop5toaiwyZq5Lm7Ldr6MFdYtvb3gtQ2B4U5ZRXNkXyuN"
+        },
     )
     assert resp.status_code == 200
     data = resp.json()

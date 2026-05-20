@@ -560,6 +560,11 @@ class LegislativeStateMachine:
             ).fetchall()
             records = []
             for row in rows:
+                # canonical-hex on signed rows, JSON only on legacy rows
+                # (StateTransition rows are system-emitted and unsigned;
+                # they continue to store JSON in `payload`, while MSG2-MSG7
+                # signed rows store canonical hex in `payload` and JSON in
+                # `payload_json`).
                 data = json.loads(row["payload"])
                 records.append(
                     TransitionRecord(

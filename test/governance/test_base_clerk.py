@@ -15,13 +15,17 @@ class _ConcreteClerk(BaseClerk):
 
 def test_authority_check_passes(governance_db: Path):
     """Clerk can perform actions within its authority envelope."""
-    clerk = _ConcreteClerk(str(governance_db), "did:oasis:clerk-registrar")
+    clerk = _ConcreteClerk(
+        str(governance_db), "did:key:z6Mkkwz2P6pxvfqPxgdssMRZ9UNThiuMueGdV4awUacowDLd"
+    )
     assert clerk.authority_check("registrar:open_session") is True
 
 
 def test_authority_check_fails_wrong_role(governance_db: Path):
     """Clerk cannot perform actions outside its authority envelope."""
-    clerk = _ConcreteClerk(str(governance_db), "did:oasis:clerk-registrar")
+    clerk = _ConcreteClerk(
+        str(governance_db), "did:key:z6Mkkwz2P6pxvfqPxgdssMRZ9UNThiuMueGdV4awUacowDLd"
+    )
     # Registrar should not have speaker permissions
     assert clerk.authority_check("speaker:open_voting") is False
 

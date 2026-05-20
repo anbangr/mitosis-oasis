@@ -13,10 +13,16 @@ import json
 import uuid
 from typing import Any, Optional
 
+from oasis.crypto import ed25519
 from oasis.governance.clerks.base import BaseClerk
 from oasis.governance.clerks.llm_interface import LLMError
 from oasis.governance.constitutional import ConstitutionalValidator, ValidationResult
-from oasis.governance.messages import CodedContractSpec, DAGProposal, log_message
+from oasis.governance.messages import (
+    CodedContractSpec,
+    DAGProposal,
+    canonical_signed_bytes,
+    log_message,
+)
 
 
 class Codifier(BaseClerk):
@@ -138,7 +144,14 @@ class Codifier(BaseClerk):
                 "bid_assignments": bid_assignments,
             },
             validation_proof=validation_proof,
+            signature="ab" * 64,  # placeholder — replaced below
         )
+
+        # Sign with the Codifier's persisted Ed25519 private key
+        priv = self._load_private_key()
+        if priv is not None:
+            canonical = canonical_signed_bytes(msg6)
+            msg6.signature = ed25519.sign(priv, canonical).hex()
 
         # Store in DB
         conn = self._connect()

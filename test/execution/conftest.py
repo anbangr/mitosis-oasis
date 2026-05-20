@@ -24,6 +24,7 @@ from oasis.governance.messages import (
     IdentityAttestation,
     LegislativeApproval,
     TaskBid,
+    canonical_signed_bytes,
     log_message,
 )
 from oasis.governance.schema import (
@@ -33,6 +34,8 @@ from oasis.governance.schema import (
 )
 from oasis.governance.state_machine import LegislativeState, LegislativeStateMachine
 from oasis.execution.schema import create_execution_tables
+from oasis.crypto import ed25519
+from oasis.crypto.did import did_from_pubkey
 
 
 # ---------------------------------------------------------------------------
@@ -72,14 +75,19 @@ def db_conn(execution_db: Path) -> Generator[sqlite3.Connection, None, None]:
 # Producer agents
 # ---------------------------------------------------------------------------
 
-EXEC_PRODUCERS = [
-    {
-        "agent_did": f"did:exec:producer-{i}",
-        "display_name": f"Exec Producer {i}",
-        "reputation_score": 0.5,
-    }
-    for i in range(1, 6)
-]
+EXEC_PRODUCERS = []
+
+for i in range(1, 6):
+    priv, pub = ed25519.generate_keypair()
+    EXEC_PRODUCERS.append(
+        {
+            "agent_did": did_from_pubkey(pub),
+            "public_key": pub.hex(),
+            "private_key": priv,
+            "display_name": f"Exec Producer {i}",
+            "reputation_score": 0.5,
+        }
+    )
 
 
 @pytest.fixture()
@@ -90,9 +98,9 @@ def producers(execution_db: Path) -> list[dict]:
     for p in EXEC_PRODUCERS:
         conn.execute(
             "INSERT OR IGNORE INTO agent_registry "
-            "(agent_did, agent_type, display_name, human_principal, reputation_score) "
-            "VALUES (?, 'producer', ?, 'human@example.com', ?)",
-            (p["agent_did"], p["display_name"], p["reputation_score"]),
+            "(agent_did, agent_type, display_name, human_principal, reputation_score, public_key) "
+            "VALUES (?, 'producer', ?, 'human@example.com', ?, ?)",
+            (p["agent_did"], p["display_name"], p["reputation_score"], p["public_key"]),
         )
     conn.commit()
     conn.close()
@@ -172,10 +180,18 @@ def drive_to_deployed(
     dag = _make_unique_dag(DEFAULT_DAG, sid)
 
     # Clerk instances
-    registrar = Registrar(db_path=db, clerk_did="did:oasis:clerk-registrar")
-    speaker = Speaker(db_path=db, clerk_did="did:oasis:clerk-speaker")
-    regulator = Regulator(db_path=db, clerk_did="did:oasis:clerk-regulator")
-    codifier = Codifier(db_path=db, clerk_did="did:oasis:clerk-codifier")
+    registrar = Registrar(
+        db_path=db, clerk_did="did:key:z6Mkkwz2P6pxvfqPxgdssMRZ9UNThiuMueGdV4awUacowDLd"
+    )
+    speaker = Speaker(
+        db_path=db, clerk_did="did:key:z6Mknpo1FQJ19grCZsqJcsRBBKegBS8EQ8H6pk6hxiFtoWSK"
+    )
+    regulator = Regulator(
+        db_path=db, clerk_did="did:key:z6Mkop5toaiwyZq5Lm7Ldr6MFdYtvb3gtQ2B4U5ZRXNkXyuN"
+    )
+    codifier = Codifier(
+        db_path=db, clerk_did="did:key:z6Mkqa2BXHD2A1yYPvv2gWLRZCMdgvEroqCEXb8ZsGzbqxH9"
+    )
 
     # Create session
     conn = sqlite3.connect(db)
@@ -197,14 +213,18 @@ def drive_to_deployed(
     assert result.allowed, f"→ IDENTITY_VERIFICATION failed: {result.reason}"
 
     # 2. Attest all producers
+
     for p in producers:
         att = IdentityAttestation(
             session_id=sid,
             agent_did=p["agent_did"],
-            signature="exec-sig",
+            signature="ab" * 64,
             reputation_score=p["reputation_score"],
             agent_type="producer",
         )
+        att.signature = ed25519.sign(
+            p["private_key"], canonical_signed_bytes(att)
+        ).hex()
         res = registrar.verify_identity(att)
         assert res["passed"], f"Identity failed for {p['agent_did']}: {res['errors']}"
 
@@ -234,6 +254,9 @@ def drive_to_deployed(
         token_budget_total=1000.0,
         deadline_ms=60000,
     )
+    proposal.signature = ed25519.sign(
+        producers[0]["private_key"], canonical_signed_bytes(proposal)
+    ).hex()
     prop_result = speaker.receive_proposal(sid, proposal)
     assert prop_result["passed"], f"Proposal failed: {prop_result['errors']}"
     proposal_id = prop_result["proposal_id"]
@@ -258,6 +281,9 @@ def drive_to_deployed(
             capability_match=bidder.get("reputation_score", 0.5),
             pop_tier_acceptance=node.get("pop_tier", 1),
         )
+        bid.signature = ed25519.sign(
+            bidder["private_key"], canonical_signed_bytes(bid)
+        ).hex()
         bid_result = regulator.receive_bid(sid, bid)
         assert bid_result["passed"], (
             f"Bid failed for {node['node_id']}: {bid_result['errors']}"

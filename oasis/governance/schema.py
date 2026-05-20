@@ -21,10 +21,14 @@ Tables
 
 from __future__ import annotations
 
+import hashlib
 import json
 import sqlite3
 from pathlib import Path
 from typing import Union
+
+from oasis.crypto import ed25519
+from oasis.crypto.did import did_from_pubkey
 
 # ---------------------------------------------------------------------------
 # DDL statements
@@ -291,12 +295,22 @@ _DEFAULT_CONSTITUTION = [
 
 _CLERK_ROLES = ["registrar", "speaker", "regulator", "codifier"]
 
+
+def _clerk_keypair(role: str) -> tuple[bytes, bytes, str]:
+    """Return deterministic (priv, pub, did) for a clerk role."""
+    seed = hashlib.sha256(f"clerk-seed-{role}".encode()).digest()
+    priv, pub = ed25519.keypair_from_seed(seed)
+    did = did_from_pubkey(pub)
+    return priv, pub, did
+
+
 _DEFAULT_CLERKS = [
     {
-        "agent_did": f"did:oasis:clerk-{role}",
+        "agent_did": _clerk_keypair(role)[2],
         "agent_type": "clerk",
         "display_name": f"Clerk ({role.title()})",
         "human_principal": "platform@mitosis.dev",
+        "public_key": _clerk_keypair(role)[1].hex(),
         "clerk_role": role,
         "authority_envelope": json.dumps(
             {
@@ -317,6 +331,15 @@ _DEFAULT_CLERKS = [
 
 def create_governance_tables(db_path: Union[str, Path]) -> None:
     """Create all 15 governance tables.  Idempotent (IF NOT EXISTS)."""
+
+    def add_column_idempotent(column_sql: str) -> None:
+        try:
+            conn.execute(column_sql)
+            conn.commit()
+        except sqlite3.OperationalError as exc:
+            if "duplicate column name" not in str(exc).lower():
+                raise
+
     conn = sqlite3.connect(str(db_path))
     try:
         conn.execute("PRAGMA foreign_keys = ON")
@@ -328,12 +351,15 @@ def create_governance_tables(db_path: Union[str, Path]) -> None:
             "ALTER TABLE bid ADD COLUMN quoted_price REAL NOT NULL DEFAULT 0.0",
             "ALTER TABLE bid ADD COLUMN capability_match REAL NOT NULL DEFAULT 0.0",
         ]:
-            try:
-                conn.execute(column_sql)
-                conn.commit()
-            except sqlite3.OperationalError:
-                # Column already exists — second invocation is a no-op
-                pass
+            add_column_idempotent(column_sql)
+
+        # Idempotent column additions for crypto foundation (spec IDN-117)
+        for column_sql in [
+            "ALTER TABLE agent_registry ADD COLUMN public_key TEXT",
+            "ALTER TABLE message_log ADD COLUMN signature TEXT",
+            "ALTER TABLE message_log ADD COLUMN payload_json TEXT",
+        ]:
+            add_column_idempotent(column_sql)
     finally:
         conn.close()
 
@@ -358,37 +384,37 @@ def seed_constitution(db_path: Union[str, Path]) -> None:
         conn.close()
 
 
+def get_clerk_keypair(role: str) -> tuple[bytes, bytes, str]:
+    """Return the (priv, pub, did) for a clerk role by reading the bootstrap key file."""
+    import json
+    import os
+    from pathlib import Path
+
+    keys_dir = os.environ.get("OASIS_CLERK_KEYS_DIR", "data/clerk_keys")
+    key_file = Path(keys_dir) / f"{role}.json"
+    if not key_file.exists():
+        raise RuntimeError(
+            f"Clerk key file not found: {key_file}. Run ensure_clerk_keys first."
+        )
+    data = json.loads(key_file.read_text())
+    priv = bytes.fromhex(data["private_key_hex"])
+    pub = bytes.fromhex(data["public_key_hex"])
+    return priv, pub, data["did"]
+
+
+def get_clerk_did(role: str) -> str:
+    """Return the did:key DID for a clerk role by reading the bootstrap key file."""
+    _, _, did = get_clerk_keypair(role)
+    return did
+
+
 def seed_clerks(db_path: Union[str, Path]) -> None:
     """Register the 4 clerk agents with authority envelopes.
 
-    Inserts into both ``agent_registry`` and ``clerk_registry``.
-    Idempotent (INSERT OR IGNORE).
+    Calls ``ensure_clerk_keys`` so that clerks are always registered with
+    real did:key DIDs derived from persisted Ed25519 keypairs.  This
+    replaces the Bundle-0 static ``did:oasis:clerk-*`` seeding path.
     """
-    conn = sqlite3.connect(str(db_path))
-    try:
-        conn.execute("PRAGMA foreign_keys = ON")
-        for clerk in _DEFAULT_CLERKS:
-            conn.execute(
-                "INSERT OR IGNORE INTO agent_registry "
-                "(agent_did, agent_type, display_name, human_principal) "
-                "VALUES (?, ?, ?, ?)",
-                (
-                    clerk["agent_did"],
-                    clerk["agent_type"],
-                    clerk["display_name"],
-                    clerk["human_principal"],
-                ),
-            )
-            conn.execute(
-                "INSERT OR IGNORE INTO clerk_registry "
-                "(agent_did, clerk_role, authority_envelope) "
-                "VALUES (?, ?, ?)",
-                (
-                    clerk["agent_did"],
-                    clerk["clerk_role"],
-                    clerk["authority_envelope"],
-                ),
-            )
-        conn.commit()
-    finally:
-        conn.close()
+    from oasis.governance.clerks.bootstrap import ensure_clerk_keys
+
+    ensure_clerk_keys(db_path)

@@ -22,7 +22,9 @@ def _setup(governance_db: Path) -> Codifier:
     )
     conn.commit()
     conn.close()
-    return Codifier(str(governance_db), "did:oasis:clerk-codifier")
+    return Codifier(
+        str(governance_db), "did:key:z6Mkqa2BXHD2A1yYPvv2gWLRZCMdgvEroqCEXb8ZsGzbqxH9"
+    )
 
 
 def _make_proposal() -> DAGProposal:

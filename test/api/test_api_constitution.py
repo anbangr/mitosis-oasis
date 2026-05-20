@@ -26,9 +26,10 @@ def test_list_agents(client, gov_db, registered_producers):
 
 def test_reputation_history(client, gov_db, registered_producers):
     """GET /agents/{did}/reputation returns history (may be empty)."""
-    resp = client.get("/api/governance/agents/did:mock:producer-1/reputation")
+    did = registered_producers[0]["agent_did"]
+    resp = client.get(f"/api/governance/agents/{did}/reputation")
     assert resp.status_code == 200
     data = resp.json()
-    assert data["agent_did"] == "did:mock:producer-1"
+    assert data["agent_did"] == did
     assert "current_score" in data
     assert isinstance(data["history"], list)

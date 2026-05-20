@@ -13,6 +13,38 @@ Message Types
 5. RegulatoryDecision           (MSG5) — Regulator approves/rejects bid set
 6. CodedContractSpec            (MSG6) — Codifier emits deployment spec
 7. LegislativeApproval          (MSG7) — Dual-signed final approval
+
+Canonical signed-bytes specification
+--------------------------------------
+For each signed MSG type, the canonical bytes that the sender computes and
+signs are::
+
+    canonical_bytes(msg) =
+        json.dumps({
+            "msg_type":   msg.msg_type.value,
+            "session_id": msg.session_id,
+            # all SIGNED FIELDS for this message type, in the order listed below
+        }, sort_keys=True, separators=(",", ":")).encode("utf-8")
+
+Field sets per MSG type (the signature covers these fields only —
+``timestamp`` and any server-set/replay-protection fields are EXCLUDED so
+signatures stay stable across re-logging and clock skew):
+
+| MSG  | Class | Signed fields (in addition to ``msg_type`` + ``session_id``) |
+|------|-------|--------------------------------------------------------------|
+| MSG1 | ``IdentityVerificationRequest`` | ``min_reputation`` |
+| MSG2 | ``IdentityAttestation`` | ``agent_did``, ``reputation_score`` (formatted via ``format(value, ".6f")``), ``agent_type`` |
+| MSG3 | ``DAGProposal`` | ``proposer_did``, ``dag_spec`` (JSON-canonicalised dict; ``sort_keys=True`` is applied recursively), ``rationale``, ``token_budget_total`` (``.6f``), ``deadline_ms`` |
+| MSG4 | ``TaskBid`` | ``task_node_id``, ``bidder_did``, ``service_id``, ``proposed_code_hash``, ``stake_amount`` (``.6f``), ``estimated_latency_ms``, ``quoted_price`` (``.6f``), ``capability_match`` (``.6f``), ``pop_tier_acceptance`` |
+| MSG5 | ``RegulatoryDecision`` | ``approved_bids`` (list), ``rejected_bids`` (list), ``fairness_score`` (``.6f``), ``compliance_flags`` (list) |
+| MSG6 | ``CodedContractSpec`` | ``collaboration_contract_spec``, ``guardian_module_spec``, ``verification_module_spec``, ``gate_module_spec``, ``service_contract_specs``, ``validation_proof`` |
+| MSG7 | ``LegislativeApproval`` | ``spec_id`` — proposer/speaker side; the regulator co-signs the SAME canonical bytes |
+
+``canonical_signed_bytes(msg)`` is centralised so EVERY signer and verifier
+calls the same function. Floats are formatted via ``format(v, ".6f")`` so the
+canonical encoding is deterministic across Python's repr drift; lists are
+JSON-encoded with order preserved (list order is semantically meaningful for
+``approved_bids`` etc.).
 """
 
 from __future__ import annotations
@@ -42,6 +74,7 @@ class MessageType(str, Enum):
     REGULATORY_DECISION = "REGULATORY_DECISION"
     CODED_CONTRACT_SPEC = "CODED_CONTRACT_SPEC"
     LEGISLATIVE_APPROVAL = "LEGISLATIVE_APPROVAL"
+    LEGISLATIVE_APPROVAL_REGULATOR_COSIG = "LEGISLATIVE_APPROVAL_REGULATOR_COSIG"
 
 
 # ---------------------------------------------------------------------------
@@ -78,7 +111,12 @@ class IdentityAttestation(BaseModel):
     msg_type: MessageType = MessageType.IDENTITY_ATTESTATION
     session_id: str = Field(..., min_length=1)
     agent_did: str = Field(..., min_length=1)
-    signature: str = Field(..., min_length=1)
+    signature: str | None = Field(
+        None,
+        min_length=128,
+        max_length=128,
+        pattern=r"^[0-9a-f]{128}$",
+    )
     reputation_score: float = Field(..., ge=0.0, le=1.0)
     agent_type: str = Field(..., pattern=r"^(producer|clerk)$")
     timestamp: datetime = Field(default_factory=_utcnow)
@@ -99,6 +137,12 @@ class DAGProposal(BaseModel):
     rationale: str = Field(..., min_length=1)
     token_budget_total: float = Field(..., gt=0)
     deadline_ms: int = Field(..., gt=0)
+    signature: str | None = Field(
+        None,
+        min_length=128,
+        max_length=128,
+        pattern=r"^[0-9a-f]{128}$",
+    )
     timestamp: datetime = Field(default_factory=_utcnow)
 
     @field_validator("dag_spec")
@@ -128,6 +172,12 @@ class TaskBid(BaseModel):
     quoted_price: float = Field(..., ge=0)
     capability_match: float = Field(..., ge=0.0, le=1.0)
     pop_tier_acceptance: int = Field(..., ge=1, le=3)
+    signature: str | None = Field(
+        None,
+        min_length=128,
+        max_length=128,
+        pattern=r"^[0-9a-f]{128}$",
+    )
     timestamp: datetime = Field(default_factory=_utcnow)
 
 
@@ -165,6 +215,12 @@ class CodedContractSpec(BaseModel):
     gate_module_spec: dict = Field(...)
     service_contract_specs: dict = Field(...)
     validation_proof: str = Field(..., min_length=1)
+    signature: str | None = Field(
+        None,
+        min_length=128,
+        max_length=128,
+        pattern=r"^[0-9a-f]{128}$",
+    )
     timestamp: datetime = Field(default_factory=_utcnow)
 
 
@@ -179,8 +235,18 @@ class LegislativeApproval(BaseModel):
     msg_type: MessageType = MessageType.LEGISLATIVE_APPROVAL
     session_id: str = Field(..., min_length=1)
     spec_id: str = Field(..., min_length=1)
-    speaker_signature: str = Field(..., min_length=1)
-    regulator_signature: str = Field(..., min_length=1)
+    speaker_signature: str = Field(
+        ...,
+        min_length=128,
+        max_length=128,
+        pattern=r"^[0-9a-f]{128}$",
+    )
+    regulator_signature: str = Field(
+        ...,
+        min_length=128,
+        max_length=128,
+        pattern=r"^[0-9a-f]{128}$",
+    )
     timestamp: datetime = Field(default_factory=_utcnow)
 
 
@@ -208,6 +274,97 @@ MESSAGE_MODELS: dict[MessageType, type[BaseModel]] = {
     MessageType.CODED_CONTRACT_SPEC: CodedContractSpec,
     MessageType.LEGISLATIVE_APPROVAL: LegislativeApproval,
 }
+
+
+# ---------------------------------------------------------------------------
+# Canonical signed bytes
+# ---------------------------------------------------------------------------
+
+_SIGNED_FIELDS: dict[MessageType, list[str]] = {
+    MessageType.IDENTITY_VERIFICATION_REQUEST: ["min_reputation"],
+    MessageType.IDENTITY_ATTESTATION: [
+        "agent_did",
+        "reputation_score",
+        "agent_type",
+    ],
+    MessageType.DAG_PROPOSAL: [
+        "proposer_did",
+        "dag_spec",
+        "rationale",
+        "token_budget_total",
+        "deadline_ms",
+    ],
+    MessageType.TASK_BID: [
+        "task_node_id",
+        "bidder_did",
+        "service_id",
+        "proposed_code_hash",
+        "stake_amount",
+        "estimated_latency_ms",
+        "quoted_price",
+        "capability_match",
+        "pop_tier_acceptance",
+    ],
+    MessageType.REGULATORY_DECISION: [
+        "approved_bids",
+        "rejected_bids",
+        "fairness_score",
+        "compliance_flags",
+    ],
+    MessageType.CODED_CONTRACT_SPEC: [
+        "collaboration_contract_spec",
+        "guardian_module_spec",
+        "verification_module_spec",
+        "gate_module_spec",
+        "service_contract_specs",
+        "validation_proof",
+    ],
+    MessageType.LEGISLATIVE_APPROVAL: ["spec_id"],
+}
+
+
+def _canonicalize_value(obj: Any) -> Any:
+    """Recursively canonicalise a value for stable JSON encoding.
+
+    * ``float`` → formatted string ``format(v, ".6f")``
+    * ``dict``  → recursively canonicalised values with sorted keys
+    * ``list``  → recursively canonicalised elements (order preserved)
+    * everything else → returned unchanged
+    """
+    if isinstance(obj, float):
+        return format(obj, ".6f")
+    if isinstance(obj, dict):
+        return {k: _canonicalize_value(v) for k, v in sorted(obj.items())}
+    if isinstance(obj, list):
+        return [_canonicalize_value(v) for v in obj]
+    return obj
+
+
+def canonical_signed_bytes(msg: ProtocolMessage) -> bytes:
+    """Return the canonical UTF-8 bytes that must be signed for *msg*.
+
+    The bytes are produced by JSON-serialising a dict that contains
+    ``msg_type``, ``session_id``, and the signed-field subset for the
+    message's type, then encoding with ``sort_keys=True`` and compact
+    separators.
+
+    Raises:
+        TypeError: if the message type is not one of the seven protocol
+        message types.
+    """
+    msg_type = getattr(msg, "msg_type", None)
+    if msg_type not in _SIGNED_FIELDS:
+        raise TypeError(f"Unsupported message type: {msg_type!r}")
+
+    payload: dict[str, Any] = {
+        "msg_type": msg_type.value,
+        "session_id": msg.session_id,
+    }
+    for field in _SIGNED_FIELDS[msg_type]:
+        payload[field] = getattr(msg, field)
+
+    canonical = _canonicalize_value(payload)
+    return json.dumps(canonical, sort_keys=True, separators=(",", ":")).encode("utf-8")
 
 
 # ---------------------------------------------------------------------------
@@ -270,29 +427,91 @@ def validate_message(msg: ProtocolMessage) -> list[str]:
 # ---------------------------------------------------------------------------
 
 
+def signature_field_for(msg: ProtocolMessage) -> str:
+    """Return the attribute name that holds the Ed25519 signature for *msg*."""
+    if isinstance(msg, RegulatoryDecision):
+        return "regulatory_signature"
+    if isinstance(msg, LegislativeApproval):
+        return "speaker_signature"
+    return "signature"
+
+
 def log_message(
     db_path: Union[str, Path],
     session_id: str,
     msg: ProtocolMessage,
     sender_did: str = "system",
     receiver: Optional[str] = None,
+    cosigner_did: Optional[str] = None,
 ) -> int:
     """Append a protocol message to the message_log table.
 
-    Returns the log_id of the inserted row.
+    For signed messages the *payload* column stores the lowercase hex of the
+    canonical signed bytes; *signature* stores the detached Ed25519 sig hex;
+    and *payload_json* stores the full Pydantic JSON for observability.
+
+    For unsigned messages (MSG1 in Bundle 1) *payload* is ``""``,
+    *signature* is ``NULL``, and *payload_json* still holds the JSON.
+
+    MSG7 only: when *cosigner_did* is provided a second row with
+    ``msg_type = LEGISLATIVE_APPROVAL_REGULATOR_COSIG`` is written so both
+    signatures are preserved in the log.
+
+    Returns the log_id of the primary inserted row.
     """
-    payload = msg.model_dump_json()
+    payload_json = msg.model_dump_json()
+
+    sig_field = signature_field_for(msg)
+    signature = getattr(msg, sig_field, None)
+    # For unsigned messages (MSG1) signature stays None → NULL in DB
+
+    if signature is None:
+        payload = ""
+    else:
+        payload = canonical_signed_bytes(msg).hex()
+
     conn = sqlite3.connect(str(db_path))
     try:
         conn.execute("PRAGMA foreign_keys = ON")
         cursor = conn.execute(
             "INSERT INTO message_log "
-            "(session_id, msg_type, sender_did, receiver, payload) "
-            "VALUES (?, ?, ?, ?, ?)",
-            (session_id, msg.msg_type.value, sender_did, receiver, payload),
+            "(session_id, msg_type, sender_did, receiver, payload, signature, payload_json) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (
+                session_id,
+                msg.msg_type.value,
+                sender_did,
+                receiver,
+                payload,
+                signature,
+                payload_json,
+            ),
         )
+        primary_log_id = cursor.lastrowid  # type: ignore[assignment]
+
+        # MSG7 dual-cosig persistence
+        if (
+            isinstance(msg, LegislativeApproval)
+            and cosigner_did is not None
+            and msg.regulator_signature is not None
+        ):
+            conn.execute(
+                "INSERT INTO message_log "
+                "(session_id, msg_type, sender_did, receiver, payload, signature, payload_json) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (
+                    session_id,
+                    MessageType.LEGISLATIVE_APPROVAL_REGULATOR_COSIG.value,
+                    cosigner_did,
+                    receiver,
+                    payload,
+                    msg.regulator_signature,
+                    payload_json,
+                ),
+            )
+
         conn.commit()
-        return cursor.lastrowid  # type: ignore[return-value]
+        return primary_log_id  # type: ignore[return-value]
     finally:
         conn.close()
 
@@ -310,7 +529,8 @@ def get_session_messages(
     """Query protocol messages for a session, optionally filtered by type.
 
     Returns a list of dicts with keys: log_id, session_id, msg_type,
-    sender_did, receiver, payload (parsed), created_at.
+    sender_did, receiver, payload (the raw hex string for signed rows),
+    created_at.  JSON observability is available via ``payload_json``.
     Results are ordered chronologically (ascending).
     """
     conn = sqlite3.connect(str(db_path))
@@ -331,11 +551,14 @@ def get_session_messages(
 
         results = []
         for row in rows:
-            payload_raw = row["payload"]
-            try:
-                payload = json.loads(payload_raw) if payload_raw else None
-            except (json.JSONDecodeError, TypeError):
-                payload = payload_raw
+            # payload_json is the Pydantic JSON for observability;
+            # payload is the canonical hex (or "" for unsigned)
+            payload_json_parsed = None
+            if row["payload_json"]:
+                try:
+                    payload_json_parsed = json.loads(row["payload_json"])
+                except (json.JSONDecodeError, TypeError):
+                    payload_json_parsed = row["payload_json"]
             results.append(
                 {
                     "log_id": row["log_id"],
@@ -343,7 +566,9 @@ def get_session_messages(
                     "msg_type": row["msg_type"],
                     "sender_did": row["sender_did"],
                     "receiver": row["receiver"],
-                    "payload": payload,
+                    "payload": row["payload"],
+                    "signature": row["signature"],
+                    "payload_json": payload_json_parsed,
                     "created_at": row["created_at"],
                 }
             )

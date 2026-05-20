@@ -14,7 +14,9 @@ from oasis.governance.messages import (
     DAGProposal,
     IdentityAttestation,
     TaskBid,
+    canonical_signed_bytes,
 )
+from oasis.crypto import ed25519
 from oasis.governance.state_machine import LegislativeState, LegislativeStateMachine
 
 
@@ -40,20 +42,27 @@ def _create_session(db_path, sid=None, budget=1000.0):
 def _advance_to_identity(db_path, sid, producers, min_rep=0.1):
     """Advance to IDENTITY_VERIFICATION and attest all producers."""
     db = str(db_path)
-    registrar = Registrar(db_path=db, clerk_did="did:oasis:clerk-registrar")
+    registrar = Registrar(
+        db_path=db, clerk_did="did:key:z6Mkkwz2P6pxvfqPxgdssMRZ9UNThiuMueGdV4awUacowDLd"
+    )
     registrar.open_session(sid, min_rep)
     sm = LegislativeStateMachine(sid, db)
     r = sm.transition(LegislativeState.IDENTITY_VERIFICATION)
     assert r.allowed
 
+    from oasis.governance.messages import canonical_signed_bytes
+
     for p in producers:
         att = IdentityAttestation(
             session_id=sid,
             agent_did=p["agent_did"],
-            signature="sig",
-            reputation_score=p["reputation_score"],
+            signature="ab" * 64,
+            reputation_score=p.get("reputation_score", 0.5),
             agent_type="producer",
         )
+        att.signature = ed25519.sign(
+            p["private_key"], canonical_signed_bytes(att)
+        ).hex()
         registrar.verify_identity(att)
 
     # Guard: IDENTITY_ATTESTATION
@@ -94,7 +103,10 @@ class TestFailureModes:
         conn.commit()
         conn.close()
 
-        registrar = Registrar(db_path=db, clerk_did="did:oasis:clerk-registrar")
+        registrar = Registrar(
+            db_path=db,
+            clerk_did="did:key:z6Mkkwz2P6pxvfqPxgdssMRZ9UNThiuMueGdV4awUacowDLd",
+        )
         registrar.open_session(sid, min_reputation=0.9)
         sm = LegislativeStateMachine(sid, db)
         r = sm.transition(LegislativeState.IDENTITY_VERIFICATION)
@@ -104,7 +116,7 @@ class TestFailureModes:
         att = IdentityAttestation(
             session_id=sid,
             agent_did=producers[0]["agent_did"],
-            signature="sig",
+            signature="ab" * 64,
             reputation_score=0.5,  # below 0.9
             agent_type="producer",
         )
@@ -154,7 +166,10 @@ class TestFailureModes:
             ],
         }
 
-        speaker = Speaker(db_path=str(e2e_db), clerk_did="did:oasis:clerk-speaker")
+        speaker = Speaker(
+            db_path=str(e2e_db),
+            clerk_did="did:key:z6Mknpo1FQJ19grCZsqJcsRBBKegBS8EQ8H6pk6hxiFtoWSK",
+        )
         proposal = DAGProposal(
             session_id=sid,
             proposer_did=producers[0]["agent_did"],
@@ -163,6 +178,9 @@ class TestFailureModes:
             token_budget_total=200.0,
             deadline_ms=60000,
         )
+        proposal.signature = ed25519.sign(
+            producers[0]["private_key"], canonical_signed_bytes(proposal)
+        ).hex()
         res = speaker.receive_proposal(sid, proposal)
         assert not res["passed"]
         assert any("cycle" in e.lower() for e in res["errors"])
@@ -201,7 +219,10 @@ class TestFailureModes:
             "edges": [{"from_node_id": "n1", "to_node_id": "n2"}],
         }
 
-        speaker = Speaker(db_path=str(e2e_db), clerk_did="did:oasis:clerk-speaker")
+        speaker = Speaker(
+            db_path=str(e2e_db),
+            clerk_did="did:key:z6Mknpo1FQJ19grCZsqJcsRBBKegBS8EQ8H6pk6hxiFtoWSK",
+        )
         proposal = DAGProposal(
             session_id=sid,
             proposer_did=producers[0]["agent_did"],
@@ -210,6 +231,9 @@ class TestFailureModes:
             token_budget_total=700.0,
             deadline_ms=60000,
         )
+        proposal.signature = ed25519.sign(
+            producers[0]["private_key"], canonical_signed_bytes(proposal)
+        ).hex()
         res = speaker.receive_proposal(sid, proposal)
         assert res["passed"]
 
@@ -218,7 +242,8 @@ class TestFailureModes:
 
         # Only bid on n1, leave n2 uncovered
         regulator = Regulator(
-            db_path=str(e2e_db), clerk_did="did:oasis:clerk-regulator"
+            db_path=str(e2e_db),
+            clerk_did="did:key:z6Mkop5toaiwyZq5Lm7Ldr6MFdYtvb3gtQ2B4U5ZRXNkXyuN",
         )
         bid = TaskBid(
             session_id=sid,
@@ -232,6 +257,9 @@ class TestFailureModes:
             capability_match=producers[0].get("reputation_score", 0.5),
             pop_tier_acceptance=1,
         )
+        bid.signature = ed25519.sign(
+            producers[0]["private_key"], canonical_signed_bytes(bid)
+        ).hex()
         regulator.receive_bid(sid, bid)
 
         # Cannot transition because n2 is uncovered
@@ -274,7 +302,10 @@ class TestFailureModes:
             "edges": [{"from_node_id": "big-root", "to_node_id": "big-leaf"}],
         }
 
-        speaker = Speaker(db_path=str(e2e_db), clerk_did="did:oasis:clerk-speaker")
+        speaker = Speaker(
+            db_path=str(e2e_db),
+            clerk_did="did:key:z6Mknpo1FQJ19grCZsqJcsRBBKegBS8EQ8H6pk6hxiFtoWSK",
+        )
         # Set budget high enough to pass proposal guard but over constitutional cap
         proposal = DAGProposal(
             session_id=sid,
@@ -284,6 +315,9 @@ class TestFailureModes:
             token_budget_total=999999.0,  # under cap at proposal level
             deadline_ms=60000,
         )
+        proposal.signature = ed25519.sign(
+            producers[0]["private_key"], canonical_signed_bytes(proposal)
+        ).hex()
         res = speaker.receive_proposal(sid, proposal)
         assert res["passed"]
         res["proposal_id"]
@@ -292,7 +326,8 @@ class TestFailureModes:
         assert r.allowed
 
         regulator = Regulator(
-            db_path=str(e2e_db), clerk_did="did:oasis:clerk-regulator"
+            db_path=str(e2e_db),
+            clerk_did="did:key:z6Mkop5toaiwyZq5Lm7Ldr6MFdYtvb3gtQ2B4U5ZRXNkXyuN",
         )
         for node in big_dag["nodes"]:
             bid = TaskBid(
@@ -307,6 +342,9 @@ class TestFailureModes:
                 capability_match=producers[0].get("reputation_score", 0.5),
                 pop_tier_acceptance=1,
             )
+            bid.signature = ed25519.sign(
+                producers[0]["private_key"], canonical_signed_bytes(bid)
+            ).hex()
             regulator.receive_bid(sid, bid)
 
         r = sm.transition(LegislativeState.REGULATORY_REVIEW)
@@ -326,7 +364,10 @@ class TestFailureModes:
         ).fetchall()
         conn.close()
 
-        codifier = Codifier(db_path=str(e2e_db), clerk_did="did:oasis:clerk-codifier")
+        codifier = Codifier(
+            db_path=str(e2e_db),
+            clerk_did="did:key:z6Mkqa2BXHD2A1yYPvv2gWLRZCMdgvEroqCEXb8ZsGzbqxH9",
+        )
         spec = codifier.compile_spec(sid, proposal, [dict(b) for b in bids])
         val_result = codifier.run_constitutional_validation(spec)
         assert not val_result.passed
@@ -346,10 +387,22 @@ class TestFailureModes:
         db = str(e2e_db)
 
         # Drive session up to AWAITING_APPROVAL manually
-        registrar = Registrar(db_path=db, clerk_did="did:oasis:clerk-registrar")
-        speaker = Speaker(db_path=db, clerk_did="did:oasis:clerk-speaker")
-        regulator_clerk = Regulator(db_path=db, clerk_did="did:oasis:clerk-regulator")
-        codifier = Codifier(db_path=db, clerk_did="did:oasis:clerk-codifier")
+        registrar = Registrar(
+            db_path=db,
+            clerk_did="did:key:z6Mkkwz2P6pxvfqPxgdssMRZ9UNThiuMueGdV4awUacowDLd",
+        )
+        speaker = Speaker(
+            db_path=db,
+            clerk_did="did:key:z6Mknpo1FQJ19grCZsqJcsRBBKegBS8EQ8H6pk6hxiFtoWSK",
+        )
+        regulator_clerk = Regulator(
+            db_path=db,
+            clerk_did="did:key:z6Mkop5toaiwyZq5Lm7Ldr6MFdYtvb3gtQ2B4U5ZRXNkXyuN",
+        )
+        codifier = Codifier(
+            db_path=db,
+            clerk_did="did:key:z6Mkqa2BXHD2A1yYPvv2gWLRZCMdgvEroqCEXb8ZsGzbqxH9",
+        )
 
         conn = sqlite3.connect(db)
         conn.execute("PRAGMA foreign_keys = ON")
@@ -369,7 +422,7 @@ class TestFailureModes:
             att = IdentityAttestation(
                 session_id=sid,
                 agent_did=p["agent_did"],
-                signature="sig",
+                signature="ab" * 64,
                 reputation_score=0.5,
                 agent_type="producer",
             )
@@ -397,24 +450,29 @@ class TestFailureModes:
             token_budget_total=1000.0,
             deadline_ms=60000,
         )
+        proposal.signature = ed25519.sign(
+            producers[0]["private_key"], canonical_signed_bytes(proposal)
+        ).hex()
         speaker.receive_proposal(sid, proposal)
         sm.transition(LegislativeState.BIDDING_OPEN)
 
         for idx, node in enumerate(dag["nodes"]):
+            bidder = producers[idx % len(producers)]
             bid = TaskBid(
                 session_id=sid,
                 task_node_id=node["node_id"],
-                bidder_did=producers[idx % len(producers)]["agent_did"],
+                bidder_did=bidder["agent_did"],
                 service_id=node["service_id"],
                 proposed_code_hash="abcdef1234567890",
                 stake_amount=0.5,
                 estimated_latency_ms=5000,
                 quoted_price=0.5,
-                capability_match=producers[idx % len(producers)].get(
-                    "reputation_score", 0.5
-                ),
+                capability_match=bidder.get("reputation_score", 0.5),
                 pop_tier_acceptance=1,
             )
+            bid.signature = ed25519.sign(
+                bidder["private_key"], canonical_signed_bytes(bid)
+            ).hex()
             regulator_clerk.receive_bid(sid, bid)
 
         sm.transition(LegislativeState.REGULATORY_REVIEW)
@@ -446,8 +504,14 @@ class TestFailureModes:
         sm = _advance_to_identity(e2e_db, sid, producers)
         db = str(e2e_db)
 
-        speaker = Speaker(db_path=db, clerk_did="did:oasis:clerk-speaker")
-        regulator = Regulator(db_path=db, clerk_did="did:oasis:clerk-regulator")
+        speaker = Speaker(
+            db_path=db,
+            clerk_did="did:key:z6Mknpo1FQJ19grCZsqJcsRBBKegBS8EQ8H6pk6hxiFtoWSK",
+        )
+        regulator = Regulator(
+            db_path=db,
+            clerk_did="did:key:z6Mkop5toaiwyZq5Lm7Ldr6MFdYtvb3gtQ2B4U5ZRXNkXyuN",
+        )
 
         round_counter = [0]
         all_node_ids = []  # track all node IDs across rounds
@@ -498,6 +562,9 @@ class TestFailureModes:
                 token_budget_total=700.0,
                 deadline_ms=60000,
             )
+            proposal.signature = ed25519.sign(
+                producers[0]["private_key"], canonical_signed_bytes(proposal)
+            ).hex()
             speaker.receive_proposal(sid, proposal)
 
             r = sm.transition(LegislativeState.BIDDING_OPEN)
@@ -505,20 +572,22 @@ class TestFailureModes:
 
             # Bid on ALL node IDs ever created (guard checks all proposals)
             for idx, (node_id, svc_id) in enumerate(all_node_ids):
+                bidder = producers[idx % len(producers)]
                 bid = TaskBid(
                     session_id=sid,
                     task_node_id=node_id,
-                    bidder_did=producers[idx % len(producers)]["agent_did"],
+                    bidder_did=bidder["agent_did"],
                     service_id=svc_id,
                     proposed_code_hash="abcdef1234567890",
                     stake_amount=0.5,
                     estimated_latency_ms=5000,
                     quoted_price=0.5,
-                    capability_match=producers[idx % len(producers)].get(
-                        "reputation_score", 0.5
-                    ),
+                    capability_match=bidder.get("reputation_score", 0.5),
                     pop_tier_acceptance=1,
                 )
+                bid.signature = ed25519.sign(
+                    bidder["private_key"], canonical_signed_bytes(bid)
+                ).hex()
                 regulator.receive_bid(sid, bid)
 
             r = sm.transition(LegislativeState.REGULATORY_REVIEW)

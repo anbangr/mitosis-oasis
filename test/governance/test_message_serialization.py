@@ -23,7 +23,7 @@ def test_json_round_trip():
         IdentityAttestation(
             session_id="s1",
             agent_did="did:mock:p1",
-            signature="sig",
+            signature="ab" * 64,
             reputation_score=0.6,
             agent_type="producer",
         ),
@@ -53,7 +53,7 @@ def test_json_round_trip():
             rejected_bids=[],
             fairness_score=0.9,
             compliance_flags=[],
-            regulatory_signature="sig-r",
+            regulatory_signature="cd" * 64,
         ),
         CodedContractSpec(
             session_id="s1",
@@ -67,8 +67,8 @@ def test_json_round_trip():
         LegislativeApproval(
             session_id="s1",
             spec_id="spec1",
-            speaker_signature="sig-s",
-            regulator_signature="sig-r",
+            speaker_signature="ef" * 64,
+            regulator_signature="cd" * 64,
         ),
     ]
 

@@ -105,3 +105,13 @@ log/
 
 # Claude Code local settings
 .claude/settings.local.json
+
+# Bundle-1 ephemeral artifacts
+data/clerk_keys/
+refactor.py
+BLOCKED-feature-*.md
+
+# Bundle-1 F11 ephemeral artifacts
+.gstack/
+inbox/
+uv.lock

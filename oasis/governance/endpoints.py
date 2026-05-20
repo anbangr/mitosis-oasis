@@ -12,8 +12,10 @@ import sqlite3
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field, field_validator
+
+from oasis.api_auth import require_eip712_sig
 
 from oasis.config import PlatformConfig, _GOVERNANCE_MODE_ORDER, _VALID_GOVERNANCE_MODES
 from oasis.governance.clerks.codifier import Codifier
@@ -77,19 +79,27 @@ def _connect() -> sqlite3.Connection:
 
 
 def _registrar() -> Registrar:
-    return Registrar(db_path=_get_db(), clerk_did="did:oasis:clerk-registrar")
+    from oasis.governance.schema import get_clerk_did
+
+    return Registrar(db_path=_get_db(), clerk_did=get_clerk_did("registrar"))
 
 
 def _speaker() -> Speaker:
-    return Speaker(db_path=_get_db(), clerk_did="did:oasis:clerk-speaker")
+    from oasis.governance.schema import get_clerk_did
+
+    return Speaker(db_path=_get_db(), clerk_did=get_clerk_did("speaker"))
 
 
 def _regulator() -> Regulator:
-    return Regulator(db_path=_get_db(), clerk_did="did:oasis:clerk-regulator")
+    from oasis.governance.schema import get_clerk_did
+
+    return Regulator(db_path=_get_db(), clerk_did=get_clerk_did("regulator"))
 
 
 def _codifier() -> Codifier:
-    return Codifier(db_path=_get_db(), clerk_did="did:oasis:clerk-codifier")
+    from oasis.governance.schema import get_clerk_did
+
+    return Codifier(db_path=_get_db(), clerk_did=get_clerk_did("codifier"))
 
 
 # ---------------------------------------------------------------------------
@@ -157,6 +167,7 @@ class ProposalBody(BaseModel):
     rationale: str = Field("", min_length=0)
     token_budget_total: float = Field(..., gt=0)
     deadline_ms: int = Field(..., gt=0)
+    signature: str = Field("", min_length=0)
 
 
 class StrawPollBody(BaseModel):
@@ -179,10 +190,11 @@ class BidBody(BaseModel):
     service_id: str = Field(..., min_length=1)
     proposed_code_hash: str = Field(..., min_length=1)
     stake_amount: float = Field(..., ge=0)
-    estimated_latency_ms: int = Field(..., gt=0)
+    estimated_latency_ms: int = Field(..., ge=0)
     quoted_price: float = Field(..., ge=0)
     capability_match: float = Field(..., ge=0.0, le=1.0)
     pop_tier_acceptance: int = Field(..., ge=1, le=3)
+    signature: str = Field("", min_length=0)
 
 
 class RegulatoryDecisionBody(BaseModel):
@@ -197,6 +209,12 @@ class ApprovalBody(BaseModel):
     spec_id: str = Field(..., min_length=1)
     proposer_signature: str = Field("", min_length=0)
     regulator_signature: str = Field("", min_length=0)
+
+
+class ConstitutionAmendmentBody(BaseModel):
+    param_name: str = Field(..., min_length=1)
+    param_value: str = Field(..., min_length=1)
+    nonce: int = Field(..., ge=0)
 
 
 # ---------------------------------------------------------------------------
@@ -396,6 +414,7 @@ async def submit_proposal(session_id: str, body: ProposalBody):
         rationale=body.rationale or "No rationale provided",
         token_budget_total=body.token_budget_total,
         deadline_ms=body.deadline_ms,
+        signature=body.signature or None,
     )
     result = speaker.receive_proposal(session_id, proposal)
     if not result["passed"]:
@@ -629,6 +648,7 @@ async def submit_bid(session_id: str, body: BidBody):
         quoted_price=body.quoted_price,
         capability_match=body.capability_match,
         pop_tier_acceptance=body.pop_tier_acceptance,
+        signature=body.signature or None,
     )
     result = regulator.receive_bid(session_id, bid)
     if not result["passed"]:
@@ -687,7 +707,9 @@ async def submit_regulatory_decision(session_id: str, body: RegulatoryDecisionBo
     _require_state(session_id, LegislativeState.REGULATORY_REVIEW)
 
     # Only the regulator clerk can submit
-    if body.submitter_did != "did:oasis:clerk-regulator":
+    from oasis.governance.schema import get_clerk_did
+
+    if body.submitter_did != get_clerk_did("regulator"):
         raise HTTPException(
             403, "Only the regulator clerk can submit regulatory decisions"
         )
@@ -979,6 +1001,32 @@ async def get_reputation(agent_did: str):
             }
             for h in history
         ],
+    }
+
+
+@_routes.put("/constitution", dependencies=[Depends(require_eip712_sig)])
+async def amend_constitution(body: ConstitutionAmendmentBody) -> dict[str, Any]:
+    """Update a constitutional parameter."""
+    conn = _connect()
+    try:
+        row = conn.execute(
+            "SELECT param_name FROM constitution WHERE param_name = ?",
+            (body.param_name,),
+        ).fetchone()
+        if row is None:
+            raise HTTPException(404, f"Parameter not found: {body.param_name}")
+
+        conn.execute(
+            "UPDATE constitution SET param_value = ? WHERE param_name = ?",
+            (body.param_value, body.param_name),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+    return {
+        "param_name": body.param_name,
+        "param_value": body.param_value,
     }
 
 

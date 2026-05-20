@@ -28,9 +28,17 @@ import pytest
 from oasis.crypto import ed25519
 from oasis.crypto.did import did_from_pubkey
 from oasis.governance.clerks.bootstrap import ensure_clerk_keys
-from oasis.governance.messages import IdentityAttestation, canonical_signed_bytes, log_message
+from oasis.governance.messages import (
+    IdentityAttestation,
+    canonical_signed_bytes,
+    log_message,
+)
 from oasis.governance.schema import create_governance_tables, seed_constitution
-from oasis.governance.state_machine import GuardResult, LegislativeState, _guard_identity_to_proposal
+from oasis.governance.state_machine import (
+    GuardResult,
+    LegislativeState,
+    _guard_identity_to_proposal,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -66,7 +74,9 @@ def gov_conn(gov_db: Path) -> Generator[sqlite3.Connection, None, None]:
 # ---------------------------------------------------------------------------
 
 
-def _register_producer(db_path: Path, did: str, public_key: bytes, reputation_score: float = 0.5) -> None:
+def _register_producer(
+    db_path: Path, did: str, public_key: bytes, reputation_score: float = 0.5
+) -> None:
     """Register a producer agent with a real Ed25519 public key (hex)."""
     conn = sqlite3.connect(str(db_path))
     conn.execute("PRAGMA foreign_keys = ON")
@@ -74,7 +84,15 @@ def _register_producer(db_path: Path, did: str, public_key: bytes, reputation_sc
         "INSERT INTO agent_registry "
         "(agent_did, agent_type, display_name, human_principal, reputation_score, active, public_key) "
         "VALUES (?, ?, ?, ?, ?, ?, ?)",
-        (did, "producer", f"Producer {did}", "test@example.com", reputation_score, 1, public_key.hex()),
+        (
+            did,
+            "producer",
+            f"Producer {did}",
+            "test@example.com",
+            reputation_score,
+            1,
+            public_key.hex(),
+        ),
     )
     conn.commit()
     conn.close()
@@ -117,7 +135,9 @@ def _insert_session(db_path: Path, session_id: str) -> None:
 class TestBundleOneCryptoWaypoint:
     """Bundle-1 E2E waypoint (T1–T6)."""
 
-    def test_t1_six_of_ten_real_ed25519_pass_guard(self, gov_db: Path, gov_conn: sqlite3.Connection):
+    def test_t1_six_of_ten_real_ed25519_pass_guard(
+        self, gov_db: Path, gov_conn: sqlite3.Connection
+    ):
         """T1: 6/10 attestations with real signatures clear quorum_threshold=0.60."""
         session_id = "smoke-bundle1"
 
@@ -145,7 +165,9 @@ class TestBundleOneCryptoWaypoint:
     # T2 — 0/10 attestations fail guard
     # -----------------------------------------------------------------------
 
-    def test_t2_zero_of_ten_attestations_fail_guard(self, gov_db: Path, gov_conn: sqlite3.Connection):
+    def test_t2_zero_of_ten_attestations_fail_guard(
+        self, gov_db: Path, gov_conn: sqlite3.Connection
+    ):
         """T2: 0/10 attestations at quorum_threshold=0.60 → blocked."""
         session_id = "smoke-bundle1-t2"
 
@@ -160,7 +182,9 @@ class TestBundleOneCryptoWaypoint:
 
         assert isinstance(result, GuardResult)
         assert result.allowed is False
-        assert "quorum" in result.reason.lower() or "attestation" in result.reason.lower()
+        assert (
+            "quorum" in result.reason.lower() or "attestation" in result.reason.lower()
+        )
 
     # -----------------------------------------------------------------------
     # T4 — Signature verifiable post-insert via canonical-bytes round-trip

@@ -28,6 +28,7 @@ import pytest
 from oasis.crypto import ed25519
 from oasis.crypto.did import did_from_pubkey
 from oasis.governance.clerks.bootstrap import ensure_clerk_keys
+from oasis.governance.clerks.registrar import Registrar
 from oasis.governance.messages import (
     IdentityAttestation,
     canonical_signed_bytes,
@@ -77,25 +78,37 @@ def gov_conn(gov_db: Path) -> Generator[sqlite3.Connection, None, None]:
 def _register_producer(
     db_path: Path, did: str, public_key: bytes, reputation_score: float = 0.5
 ) -> None:
-    """Register a producer agent with a real Ed25519 public key (hex)."""
+    """Register a producer agent through Registrar.register_agent with a real public key."""
     conn = sqlite3.connect(str(db_path))
-    conn.execute("PRAGMA foreign_keys = ON")
-    conn.execute(
-        "INSERT INTO agent_registry "
-        "(agent_did, agent_type, display_name, human_principal, reputation_score, active, public_key) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?)",
-        (
-            did,
-            "producer",
-            f"Producer {did}",
-            "test@example.com",
-            reputation_score,
-            1,
-            public_key.hex(),
-        ),
+    conn.row_factory = sqlite3.Row
+    try:
+        registrar_row = conn.execute(
+            "SELECT agent_did FROM clerk_registry WHERE clerk_role = 'registrar'"
+        ).fetchone()
+        assert registrar_row is not None, "registrar clerk row missing"
+    finally:
+        conn.close()
+
+    registrar = Registrar(str(db_path), registrar_row["agent_did"])
+    registrar.register_agent(
+        did,
+        "producer",
+        f"Producer {did}",
+        human_principal="test@example.com",
+        public_key=public_key.hex(),
     )
-    conn.commit()
-    conn.close()
+
+    if reputation_score != 0.5:
+        conn = sqlite3.connect(str(db_path))
+        conn.execute("PRAGMA foreign_keys = ON")
+        try:
+            conn.execute(
+                "UPDATE agent_registry SET reputation_score = ? WHERE agent_did = ?",
+                (reputation_score, did),
+            )
+            conn.commit()
+        finally:
+            conn.close()
 
 
 def _make_signed_attestation(

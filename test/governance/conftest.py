@@ -13,6 +13,9 @@ from typing import Generator
 
 import pytest
 
+from oasis.crypto import ed25519
+from oasis.crypto.did import did_from_pubkey
+from oasis.governance.messages import IdentityAttestation, canonical_signed_bytes
 from oasis.governance.schema import (
     create_governance_tables,
     seed_clerks,
@@ -162,3 +165,71 @@ def db_conn(governance_db: Path) -> Generator[sqlite3.Connection, None, None]:
         yield conn
     finally:
         conn.close()
+
+
+# ---------------------------------------------------------------------------
+# Crypto fixtures (Feature 10 — ed25519 keypair)
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture()
+def ed25519_keypair() -> tuple[bytes, bytes]:
+    """Return a fresh Ed25519 keypair as (private_key, public_key) bytes."""
+    return ed25519.generate_keypair()
+
+
+# ---------------------------------------------------------------------------
+# Helper: register an agent with a public_key
+# ---------------------------------------------------------------------------
+
+
+def register_agent_with_key(
+    db_path: Path,
+    agent_did: str,
+    agent_type: str,
+    display_name: str,
+    public_key: str,
+    reputation_score: float = 0.5,
+) -> None:
+    """Insert or update an agent_registry row including public_key."""
+    conn = sqlite3.connect(str(db_path))
+    conn.execute("PRAGMA foreign_keys = ON")
+    try:
+        conn.execute(
+            "INSERT OR IGNORE INTO agent_registry "
+            "(agent_did, agent_type, display_name, human_principal, reputation_score, public_key) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (agent_did, agent_type, display_name, "test@example.com", reputation_score, public_key),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+# ---------------------------------------------------------------------------
+# Helper: create a signed IdentityAttestation
+# ---------------------------------------------------------------------------
+
+
+def make_signed_attestation(
+    session_id: str,
+    agent_did: str,
+    agent_type: str,
+    reputation_score: float,
+    private_key: bytes,
+) -> IdentityAttestation:
+    """Build an IdentityAttestation and sign it with the given Ed25519 private key.
+
+    The signature covers ``canonical_signed_bytes`` of the message.
+    """
+    msg = IdentityAttestation(
+        session_id=session_id,
+        agent_did=agent_did,
+        signature="ab" * 64,  # placeholder — replaced below
+        reputation_score=reputation_score,
+        agent_type=agent_type,
+    )
+    canonical = canonical_signed_bytes(msg)
+    sig = ed25519.sign(private_key, canonical)
+    msg.signature = sig.hex()
+    return msg

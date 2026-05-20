@@ -16,7 +16,9 @@ def _setup(governance_db: Path) -> Regulator:
     )
     conn.commit()
     conn.close()
-    return Regulator(str(governance_db), "did:oasis:clerk-regulator")
+    return Regulator(
+        str(governance_db), "did:key:z6Mkop5toaiwyZq5Lm7Ldr6MFdYtvb3gtQ2B4U5ZRXNkXyuN"
+    )
 
 
 def test_first_reproposal_allowed(governance_db: Path):

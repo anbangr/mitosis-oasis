@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 
-def test_submit_bid(client, session_factory):
+def test_submit_bid(client, session_factory, registered_producers):
     """POST /bids submits a valid bid."""
     session_id = session_factory("BIDDING_OPEN")
 
@@ -11,7 +11,7 @@ def test_submit_bid(client, session_factory):
         f"/api/governance/sessions/{session_id}/bids",
         json={
             "task_node_id": "n1",
-            "bidder_did": "did:mock:producer-2",
+            "bidder_did": registered_producers[1]["agent_did"],
             "service_id": "svc-a",
             "proposed_code_hash": "abcdef1234567890",
             "stake_amount": 0.5,
@@ -27,7 +27,7 @@ def test_submit_bid(client, session_factory):
     assert data["bid_id"] is not None
 
 
-def test_list_bids(client, session_factory):
+def test_list_bids(client, session_factory, registered_producers):
     """GET /bids lists all bids for a session."""
     session_id = session_factory("BIDDING_OPEN")
 
@@ -36,7 +36,7 @@ def test_list_bids(client, session_factory):
         f"/api/governance/sessions/{session_id}/bids",
         json={
             "task_node_id": "n1",
-            "bidder_did": "did:mock:producer-3",
+            "bidder_did": registered_producers[2]["agent_did"],
             "service_id": "svc-a",
             "proposed_code_hash": "hash12345678",
             "stake_amount": 0.3,
@@ -53,7 +53,7 @@ def test_list_bids(client, session_factory):
     assert len(data["bids"]) >= 1
 
 
-def test_invalid_bid_400(client, session_factory):
+def test_invalid_bid_400(client, session_factory, registered_producers):
     """POST /bids rejects bid with bad code hash."""
     session_id = session_factory("BIDDING_OPEN")
 
@@ -61,7 +61,7 @@ def test_invalid_bid_400(client, session_factory):
         f"/api/governance/sessions/{session_id}/bids",
         json={
             "task_node_id": "n1",
-            "bidder_did": "did:mock:producer-1",
+            "bidder_did": registered_producers[0]["agent_did"],
             "service_id": "svc-a",
             "proposed_code_hash": "short",  # too short
             "stake_amount": 0.5,
@@ -74,7 +74,7 @@ def test_invalid_bid_400(client, session_factory):
     assert resp.status_code == 400
 
 
-def test_state_gate_bidding(client, session_factory):
+def test_state_gate_bidding(client, session_factory, registered_producers):
     """POST /bids returns 409 when session is not in BIDDING_OPEN."""
     session_id = session_factory("PROPOSAL_OPEN")
 
@@ -82,7 +82,7 @@ def test_state_gate_bidding(client, session_factory):
         f"/api/governance/sessions/{session_id}/bids",
         json={
             "task_node_id": "n1",
-            "bidder_did": "did:mock:producer-1",
+            "bidder_did": registered_producers[0]["agent_did"],
             "service_id": "svc-a",
             "proposed_code_hash": "abcdef1234567890",
             "stake_amount": 0.5,

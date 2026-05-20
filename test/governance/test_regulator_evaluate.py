@@ -8,7 +8,9 @@ from oasis.governance.clerks.regulator import Regulator
 
 def _setup(governance_db: Path, num_nodes: int = 2, num_bidders: int = 2) -> Regulator:
     """Create regulator with session, proposals, nodes, and bids."""
-    reg = Regulator(str(governance_db), "did:oasis:clerk-regulator")
+    reg = Regulator(
+        str(governance_db), "did:key:z6Mkop5toaiwyZq5Lm7Ldr6MFdYtvb3gtQ2B4U5ZRXNkXyuN"
+    )
     conn = sqlite3.connect(str(governance_db))
     conn.execute("PRAGMA foreign_keys = ON")
     conn.execute(

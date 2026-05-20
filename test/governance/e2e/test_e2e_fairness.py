@@ -13,6 +13,7 @@ from oasis.governance.messages import (
     IdentityAttestation,
     TaskBid,
 )
+from oasis.crypto import ed25519
 from oasis.governance.state_machine import LegislativeState, LegislativeStateMachine
 
 
@@ -35,19 +36,26 @@ def test_monopolist_bid_rejected(e2e_db, producers):
     conn.commit()
     conn.close()
 
-    registrar = Registrar(db_path=db, clerk_did="did:oasis:clerk-registrar")
+    registrar = Registrar(
+        db_path=db, clerk_did="did:key:z6Mkkwz2P6pxvfqPxgdssMRZ9UNThiuMueGdV4awUacowDLd"
+    )
     registrar.open_session(sid, 0.1)
     sm = LegislativeStateMachine(sid, db)
     sm.transition(LegislativeState.IDENTITY_VERIFICATION)
+
+    from oasis.governance.messages import canonical_signed_bytes
 
     for p in producers:
         att = IdentityAttestation(
             session_id=sid,
             agent_did=p["agent_did"],
-            signature="sig",
+            signature="ab" * 64,
             reputation_score=0.5,
             agent_type="producer",
         )
+        att.signature = ed25519.sign(
+            p["private_key"], canonical_signed_bytes(att)
+        ).hex()
         registrar.verify_identity(att)
 
     conn = sqlite3.connect(db)
@@ -92,7 +100,9 @@ def test_monopolist_bid_rejected(e2e_db, producers):
         ],
     }
 
-    speaker = Speaker(db_path=db, clerk_did="did:oasis:clerk-speaker")
+    speaker = Speaker(
+        db_path=db, clerk_did="did:key:z6Mknpo1FQJ19grCZsqJcsRBBKegBS8EQ8H6pk6hxiFtoWSK"
+    )
     proposal = DAGProposal(
         session_id=sid,
         proposer_did=producers[0]["agent_did"],
@@ -106,7 +116,9 @@ def test_monopolist_bid_rejected(e2e_db, producers):
 
     sm.transition(LegislativeState.BIDDING_OPEN)
 
-    regulator = Regulator(db_path=db, clerk_did="did:oasis:clerk-regulator")
+    regulator = Regulator(
+        db_path=db, clerk_did="did:key:z6Mkop5toaiwyZq5Lm7Ldr6MFdYtvb3gtQ2B4U5ZRXNkXyuN"
+    )
 
     # Monopolist (producer-1) bids on ALL nodes with high stake
     monopolist = producers[0]

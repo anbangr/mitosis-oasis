@@ -9,7 +9,9 @@ from oasis.governance.messages import DAGProposal
 
 def _make_speaker(governance_db: Path) -> Speaker:
     """Create a Speaker clerk with a session."""
-    sp = Speaker(str(governance_db), "did:oasis:clerk-speaker")
+    sp = Speaker(
+        str(governance_db), "did:key:z6Mknpo1FQJ19grCZsqJcsRBBKegBS8EQ8H6pk6hxiFtoWSK"
+    )
     conn = sqlite3.connect(str(governance_db))
     conn.execute("PRAGMA foreign_keys = ON")
     conn.execute(

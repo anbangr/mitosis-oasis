@@ -54,7 +54,14 @@ def _create_full_session(
         "(proposal_id, session_id, proposer_did, dag_spec, "
         " token_budget_total, deadline_ms) "
         "VALUES (?, ?, ?, ?, ?, ?)",
-        (prop_id, session_id, "did:oasis:clerk-registrar", dag_spec, budget, 60000),
+        (
+            prop_id,
+            session_id,
+            "did:key:z6Mkkwz2P6pxvfqPxgdssMRZ9UNThiuMueGdV4awUacowDLd",
+            dag_spec,
+            budget,
+            60000,
+        ),
     )
     conn.execute(
         "INSERT INTO dag_node "

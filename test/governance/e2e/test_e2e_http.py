@@ -9,7 +9,10 @@ import pytest
 from fastapi.testclient import TestClient
 
 from oasis.api import app
+from oasis.crypto import ed25519
+from oasis.crypto.did import did_from_pubkey
 from oasis.governance import endpoints as gov_ep
+from oasis.governance.messages import IdentityAttestation, canonical_signed_bytes
 from oasis.governance.state_machine import LegislativeState, LegislativeStateMachine
 
 
@@ -19,27 +22,39 @@ def http_env(tmp_path: Path):
     db = tmp_path / "http_e2e.db"
     gov_ep.init_governance_db(str(db))
 
-    # Register 5 producers
+    # Generate 5 producers with real did:key DIDs
+    producers = []
     conn = sqlite3.connect(str(db))
     conn.execute("PRAGMA foreign_keys = ON")
     for i in range(1, 6):
+        priv, pub = ed25519.generate_keypair()
+        agent_did = did_from_pubkey(pub)
+        producers.append(
+            {
+                "agent_did": agent_did,
+                "private_key": priv,
+                "public_key": pub.hex(),
+                "display_name": f"HTTP Producer {i}",
+            }
+        )
         conn.execute(
             "INSERT OR IGNORE INTO agent_registry "
-            "(agent_did, agent_type, display_name, human_principal, reputation_score) "
-            "VALUES (?, 'producer', ?, 'human@example.com', 0.5)",
-            (f"did:http:producer-{i}", f"HTTP Producer {i}"),
+            "(agent_did, agent_type, display_name, human_principal, reputation_score, public_key) "
+            "VALUES (?, 'producer', ?, 'human@example.com', 0.5, ?)",
+            (agent_did, f"HTTP Producer {i}", pub.hex()),
         )
     conn.commit()
     conn.close()
 
     client = TestClient(app, raise_server_exceptions=False)
-    return {"db": db, "client": client}
+    return {"db": db, "client": client, "producers": producers}
 
 
 def test_full_pipeline_via_http(http_env):
     """Walk the entire legislative pipeline via HTTP endpoints."""
     client = http_env["client"]
     db = http_env["db"]
+    producers = http_env["producers"]
 
     # 1. Create session
     resp = client.post(
@@ -56,13 +71,23 @@ def test_full_pipeline_via_http(http_env):
     )
     assert resp.status_code == 200, resp.text
 
-    # 3. Attest all 5 producers
-    for i in range(1, 6):
+    # 3. Attest all 5 producers with valid signatures
+    for p in producers:
+        att = IdentityAttestation(
+            session_id=session_id,
+            agent_did=p["agent_did"],
+            signature="ab" * 64,
+            reputation_score=0.5,
+            agent_type="producer",
+        )
+        att.signature = ed25519.sign(
+            p["private_key"], canonical_signed_bytes(att)
+        ).hex()
         resp = client.post(
             f"/api/governance/sessions/{session_id}/identity/attest",
             json={
-                "agent_did": f"did:http:producer-{i}",
-                "signature": "http-sig",
+                "agent_did": p["agent_did"],
+                "signature": att.signature,
                 "reputation_score": 0.5,
                 "agent_type": "producer",
             },
@@ -72,11 +97,11 @@ def test_full_pipeline_via_http(http_env):
     # Insert IDENTITY_ATTESTATION for guard
     conn = sqlite3.connect(str(db))
     conn.execute("PRAGMA foreign_keys = ON")
-    for i in range(1, 6):
+    for p in producers:
         conn.execute(
             "INSERT INTO message_log (session_id, msg_type, sender_did, payload) "
             "VALUES (?, 'IDENTITY_ATTESTATION', ?, '{}')",
-            (session_id, f"did:http:producer-{i}"),
+            (session_id, p["agent_did"]),
         )
     conn.commit()
     conn.close()
@@ -111,7 +136,7 @@ def test_full_pipeline_via_http(http_env):
     resp = client.post(
         f"/api/governance/sessions/{session_id}/proposals",
         json={
-            "proposer_did": "did:http:producer-1",
+            "proposer_did": producers[0]["agent_did"],
             "dag_spec": dag_spec,
             "rationale": "HTTP E2E test",
             "token_budget_total": 700.0,
@@ -126,12 +151,12 @@ def test_full_pipeline_via_http(http_env):
     assert r.allowed, r.reason
 
     # 6. Submit bids
-    for node_id, svc, bidder_idx in [("h1", "svc-a", 1), ("h2", "svc-b", 2)]:
+    for node_id, svc, bidder_idx in [("h1", "svc-a", 0), ("h2", "svc-b", 1)]:
         resp = client.post(
             f"/api/governance/sessions/{session_id}/bids",
             json={
                 "task_node_id": node_id,
-                "bidder_did": f"did:http:producer-{bidder_idx}",
+                "bidder_did": producers[bidder_idx]["agent_did"],
                 "service_id": svc,
                 "proposed_code_hash": "abcdef1234567890",
                 "stake_amount": 0.5,
@@ -150,7 +175,9 @@ def test_full_pipeline_via_http(http_env):
     # 8. Regulatory decision
     resp = client.post(
         f"/api/governance/sessions/{session_id}/regulatory/decision",
-        json={"submitter_did": "did:oasis:clerk-regulator"},
+        json={
+            "submitter_did": "did:key:z6Mkop5toaiwyZq5Lm7Ldr6MFdYtvb3gtQ2B4U5ZRXNkXyuN"
+        },
     )
     assert resp.status_code == 200, resp.text
 
@@ -176,7 +203,7 @@ def test_full_pipeline_via_http(http_env):
         json={
             "spec_id": spec_id,
             "proposer_signature": "proposer-sig-http",
-            "regulator_signature": "regulator-sig-http",
+            "regulator_signature": "abababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab",
         },
     )
     assert resp.status_code == 200, resp.text

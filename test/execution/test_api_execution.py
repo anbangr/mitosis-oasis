@@ -53,9 +53,9 @@ def api_producers(exec_db):
     for p in EXEC_PRODUCERS:
         conn.execute(
             "INSERT OR IGNORE INTO agent_registry "
-            "(agent_did, agent_type, display_name, human_principal, reputation_score) "
-            "VALUES (?, 'producer', ?, 'human@example.com', ?)",
-            (p["agent_did"], p["display_name"], p["reputation_score"]),
+            "(agent_did, agent_type, display_name, human_principal, reputation_score, public_key) "
+            "VALUES (?, 'producer', ?, 'human@example.com', ?, ?)",
+            (p["agent_did"], p["display_name"], p["reputation_score"], p["public_key"]),
         )
     conn.commit()
     conn.close()

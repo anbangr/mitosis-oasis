@@ -39,6 +39,8 @@ from oasis.execution.commitment import commit_to_task
 from oasis.execution.runner import ExecutionDispatcher
 from oasis.adjudication.schema import create_adjudication_tables
 from oasis.adjudication.settlement import SettlementCalculator
+from oasis.crypto import ed25519
+from oasis.crypto.did import did_from_pubkey
 
 
 # ---------------------------------------------------------------------------
@@ -58,14 +60,19 @@ def cross_db(tmp_path: Path) -> Path:
     return db
 
 
-DEFAULT_PRODUCERS = [
-    {
-        "agent_did": f"did:xb:producer-{i}",
-        "display_name": f"XB Producer {i}",
-        "reputation_score": 0.5,
-    }
-    for i in range(1, 6)
-]
+CROSS_PRODUCERS = []
+
+for i in range(1, 6):
+    priv, pub = ed25519.generate_keypair()
+    CROSS_PRODUCERS.append(
+        {
+            "agent_did": did_from_pubkey(pub),
+            "public_key": pub.hex(),
+            "private_key": priv,
+            "display_name": f"Cross Producer {i}",
+            "reputation_score": 0.5,
+        }
+    )
 
 
 @pytest.fixture()
@@ -73,16 +80,16 @@ def producers(cross_db: Path) -> list[dict]:
     """Register 5 producer agents in the cross-branch DB."""
     conn = sqlite3.connect(str(cross_db))
     conn.execute("PRAGMA foreign_keys = ON")
-    for p in DEFAULT_PRODUCERS:
+    for p in CROSS_PRODUCERS:
         conn.execute(
             "INSERT OR IGNORE INTO agent_registry "
-            "(agent_did, agent_type, display_name, human_principal, reputation_score) "
-            "VALUES (?, 'producer', ?, 'human@example.com', ?)",
-            (p["agent_did"], p["display_name"], p["reputation_score"]),
+            "(agent_did, agent_type, display_name, human_principal, reputation_score, public_key) "
+            "VALUES (?, 'producer', ?, 'human@example.com', ?, ?)",
+            (p["agent_did"], p["display_name"], p["reputation_score"], p["public_key"]),
         )
     conn.commit()
     conn.close()
-    return list(DEFAULT_PRODUCERS)
+    return list(CROSS_PRODUCERS)
 
 
 @pytest.fixture()
@@ -166,10 +173,18 @@ def drive_to_deployed(
     raw_dag = dag_spec or DEFAULT_DAG
     dag = _make_unique_dag(raw_dag, sid)
 
-    registrar = Registrar(db_path=db, clerk_did="did:oasis:clerk-registrar")
-    speaker = Speaker(db_path=db, clerk_did="did:oasis:clerk-speaker")
-    regulator = Regulator(db_path=db, clerk_did="did:oasis:clerk-regulator")
-    codifier = Codifier(db_path=db, clerk_did="did:oasis:clerk-codifier")
+    registrar = Registrar(
+        db_path=db, clerk_did="did:key:z6Mkkwz2P6pxvfqPxgdssMRZ9UNThiuMueGdV4awUacowDLd"
+    )
+    speaker = Speaker(
+        db_path=db, clerk_did="did:key:z6Mknpo1FQJ19grCZsqJcsRBBKegBS8EQ8H6pk6hxiFtoWSK"
+    )
+    regulator = Regulator(
+        db_path=db, clerk_did="did:key:z6Mkop5toaiwyZq5Lm7Ldr6MFdYtvb3gtQ2B4U5ZRXNkXyuN"
+    )
+    codifier = Codifier(
+        db_path=db, clerk_did="did:key:z6Mkqa2BXHD2A1yYPvv2gWLRZCMdgvEroqCEXb8ZsGzbqxH9"
+    )
 
     # Create session
     conn = sqlite3.connect(db)
@@ -191,14 +206,19 @@ def drive_to_deployed(
     assert result.allowed
 
     # Attest all producers
+    from oasis.governance.messages import canonical_signed_bytes
+
     for p in producers:
         att = IdentityAttestation(
             session_id=sid,
             agent_did=p["agent_did"],
-            signature="xb-sig",
+            signature="ab" * 64,
             reputation_score=p["reputation_score"],
             agent_type="producer",
         )
+        att.signature = ed25519.sign(
+            p["private_key"], canonical_signed_bytes(att)
+        ).hex()
         res = registrar.verify_identity(att)
         assert res["passed"]
 

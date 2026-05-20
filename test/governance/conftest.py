@@ -14,7 +14,6 @@ from typing import Generator
 import pytest
 
 from oasis.crypto import ed25519
-from oasis.crypto.did import did_from_pubkey
 from oasis.governance.messages import IdentityAttestation, canonical_signed_bytes
 from oasis.governance.schema import (
     create_governance_tables,
@@ -199,7 +198,14 @@ def register_agent_with_key(
             "INSERT OR IGNORE INTO agent_registry "
             "(agent_did, agent_type, display_name, human_principal, reputation_score, public_key) "
             "VALUES (?, ?, ?, ?, ?, ?)",
-            (agent_did, agent_type, display_name, "test@example.com", reputation_score, public_key),
+            (
+                agent_did,
+                agent_type,
+                display_name,
+                "test@example.com",
+                reputation_score,
+                public_key,
+            ),
         )
         conn.commit()
     finally:

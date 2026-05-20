@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 
-def test_submit_straw_poll(client, session_factory):
+def test_submit_straw_poll(client, session_factory, registered_producers):
     """POST deliberation/straw-poll collects ballots."""
     session_id = session_factory("PROPOSAL_OPEN")
 
@@ -26,7 +26,7 @@ def test_submit_straw_poll(client, session_factory):
         resp = client.post(
             f"/api/governance/sessions/{session_id}/proposals",
             json={
-                "proposer_did": "did:mock:producer-1",
+                "proposer_did": registered_producers[0]["agent_did"],
                 "dag_spec": dag,
                 "rationale": label,
                 "token_budget_total": 50.0,
@@ -40,8 +40,8 @@ def test_submit_straw_poll(client, session_factory):
         f"/api/governance/sessions/{session_id}/deliberation/straw-poll",
         json={
             "ballots": {
-                "did:mock:producer-1": pids,
-                "did:mock:producer-2": list(reversed(pids)),
+                registered_producers[0]["agent_did"]: pids,
+                registered_producers[1]["agent_did"]: list(reversed(pids)),
             }
         },
     )
@@ -50,14 +50,14 @@ def test_submit_straw_poll(client, session_factory):
     assert data["total_votes"] == 2
 
 
-def test_submit_discussion(client, session_factory):
+def test_submit_discussion(client, session_factory, registered_producers):
     """POST deliberation/discuss stores a deliberation message."""
     session_id = session_factory("PROPOSAL_OPEN")
 
     resp = client.post(
         f"/api/governance/sessions/{session_id}/deliberation/discuss",
         json={
-            "agent_did": "did:mock:producer-1",
+            "agent_did": registered_producers[0]["agent_did"],
             "round_number": 1,
             "message": "I support proposal A.",
         },
@@ -67,7 +67,7 @@ def test_submit_discussion(client, session_factory):
     assert data["round_number"] == 1
 
 
-def test_get_summary(client, session_factory):
+def test_get_summary(client, session_factory, registered_producers):
     """GET deliberation/summary returns round data."""
     session_id = session_factory("PROPOSAL_OPEN")
 
@@ -75,7 +75,7 @@ def test_get_summary(client, session_factory):
     client.post(
         f"/api/governance/sessions/{session_id}/deliberation/discuss",
         json={
-            "agent_did": "did:mock:producer-1",
+            "agent_did": registered_producers[0]["agent_did"],
             "round_number": 1,
             "message": "Round 1 message",
         },
@@ -88,14 +88,14 @@ def test_get_summary(client, session_factory):
     assert data["rounds"][0]["round_number"] == 1
 
 
-def test_round_limit(client, session_factory):
+def test_round_limit(client, session_factory, registered_producers):
     """POST deliberation/discuss rejects round > max_deliberation_rounds."""
     session_id = session_factory("PROPOSAL_OPEN")
 
     resp = client.post(
         f"/api/governance/sessions/{session_id}/deliberation/discuss",
         json={
-            "agent_did": "did:mock:producer-1",
+            "agent_did": registered_producers[0]["agent_did"],
             "round_number": 4,  # exceeds max of 3
             "message": "This should fail",
         },
@@ -103,14 +103,14 @@ def test_round_limit(client, session_factory):
     assert resp.status_code == 400
 
 
-def test_speaking_order(client, session_factory):
+def test_speaking_order(client, session_factory, registered_producers):
     """POST deliberation/discuss returns a speaking order."""
     session_id = session_factory("PROPOSAL_OPEN")
 
     resp = client.post(
         f"/api/governance/sessions/{session_id}/deliberation/discuss",
         json={
-            "agent_did": "did:mock:producer-1",
+            "agent_did": registered_producers[0]["agent_did"],
             "round_number": 1,
             "message": "Order test",
         },

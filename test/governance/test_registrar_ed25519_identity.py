@@ -15,8 +15,7 @@ from pydantic import ValidationError
 from oasis.crypto import ed25519
 from oasis.crypto.did import did_from_pubkey
 from oasis.governance.clerks.registrar import Registrar
-from oasis.governance.messages import IdentityAttestation, canonical_signed_bytes
-from oasis.governance.schema import create_governance_tables, seed_constitution
+from oasis.governance.messages import IdentityAttestation
 
 from test.governance.conftest import make_signed_attestation, register_agent_with_key
 
@@ -26,11 +25,15 @@ from test.governance.conftest import make_signed_attestation, register_agent_wit
 # ---------------------------------------------------------------------------
 
 
-def test_t1_registry_stores_public_key(governance_db: Path, ed25519_keypair: tuple[bytes, bytes]):
+def test_t1_registry_stores_public_key(
+    governance_db: Path, ed25519_keypair: tuple[bytes, bytes]
+):
     """T1: register_agent persists public_key in agent_registry."""
     priv, pub = ed25519_keypair
     agent_did = did_from_pubkey(pub)
-    reg = Registrar(str(governance_db), "did:oasis:clerk-registrar")
+    reg = Registrar(
+        str(governance_db), "did:key:z6Mkkwz2P6pxvfqPxgdssMRZ9UNThiuMueGdV4awUacowDLd"
+    )
     reg.register_agent(agent_did, "producer", "p1", public_key=pub.hex())
 
     conn = sqlite3.connect(str(governance_db))
@@ -104,14 +107,23 @@ def test_t2_signature_exactly_64_byte_hex():
 # ---------------------------------------------------------------------------
 
 
-def test_t3_valid_attestation_accepted(governance_db: Path, ed25519_keypair: tuple[bytes, bytes]):
+def test_t3_valid_attestation_accepted(
+    governance_db: Path, ed25519_keypair: tuple[bytes, bytes]
+):
     """T3: Real Ed25519 signature + matching did:key + registered public_key → accepted."""
     priv, pub = ed25519_keypair
     agent_did = did_from_pubkey(pub)
-    reg = Registrar(str(governance_db), "did:oasis:clerk-registrar")
+    reg = Registrar(
+        str(governance_db), "did:key:z6Mkkwz2P6pxvfqPxgdssMRZ9UNThiuMueGdV4awUacowDLd"
+    )
     reg.open_session("sess-t3", min_reputation=0.1)
     register_agent_with_key(
-        governance_db, agent_did, "producer", "Producer T3", pub.hex(), reputation_score=0.5
+        governance_db,
+        agent_did,
+        "producer",
+        "Producer T3",
+        pub.hex(),
+        reputation_score=0.5,
     )
 
     msg = make_signed_attestation(
@@ -132,14 +144,23 @@ def test_t3_valid_attestation_accepted(governance_db: Path, ed25519_keypair: tup
 # ---------------------------------------------------------------------------
 
 
-def test_t4_wrong_key_signature_rejected(governance_db: Path, ed25519_keypair: tuple[bytes, bytes]):
+def test_t4_wrong_key_signature_rejected(
+    governance_db: Path, ed25519_keypair: tuple[bytes, bytes]
+):
     """T4: Signature from a different keypair is rejected."""
     priv, pub = ed25519_keypair
     agent_did = did_from_pubkey(pub)
-    reg = Registrar(str(governance_db), "did:oasis:clerk-registrar")
+    reg = Registrar(
+        str(governance_db), "did:key:z6Mkkwz2P6pxvfqPxgdssMRZ9UNThiuMueGdV4awUacowDLd"
+    )
     reg.open_session("sess-t4", min_reputation=0.1)
     register_agent_with_key(
-        governance_db, agent_did, "producer", "Producer T4", pub.hex(), reputation_score=0.5
+        governance_db,
+        agent_did,
+        "producer",
+        "Producer T4",
+        pub.hex(),
+        reputation_score=0.5,
     )
 
     # Sign with a *different* keypair
@@ -162,11 +183,15 @@ def test_t4_wrong_key_signature_rejected(governance_db: Path, ed25519_keypair: t
 # ---------------------------------------------------------------------------
 
 
-def test_t5_unregistered_did_rejected(governance_db: Path, ed25519_keypair: tuple[bytes, bytes]):
+def test_t5_unregistered_did_rejected(
+    governance_db: Path, ed25519_keypair: tuple[bytes, bytes]
+):
     """T5: Agent DID with no registry row is rejected (no public_key registered)."""
     priv, pub = ed25519_keypair
     agent_did = did_from_pubkey(pub)
-    reg = Registrar(str(governance_db), "did:oasis:clerk-registrar")
+    reg = Registrar(
+        str(governance_db), "did:key:z6Mkkwz2P6pxvfqPxgdssMRZ9UNThiuMueGdV4awUacowDLd"
+    )
     reg.open_session("sess-t5", min_reputation=0.1)
     # NOTE: deliberately do NOT register the agent
 
@@ -199,7 +224,9 @@ def test_t6_did_pubkey_mismatch_rejected(
 
     # Register agent with pub_a but construct DID from pub_b
     agent_did = did_from_pubkey(pub_b)  # DID derived from pub_b
-    reg = Registrar(str(governance_db), "did:oasis:clerk-registrar")
+    reg = Registrar(
+        str(governance_db), "did:key:z6Mkkwz2P6pxvfqPxgdssMRZ9UNThiuMueGdV4awUacowDLd"
+    )
     reg.open_session("sess-t6", min_reputation=0.1)
     register_agent_with_key(
         governance_db,
@@ -221,7 +248,8 @@ def test_t6_did_pubkey_mismatch_rejected(
     assert result["valid"] is False
     assert result["passed"] is False
     assert any(
-        "did:key" in e.lower() or "does not match" in e.lower() for e in result["errors"]
+        "did:key" in e.lower() or "does not match" in e.lower()
+        for e in result["errors"]
     )
 
 
@@ -230,15 +258,24 @@ def test_t6_did_pubkey_mismatch_rejected(
 # ---------------------------------------------------------------------------
 
 
-def test_t7_non_did_key_rejected(governance_db: Path, ed25519_keypair: tuple[bytes, bytes]):
+def test_t7_non_did_key_rejected(
+    governance_db: Path, ed25519_keypair: tuple[bytes, bytes]
+):
     """T7: Legacy did:mock: DIDs are explicitly rejected."""
     priv, pub = ed25519_keypair
     agent_did = "did:mock:producer-1"  # legacy format
-    reg = Registrar(str(governance_db), "did:oasis:clerk-registrar")
+    reg = Registrar(
+        str(governance_db), "did:key:z6Mkkwz2P6pxvfqPxgdssMRZ9UNThiuMueGdV4awUacowDLd"
+    )
     reg.open_session("sess-t7", min_reputation=0.1)
     # Even if registered with a public_key, the DID format itself is invalid
     register_agent_with_key(
-        governance_db, agent_did, "producer", "Producer T7", pub.hex(), reputation_score=0.5
+        governance_db,
+        agent_did,
+        "producer",
+        "Producer T7",
+        pub.hex(),
+        reputation_score=0.5,
     )
 
     msg = make_signed_attestation(
@@ -265,10 +302,17 @@ def test_t8_tampered_field_invalidates_signature(
     """T8: Mutating a signed field after signing causes verification to fail."""
     priv, pub = ed25519_keypair
     agent_did = did_from_pubkey(pub)
-    reg = Registrar(str(governance_db), "did:oasis:clerk-registrar")
+    reg = Registrar(
+        str(governance_db), "did:key:z6Mkkwz2P6pxvfqPxgdssMRZ9UNThiuMueGdV4awUacowDLd"
+    )
     reg.open_session("sess-t8", min_reputation=0.1)
     register_agent_with_key(
-        governance_db, agent_did, "producer", "Producer T8", pub.hex(), reputation_score=0.5
+        governance_db,
+        agent_did,
+        "producer",
+        "Producer T8",
+        pub.hex(),
+        reputation_score=0.5,
     )
 
     # Sign with reputation_score=0.5
@@ -284,9 +328,7 @@ def test_t8_tampered_field_invalidates_signature(
     result = reg.verify_identity(msg)
     assert result["valid"] is False
     assert result["passed"] is False
-    assert any(
-        "signature verification failed" in e.lower() for e in result["errors"]
-    )
+    assert any("signature verification failed" in e.lower() for e in result["errors"])
 
 
 # ---------------------------------------------------------------------------
@@ -294,12 +336,16 @@ def test_t8_tampered_field_invalidates_signature(
 # ---------------------------------------------------------------------------
 
 
-def test_edge_register_without_public_key(governance_db: Path, ed25519_keypair: tuple[bytes, bytes]):
+def test_edge_register_without_public_key(
+    governance_db: Path, ed25519_keypair: tuple[bytes, bytes]
+):
     """register_agent without public_key leaves public_key IS NULL;
     verify_identity then rejects with 'No registered public_key' error."""
     priv, pub = ed25519_keypair
     agent_did = did_from_pubkey(pub)
-    reg = Registrar(str(governance_db), "did:oasis:clerk-registrar")
+    reg = Registrar(
+        str(governance_db), "did:key:z6Mkkwz2P6pxvfqPxgdssMRZ9UNThiuMueGdV4awUacowDLd"
+    )
     reg.open_session("sess-edge", min_reputation=0.1)
     # Call register_agent WITHOUT public_key (Bundle-0 compat)
     reg.register_agent(agent_did, "producer", "Producer Edge")
@@ -325,10 +371,17 @@ def test_edge_result_dict_has_valid_key(
     """The result dict contains both 'valid' and 'passed' keys (synonyms)."""
     priv, pub = ed25519_keypair
     agent_did = did_from_pubkey(pub)
-    reg = Registrar(str(governance_db), "did:oasis:clerk-registrar")
+    reg = Registrar(
+        str(governance_db), "did:key:z6Mkkwz2P6pxvfqPxgdssMRZ9UNThiuMueGdV4awUacowDLd"
+    )
     reg.open_session("sess-valid", min_reputation=0.1)
     register_agent_with_key(
-        governance_db, agent_did, "producer", "Producer V", pub.hex(), reputation_score=0.5
+        governance_db,
+        agent_did,
+        "producer",
+        "Producer V",
+        pub.hex(),
+        reputation_score=0.5,
     )
 
     msg = make_signed_attestation(

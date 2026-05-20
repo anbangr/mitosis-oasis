@@ -11,6 +11,8 @@ from oasis.governance.clerks.speaker import Speaker
 from oasis.governance.messages import DAGProposal, IdentityAttestation
 from oasis.governance.state_machine import LegislativeState, LegislativeStateMachine
 
+from oasis.crypto import ed25519
+
 from .conftest import drive_session_to_deployed
 
 
@@ -55,13 +57,13 @@ class TestLayer2:
         # Use Regulator's layer2 since it always calls the LLM
         regulator_on = Regulator(
             db_path=db,
-            clerk_did="did:oasis:clerk-regulator",
+            clerk_did="did:key:z6Mkop5toaiwyZq5Lm7Ldr6MFdYtvb3gtQ2B4U5ZRXNkXyuN",
             llm_enabled=True,
             llm=mock_llm,
         )
         regulator_off = Regulator(
             db_path=db,
-            clerk_did="did:oasis:clerk-regulator",
+            clerk_did="did:key:z6Mkop5toaiwyZq5Lm7Ldr6MFdYtvb3gtQ2B4U5ZRXNkXyuN",
             llm_enabled=False,
         )
 
@@ -117,20 +119,28 @@ class TestLayer2:
         conn.commit()
         conn.close()
 
-        registrar = Registrar(db_path=db, clerk_did="did:oasis:clerk-registrar")
+        registrar = Registrar(
+            db_path=db,
+            clerk_did="did:key:z6Mkkwz2P6pxvfqPxgdssMRZ9UNThiuMueGdV4awUacowDLd",
+        )
         registrar.open_session(sid, 0.1)
 
         sm = LegislativeStateMachine(sid, db)
         sm.transition(LegislativeState.IDENTITY_VERIFICATION)
 
+        from oasis.governance.messages import canonical_signed_bytes
+
         for p in producers:
             att = IdentityAttestation(
                 session_id=sid,
                 agent_did=p["agent_did"],
-                signature="sig",
+                signature="ab" * 64,
                 reputation_score=0.5,
                 agent_type="producer",
             )
+            att.signature = ed25519.sign(
+                p["private_key"], canonical_signed_bytes(att)
+            ).hex()
             registrar.verify_identity(att)
 
         conn = sqlite3.connect(db)
@@ -146,7 +156,10 @@ class TestLayer2:
 
         sm.transition(LegislativeState.PROPOSAL_OPEN)
 
-        speaker = Speaker(db_path=db, clerk_did="did:oasis:clerk-speaker")
+        speaker = Speaker(
+            db_path=db,
+            clerk_did="did:key:z6Mknpo1FQJ19grCZsqJcsRBBKegBS8EQ8H6pk6hxiFtoWSK",
+        )
 
         # Submit two proposals with unique node IDs
         for pname in ["prop-alpha", "prop-beta"]:

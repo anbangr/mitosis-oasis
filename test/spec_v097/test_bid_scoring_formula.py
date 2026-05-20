@@ -172,7 +172,9 @@ def _seed_db_for_evaluate(db_path: Path, num_nodes: int = 1) -> Regulator:
     create_governance_tables(str(db_path))
     seed_constitution(str(db_path))
 
-    reg = Regulator(str(db_path), "did:oasis:clerk-regulator")
+    reg = Regulator(
+        str(db_path), "did:key:z6Mkop5toaiwyZq5Lm7Ldr6MFdYtvb3gtQ2B4U5ZRXNkXyuN"
+    )
     conn = sqlite3.connect(str(db_path))
     conn.execute("PRAGMA foreign_keys = ON")
     conn.execute(
@@ -305,7 +307,9 @@ def test_t7_ingestion_persists_new_fields(tmp_path: Path):
     create_governance_tables(str(db_path))
     seed_constitution(str(db_path))
 
-    reg = Regulator(str(db_path), "did:oasis:clerk-regulator")
+    reg = Regulator(
+        str(db_path), "did:key:z6Mkop5toaiwyZq5Lm7Ldr6MFdYtvb3gtQ2B4U5ZRXNkXyuN"
+    )
     conn = sqlite3.connect(str(db_path))
     conn.execute("PRAGMA foreign_keys = ON")
     conn.execute(
@@ -382,7 +386,9 @@ def test_t8_evaluate_reads_real_budget_column(tmp_path: Path):
     create_governance_tables(str(db_path))
     seed_constitution(str(db_path))
 
-    reg = Regulator(str(db_path), "did:oasis:clerk-regulator")
+    reg = Regulator(
+        str(db_path), "did:key:z6Mkop5toaiwyZq5Lm7Ldr6MFdYtvb3gtQ2B4U5ZRXNkXyuN"
+    )
     conn = sqlite3.connect(str(db_path))
     conn.execute("PRAGMA foreign_keys = ON")
     conn.execute(

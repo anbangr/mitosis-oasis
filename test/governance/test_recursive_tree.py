@@ -47,7 +47,7 @@ def _setup_session_with_dag(
         (
             prop_id,
             session_id,
-            "did:oasis:clerk-registrar",
+            "did:key:z6Mkkwz2P6pxvfqPxgdssMRZ9UNThiuMueGdV4awUacowDLd",
             json.dumps({}),
             budget,
             60000,

@@ -31,6 +31,8 @@ from oasis.governance.schema import (
     seed_constitution,
 )
 from oasis.governance.state_machine import LegislativeState, LegislativeStateMachine
+from oasis.crypto import ed25519
+from oasis.crypto.did import did_from_pubkey
 
 
 # ---------------------------------------------------------------------------
@@ -49,14 +51,19 @@ def e2e_db(tmp_path: Path) -> Path:
 
 
 # Five default producer agents used in most E2E tests.
-DEFAULT_PRODUCERS = [
-    {
-        "agent_did": f"did:e2e:producer-{i}",
-        "display_name": f"E2E Producer {i}",
-        "reputation_score": 0.5,
-    }
-    for i in range(1, 6)
-]
+E2E_PRODUCERS = []
+
+for i in range(1, 6):
+    priv, pub = ed25519.generate_keypair()
+    E2E_PRODUCERS.append(
+        {
+            "agent_did": did_from_pubkey(pub),
+            "public_key": pub.hex(),
+            "private_key": priv,
+            "display_name": f"E2E Producer {i}",
+            "reputation_score": 0.5,
+        }
+    )
 
 
 @pytest.fixture()
@@ -64,16 +71,16 @@ def producers(e2e_db: Path) -> list[dict]:
     """Register 5 producer agents in the governance DB."""
     conn = sqlite3.connect(str(e2e_db))
     conn.execute("PRAGMA foreign_keys = ON")
-    for p in DEFAULT_PRODUCERS:
+    for p in E2E_PRODUCERS:
         conn.execute(
             "INSERT OR IGNORE INTO agent_registry "
-            "(agent_did, agent_type, display_name, human_principal, reputation_score) "
-            "VALUES (?, 'producer', ?, 'human@example.com', ?)",
-            (p["agent_did"], p["display_name"], p["reputation_score"]),
+            "(agent_did, agent_type, display_name, human_principal, reputation_score, public_key) "
+            "VALUES (?, 'producer', ?, 'human@example.com', ?, ?)",
+            (p["agent_did"], p["display_name"], p["reputation_score"], p["public_key"]),
         )
     conn.commit()
     conn.close()
-    return list(DEFAULT_PRODUCERS)
+    return list(E2E_PRODUCERS)
 
 
 # ---------------------------------------------------------------------------
@@ -165,25 +172,25 @@ def drive_session_to_deployed(
     # Clerk instances
     registrar = Registrar(
         db_path=db,
-        clerk_did="did:oasis:clerk-registrar",
+        clerk_did="did:key:z6Mkkwz2P6pxvfqPxgdssMRZ9UNThiuMueGdV4awUacowDLd",
         llm_enabled=llm_enabled,
         llm=llm,
     )
     speaker = Speaker(
         db_path=db,
-        clerk_did="did:oasis:clerk-speaker",
+        clerk_did="did:key:z6Mknpo1FQJ19grCZsqJcsRBBKegBS8EQ8H6pk6hxiFtoWSK",
         llm_enabled=llm_enabled,
         llm=llm,
     )
     regulator = Regulator(
         db_path=db,
-        clerk_did="did:oasis:clerk-regulator",
+        clerk_did="did:key:z6Mkop5toaiwyZq5Lm7Ldr6MFdYtvb3gtQ2B4U5ZRXNkXyuN",
         llm_enabled=llm_enabled,
         llm=llm,
     )
     codifier = Codifier(
         db_path=db,
-        clerk_did="did:oasis:clerk-codifier",
+        clerk_did="did:key:z6Mkqa2BXHD2A1yYPvv2gWLRZCMdgvEroqCEXb8ZsGzbqxH9",
         llm_enabled=llm_enabled,
         llm=llm,
     )
@@ -210,14 +217,19 @@ def drive_session_to_deployed(
     assert result.allowed, f"→ IDENTITY_VERIFICATION failed: {result.reason}"
 
     # --- 2. Attest all producers ---
+    from oasis.governance.messages import canonical_signed_bytes
+
     for p in producers:
         att = IdentityAttestation(
             session_id=sid,
             agent_did=p["agent_did"],
-            signature="e2e-sig",
+            signature="ab" * 64,
             reputation_score=p["reputation_score"],
             agent_type="producer",
         )
+        att.signature = ed25519.sign(
+            p["private_key"], canonical_signed_bytes(att)
+        ).hex()
         res = registrar.verify_identity(att)
         assert res["passed"], f"Identity failed for {p['agent_did']}: {res['errors']}"
 

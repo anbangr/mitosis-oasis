@@ -39,7 +39,7 @@ def test_message_logged(db_path: Path):
             "sess-1",
             "IdentityVerificationRequest",
             "did:mock:p-1",
-            "did:oasis:clerk-registrar",
+            "did:key:z6Mkkwz2P6pxvfqPxgdssMRZ9UNThiuMueGdV4awUacowDLd",
             payload,
         ),
     )

@@ -21,10 +21,14 @@ Tables
 
 from __future__ import annotations
 
+import hashlib
 import json
 import sqlite3
 from pathlib import Path
 from typing import Union
+
+from oasis.crypto import ed25519
+from oasis.crypto.did import did_from_pubkey
 
 # ---------------------------------------------------------------------------
 # DDL statements
@@ -291,12 +295,22 @@ _DEFAULT_CONSTITUTION = [
 
 _CLERK_ROLES = ["registrar", "speaker", "regulator", "codifier"]
 
+
+def _clerk_keypair(role: str) -> tuple[bytes, bytes, str]:
+    """Return deterministic (priv, pub, did) for a clerk role."""
+    seed = hashlib.sha256(f"clerk-seed-{role}".encode()).digest()
+    priv, pub = ed25519.keypair_from_seed(seed)
+    did = did_from_pubkey(pub)
+    return priv, pub, did
+
+
 _DEFAULT_CLERKS = [
     {
-        "agent_did": f"did:oasis:clerk-{role}",
+        "agent_did": _clerk_keypair(role)[2],
         "agent_type": "clerk",
         "display_name": f"Clerk ({role.title()})",
         "human_principal": "platform@mitosis.dev",
+        "public_key": _clerk_keypair(role)[1].hex(),
         "clerk_role": role,
         "authority_envelope": json.dumps(
             {
@@ -370,6 +384,25 @@ def seed_constitution(db_path: Union[str, Path]) -> None:
         conn.close()
 
 
+def get_clerk_keypair(role: str) -> tuple[bytes, bytes, str]:
+    """Return the deterministic (priv, pub, did) for a clerk role.
+
+    The keypair is derived from a deterministic Ed25519 seed based on
+    the role name so that ``seed_clerks`` and callers agree on the value.
+    """
+    return _clerk_keypair(role)
+
+
+def get_clerk_did(role: str) -> str:
+    """Return the deterministic did:key DID for a clerk role.
+
+    The DID is derived from a deterministic Ed25519 keypair seeded by
+    the role name so that ``seed_clerks`` and callers agree on the value.
+    """
+    _, pub, did = _clerk_keypair(role)
+    return did
+
+
 def seed_clerks(db_path: Union[str, Path]) -> None:
     """Register the 4 clerk agents with authority envelopes.
 
@@ -382,13 +415,14 @@ def seed_clerks(db_path: Union[str, Path]) -> None:
         for clerk in _DEFAULT_CLERKS:
             conn.execute(
                 "INSERT OR IGNORE INTO agent_registry "
-                "(agent_did, agent_type, display_name, human_principal) "
-                "VALUES (?, ?, ?, ?)",
+                "(agent_did, agent_type, display_name, human_principal, public_key) "
+                "VALUES (?, ?, ?, ?, ?)",
                 (
                     clerk["agent_did"],
                     clerk["agent_type"],
                     clerk["display_name"],
                     clerk["human_principal"],
+                    clerk.get("public_key"),
                 ),
             )
             conn.execute(

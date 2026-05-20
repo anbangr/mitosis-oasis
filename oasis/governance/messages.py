@@ -110,7 +110,12 @@ class IdentityAttestation(BaseModel):
     msg_type: MessageType = MessageType.IDENTITY_ATTESTATION
     session_id: str = Field(..., min_length=1)
     agent_did: str = Field(..., min_length=1)
-    signature: str = Field(..., min_length=1)
+    signature: str = Field(
+        ...,
+        min_length=128,
+        max_length=128,
+        pattern=r"^[0-9a-f]{128}$",
+    )
     reputation_score: float = Field(..., ge=0.0, le=1.0)
     agent_type: str = Field(..., pattern=r"^(producer|clerk)$")
     timestamp: datetime = Field(default_factory=_utcnow)

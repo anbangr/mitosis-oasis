@@ -24,13 +24,34 @@ class TestLayer2DoesNotOverrideLayer1Pass:
         registrar.open_session("sess-advisory", 0.1)
 
         # Valid attestation — Layer 1 should pass
+        from oasis.crypto import ed25519
+        from oasis.crypto.did import did_from_pubkey
+        from oasis.governance.messages import canonical_signed_bytes
+        import sqlite3
+
+        priv, pub = ed25519.generate_keypair()
+        did = did_from_pubkey(pub)
+        conn = sqlite3.connect(str(governance_db))
+        conn.execute("PRAGMA foreign_keys = ON")
+        conn.execute(
+            "INSERT OR IGNORE INTO agent_registry "
+            "(agent_did, agent_type, display_name, human_principal, reputation_score, public_key) "
+            "VALUES (?, 'producer', ?, 'test@example.com', 0.5, ?)",
+            (did, f"Producer {did}", pub.hex()),
+        )
+        conn.commit()
+        conn.close()
+
         attestation = IdentityAttestation(
             session_id="sess-advisory",
-            agent_did="did:mock:producer-1",
+            agent_did=did,
             agent_type="producer",
-            signature="valid-sig",
+            signature="ab" * 64,
             reputation_score=0.5,
         )
+        attestation.signature = ed25519.sign(
+            priv, canonical_signed_bytes(attestation)
+        ).hex()
         l1_result = registrar.layer1_process(attestation)
         assert l1_result["passed"] is True
 
@@ -76,7 +97,7 @@ class TestLayer2DoesNotOverrideLayer1Fail:
             session_id="sess-advisory-2",
             agent_did="invalid-no-did-prefix",
             agent_type="producer",
-            signature="valid-sig",
+            signature="ab" * 64,
             reputation_score=0.5,
         )
         l1_result = registrar.layer1_process(attestation)
@@ -110,13 +131,34 @@ class TestAdvisoryAttachedToDecision:
         )
         registrar.open_session("sess-advisory-3", 0.1)
 
+        from oasis.crypto import ed25519
+        from oasis.crypto.did import did_from_pubkey
+        from oasis.governance.messages import canonical_signed_bytes
+        import sqlite3
+
+        priv, pub = ed25519.generate_keypair()
+        did = did_from_pubkey(pub)
+        conn = sqlite3.connect(str(governance_db))
+        conn.execute("PRAGMA foreign_keys = ON")
+        conn.execute(
+            "INSERT OR IGNORE INTO agent_registry "
+            "(agent_did, agent_type, display_name, human_principal, reputation_score, public_key) "
+            "VALUES (?, 'producer', ?, 'test@example.com', 0.5, ?)",
+            (did, f"Producer {did}", pub.hex()),
+        )
+        conn.commit()
+        conn.close()
+
         attestation = IdentityAttestation(
             session_id="sess-advisory-3",
-            agent_did="did:mock:producer-1",
+            agent_did=did,
             agent_type="producer",
-            signature="valid-sig",
+            signature="ab" * 64,
             reputation_score=0.5,
         )
+        attestation.signature = ed25519.sign(
+            priv, canonical_signed_bytes(attestation)
+        ).hex()
         l1_result = registrar.layer1_process(attestation)
         l2_result = registrar.layer2_reason(
             {

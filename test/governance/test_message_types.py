@@ -31,7 +31,7 @@ def test_msg2_identity_attestation():
     msg = IdentityAttestation(
         session_id="sess-001",
         agent_did="did:mock:producer-1",
-        signature="sig-abc123",
+        signature="ab" * 64,
         reputation_score=0.75,
         agent_type="producer",
     )
@@ -82,7 +82,7 @@ def test_msg5_regulatory_decision():
         rejected_bids=["bid-3"],
         fairness_score=0.85,
         compliance_flags=["FLAG_A"],
-        regulatory_signature="reg-sig-xyz",
+        regulatory_signature="cd" * 64,
     )
     assert msg.msg_type == MessageType.REGULATORY_DECISION
     assert len(msg.approved_bids) == 2
@@ -108,10 +108,10 @@ def test_msg7_legislative_approval():
     msg = LegislativeApproval(
         session_id="sess-001",
         spec_id="spec-001",
-        speaker_signature="speaker-sig-abc",
-        regulator_signature="reg-sig-xyz",
+        speaker_signature="ef" * 64,
+        regulator_signature="gh" * 64,
     )
     assert msg.msg_type == MessageType.LEGISLATIVE_APPROVAL
     assert msg.spec_id == "spec-001"
-    assert msg.speaker_signature == "speaker-sig-abc"
-    assert msg.regulator_signature == "reg-sig-xyz"
+    assert msg.speaker_signature == "ef" * 64
+    assert msg.regulator_signature == "gh" * 64

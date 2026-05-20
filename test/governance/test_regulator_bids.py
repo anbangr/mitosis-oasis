@@ -9,7 +9,9 @@ from oasis.governance.messages import TaskBid
 
 def _setup(governance_db: Path) -> Regulator:
     """Create regulator with session, proposal, and DAG nodes."""
-    reg = Regulator(str(governance_db), "did:oasis:clerk-regulator")
+    reg = Regulator(
+        str(governance_db), "did:key:z6Mkop5toaiwyZq5Lm7Ldr6MFdYtvb3gtQ2B4U5ZRXNkXyuN"
+    )
     conn = sqlite3.connect(str(governance_db))
     conn.execute("PRAGMA foreign_keys = ON")
     conn.execute(

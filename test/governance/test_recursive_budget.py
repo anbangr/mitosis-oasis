@@ -35,7 +35,14 @@ def _setup_parent_session(db_path, *, session_id="parent-1", root_budget=500.0):
         "(proposal_id, session_id, proposer_did, dag_spec, "
         " token_budget_total, deadline_ms) "
         "VALUES (?, ?, ?, ?, ?, ?)",
-        ("prop-1", session_id, "did:oasis:clerk-registrar", dag_spec, 1000.0, 60000),
+        (
+            "prop-1",
+            session_id,
+            "did:key:z6Mkkwz2P6pxvfqPxgdssMRZ9UNThiuMueGdV4awUacowDLd",
+            dag_spec,
+            1000.0,
+            60000,
+        ),
     )
     for nid, label, budget in [
         ("root", "Root", root_budget),

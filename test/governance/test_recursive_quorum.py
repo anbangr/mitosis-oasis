@@ -33,7 +33,14 @@ def _setup_parent_with_dag(db_path, session_id="parent-1"):
         "(proposal_id, session_id, proposer_did, dag_spec, "
         " token_budget_total, deadline_ms) "
         "VALUES (?, ?, ?, ?, ?, ?)",
-        ("prop-q", session_id, "did:oasis:clerk-registrar", dag_spec, 1000.0, 60000),
+        (
+            "prop-q",
+            session_id,
+            "did:key:z6Mkkwz2P6pxvfqPxgdssMRZ9UNThiuMueGdV4awUacowDLd",
+            dag_spec,
+            1000.0,
+            60000,
+        ),
     )
     for nid, label, budget in [("root-q", "Root", 1000.0), ("A-q", "Task A", 500.0)]:
         conn.execute(

@@ -40,7 +40,9 @@ def _make_valid_spec(session_id: str = "sess-val") -> CodedContractSpec:
 
 def test_constitutional_validation_delegated(governance_db: Path):
     """run_constitutional_validation delegates to ConstitutionalValidator."""
-    cod = Codifier(str(governance_db), "did:oasis:clerk-codifier")
+    cod = Codifier(
+        str(governance_db), "did:key:z6Mkqa2BXHD2A1yYPvv2gWLRZCMdgvEroqCEXb8ZsGzbqxH9"
+    )
     spec = _make_valid_spec()
     result = cod.run_constitutional_validation(spec)
     # Should delegate and return a ValidationResult
@@ -50,7 +52,9 @@ def test_constitutional_validation_delegated(governance_db: Path):
 
 def test_pass_through_result(governance_db: Path):
     """Valid spec passes constitutional validation."""
-    cod = Codifier(str(governance_db), "did:oasis:clerk-codifier")
+    cod = Codifier(
+        str(governance_db), "did:key:z6Mkqa2BXHD2A1yYPvv2gWLRZCMdgvEroqCEXb8ZsGzbqxH9"
+    )
     spec = _make_valid_spec()
     result = cod.run_constitutional_validation(spec)
     assert result.passed is True
@@ -59,7 +63,9 @@ def test_pass_through_result(governance_db: Path):
 
 def test_failure_with_structured_errors(governance_db: Path):
     """Invalid spec returns structured ValidationErrors."""
-    cod = Codifier(str(governance_db), "did:oasis:clerk-codifier")
+    cod = Codifier(
+        str(governance_db), "did:key:z6Mkqa2BXHD2A1yYPvv2gWLRZCMdgvEroqCEXb8ZsGzbqxH9"
+    )
     spec = CodedContractSpec(
         session_id="sess-val",
         collaboration_contract_spec={

@@ -113,7 +113,7 @@ class TestLayer1UnaffectedByLayer2:
             session_id="sess-toggle",
             agent_did="did:mock:producer-1",
             agent_type="producer",
-            signature="valid-sig",
+            signature="ab" * 64,
             reputation_score=0.5,
         )
 

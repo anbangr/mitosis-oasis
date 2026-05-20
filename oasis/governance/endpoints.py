@@ -77,19 +77,27 @@ def _connect() -> sqlite3.Connection:
 
 
 def _registrar() -> Registrar:
-    return Registrar(db_path=_get_db(), clerk_did="did:oasis:clerk-registrar")
+    from oasis.governance.schema import get_clerk_did
+
+    return Registrar(db_path=_get_db(), clerk_did=get_clerk_did("registrar"))
 
 
 def _speaker() -> Speaker:
-    return Speaker(db_path=_get_db(), clerk_did="did:oasis:clerk-speaker")
+    from oasis.governance.schema import get_clerk_did
+
+    return Speaker(db_path=_get_db(), clerk_did=get_clerk_did("speaker"))
 
 
 def _regulator() -> Regulator:
-    return Regulator(db_path=_get_db(), clerk_did="did:oasis:clerk-regulator")
+    from oasis.governance.schema import get_clerk_did
+
+    return Regulator(db_path=_get_db(), clerk_did=get_clerk_did("regulator"))
 
 
 def _codifier() -> Codifier:
-    return Codifier(db_path=_get_db(), clerk_did="did:oasis:clerk-codifier")
+    from oasis.governance.schema import get_clerk_did
+
+    return Codifier(db_path=_get_db(), clerk_did=get_clerk_did("codifier"))
 
 
 # ---------------------------------------------------------------------------
@@ -687,7 +695,9 @@ async def submit_regulatory_decision(session_id: str, body: RegulatoryDecisionBo
     _require_state(session_id, LegislativeState.REGULATORY_REVIEW)
 
     # Only the regulator clerk can submit
-    if body.submitter_did != "did:oasis:clerk-regulator":
+    from oasis.governance.schema import get_clerk_did
+
+    if body.submitter_did != get_clerk_did("regulator"):
         raise HTTPException(
             403, "Only the regulator clerk can submit regulatory decisions"
         )

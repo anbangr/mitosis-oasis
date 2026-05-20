@@ -24,7 +24,7 @@ def test_dual_sign_off(client, session_factory, gov_db):
         json={
             "spec_id": row["spec_id"],
             "proposer_signature": "proposer-sig-abc",
-            "regulator_signature": "regulator-sig-xyz",
+            "regulator_signature": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
         },
     )
     assert resp.status_code == 200

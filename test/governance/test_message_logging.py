@@ -33,7 +33,10 @@ def test_message_logged_to_db(governance_db: Path):
         min_reputation=0.2,
     )
     log_id = log_message(
-        governance_db, session_id, msg, sender_did="did:oasis:clerk-registrar"
+        governance_db,
+        session_id,
+        msg,
+        sender_did="did:key:z6Mkkwz2P6pxvfqPxgdssMRZ9UNThiuMueGdV4awUacowDLd",
     )
     assert log_id is not None
     assert log_id > 0
@@ -70,7 +73,12 @@ def test_messages_filterable_by_type(governance_db: Path):
         pop_tier_acceptance=1,
     )
 
-    log_message(governance_db, session_id, msg1, sender_did="did:oasis:clerk-registrar")
+    log_message(
+        governance_db,
+        session_id,
+        msg1,
+        sender_did="did:key:z6Mkkwz2P6pxvfqPxgdssMRZ9UNThiuMueGdV4awUacowDLd",
+    )
     log_message(governance_db, session_id, msg2, sender_did="did:mock:producer-1")
 
     all_msgs = get_session_messages(governance_db, session_id)

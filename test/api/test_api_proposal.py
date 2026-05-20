@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 
-def test_submit_proposal(client, session_factory):
+def test_submit_proposal(client, session_factory, registered_producers):
     """POST proposals submits a valid DAG proposal."""
     session_id = session_factory("PROPOSAL_OPEN")
     dag_spec = {
@@ -22,7 +22,7 @@ def test_submit_proposal(client, session_factory):
     resp = client.post(
         f"/api/governance/sessions/{session_id}/proposals",
         json={
-            "proposer_did": "did:mock:producer-1",
+            "proposer_did": registered_producers[0]["agent_did"],
             "dag_spec": dag_spec,
             "rationale": "Test single-node",
             "token_budget_total": 50.0,
@@ -35,7 +35,7 @@ def test_submit_proposal(client, session_factory):
     assert data["proposal_id"] is not None
 
 
-def test_get_proposal_details(client, session_factory):
+def test_get_proposal_details(client, session_factory, registered_producers):
     """GET proposals/{pid} returns stored proposal."""
     session_id = session_factory("PROPOSAL_OPEN")
     dag_spec = {
@@ -54,7 +54,7 @@ def test_get_proposal_details(client, session_factory):
     resp = client.post(
         f"/api/governance/sessions/{session_id}/proposals",
         json={
-            "proposer_did": "did:mock:producer-2",
+            "proposer_did": registered_producers[1]["agent_did"],
             "dag_spec": dag_spec,
             "rationale": "Get test",
             "token_budget_total": 100.0,
@@ -68,7 +68,7 @@ def test_get_proposal_details(client, session_factory):
     assert resp.json()["proposal_id"] == pid
 
 
-def test_invalid_dag_400(client, session_factory):
+def test_invalid_dag_400(client, session_factory, registered_producers):
     """POST proposals rejects cyclic DAG."""
     session_id = session_factory("PROPOSAL_OPEN")
     dag_spec = {
@@ -98,7 +98,7 @@ def test_invalid_dag_400(client, session_factory):
     resp = client.post(
         f"/api/governance/sessions/{session_id}/proposals",
         json={
-            "proposer_did": "did:mock:producer-1",
+            "proposer_did": registered_producers[0]["agent_did"],
             "dag_spec": dag_spec,
             "rationale": "Cyclic test",
             "token_budget_total": 100.0,
@@ -108,7 +108,7 @@ def test_invalid_dag_400(client, session_factory):
     assert resp.status_code == 400
 
 
-def test_budget_exceeded_400(client, session_factory):
+def test_budget_exceeded_400(client, session_factory, registered_producers):
     """POST proposals rejects budget exceeding cap."""
     session_id = session_factory("PROPOSAL_OPEN")
     dag_spec = {
@@ -127,7 +127,7 @@ def test_budget_exceeded_400(client, session_factory):
     resp = client.post(
         f"/api/governance/sessions/{session_id}/proposals",
         json={
-            "proposer_did": "did:mock:producer-1",
+            "proposer_did": registered_producers[0]["agent_did"],
             "dag_spec": dag_spec,
             "rationale": "Over budget",
             "token_budget_total": 2_000_000.0,

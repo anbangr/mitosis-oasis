@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.4.0] - TBD
+## [0.4.0] - 2026-05-20
 
 **Bundle 1 — Cryptographic Foundation release.** Replaces v0.2.x mock crypto
 (empty signatures, `did:mock:` strings, no typed-data) with production-grade

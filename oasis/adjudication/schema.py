@@ -75,38 +75,43 @@ CREATE TABLE IF NOT EXISTS insurance_pool (
     created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- 5. Adjudicator registry
+-- 5. Adjudicator registry (MONITOR-type agents)
 CREATE TABLE IF NOT EXISTS adjudicator_registry (
-    adjudicator_did  TEXT PRIMARY KEY,
-    eth_address      TEXT,
-    public_key       TEXT,
-    stake_amount     REAL NOT NULL DEFAULT 0.0,
-    is_banned        BOOLEAN NOT NULL DEFAULT 0,
-    registered_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    adjudicator_did   TEXT PRIMARY KEY,
+    eth_address       TEXT NOT NULL UNIQUE,
+    stake_amount      REAL NOT NULL DEFAULT 5000.0,
+    is_active         BOOLEAN NOT NULL DEFAULT 1,
+    is_banned         BOOLEAN NOT NULL DEFAULT 0,
+    registered_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- 6. Impeachment motions
+-- 6. Impeachment motions (spec §2.1-2.2)
 CREATE TABLE IF NOT EXISTS impeachment (
-    motion_id          TEXT PRIMARY KEY,
-    target_did         TEXT NOT NULL,
-    evidence_cid       TEXT,
-    signatures_json    TEXT,
-    signatures_count   INTEGER NOT NULL DEFAULT 0,
-    required_threshold INTEGER NOT NULL DEFAULT 0,
-    status             TEXT NOT NULL DEFAULT 'pending',
-    slashed_amount     REAL,
-    created_at         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    executed_at        TIMESTAMP
+    motion_id         TEXT PRIMARY KEY,
+    target_did        TEXT NOT NULL,
+    evidence_cid      TEXT NOT NULL,
+    signatures_json   TEXT NOT NULL,             -- list of {signer, sig_hex}
+    signatures_count  INTEGER NOT NULL,
+    required_threshold INTEGER NOT NULL,         -- ceil(2q/3) at motion creation
+    status            TEXT NOT NULL CHECK(status IN ('pending', 'accepted', 'rejected')),
+    slashed_amount    REAL,
+    executed_at       TIMESTAMP,
+    created_at        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (target_did) REFERENCES adjudicator_registry(adjudicator_did)
 );
 
--- 7. Watchdog anomaly records
+-- 7. Watchdog anomalies (spec §2.4)
 CREATE TABLE IF NOT EXISTS watchdog_anomaly (
-    anomaly_id      TEXT PRIMARY KEY,
-    adjudicator_did TEXT NOT NULL,
-    anomaly_type    TEXT NOT NULL,
-    zscore          REAL NOT NULL,
-    window_decisions INTEGER NOT NULL DEFAULT 0,
-    detected_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    anomaly_id        INTEGER PRIMARY KEY AUTOINCREMENT,
+    adjudicator_did   TEXT NOT NULL,
+    anomaly_type      TEXT NOT NULL CHECK(anomaly_type IN (
+                          'approval_rate_deviation',
+                          'freeze_lift_rate_deviation'
+                      )),
+    zscore            REAL NOT NULL,
+    window_decisions  INTEGER NOT NULL,
+    detected_at       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (adjudicator_did) REFERENCES adjudicator_registry(adjudicator_did)
 );
 """
 

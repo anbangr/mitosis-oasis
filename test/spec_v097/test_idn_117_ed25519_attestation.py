@@ -33,6 +33,9 @@ from oasis.governance.messages import (
     MessageType,
     RegulatoryDecision,
     TaskBid,
+    canonical_signed_bytes,
+    get_session_messages,
+    log_message,
 )
 from oasis.governance.schema import create_governance_tables, seed_constitution
 
@@ -245,10 +248,53 @@ def test_nullable_columns_accept_null_rows(tmp_path: Path):
         conn.close()
 
 
+def test_log_message_splits_canonical_payload_and_payload_json(tmp_path: Path):
+    r"""log_message stores signed bytes in payload and observability JSON separately."""
+    db_path = tmp_path / "g.db"
+    session_id = "sess"
+    create_governance_tables(str(db_path))
+    conn = sqlite3.connect(str(db_path))
+    try:
+        conn.execute(
+            "INSERT INTO legislative_session (session_id, state) VALUES (?, ?)",
+            (session_id, "SESSION_INIT"),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+    msg = IdentityAttestation(
+        session_id=session_id,
+        agent_did="did:key:zX",
+        signature="ab" * 64,
+        reputation_score=0.5,
+        agent_type="producer",
+    )
+    log_message(str(db_path), session_id, msg, sender_did=msg.agent_did)
+
+    conn = sqlite3.connect(str(db_path))
+    conn.row_factory = sqlite3.Row
+    try:
+        row = conn.execute(
+            "SELECT payload, signature, payload_json FROM message_log WHERE session_id = ?",
+            (session_id,),
+        ).fetchone()
+    finally:
+        conn.close()
+
+    assert row["payload"] == canonical_signed_bytes(msg).hex()
+    assert row["signature"] == msg.signature
+    payload_json = json.loads(row["payload_json"])
+    assert payload_json["signature"] == msg.signature
+    assert payload_json["timestamp"] is not None
+
+    messages = get_session_messages(str(db_path), session_id)
+    assert messages[0]["payload"]["signature"] == msg.signature
+    assert messages[0]["signed_payload"] == canonical_signed_bytes(msg).hex()
+
+
 def test_canonical_signed_bytes_raises_for_unknown_type():
     r"""canonical_signed_bytes raises TypeError for unrecognised msg_type values."""
-    from oasis.governance.messages import canonical_signed_bytes
-
     fake_type = type("FakeType", (), {"value": "UNKNOWN_TYPE"})()
     fake_msg = type("FakeMsg", (), {"msg_type": fake_type})()
     with pytest.raises(TypeError):

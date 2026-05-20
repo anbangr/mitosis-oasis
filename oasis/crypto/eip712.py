@@ -14,7 +14,7 @@
 from __future__ import annotations
 
 from eth_account import Account
-from eth_account.messages import encode_typed_data
+from eth_account.messages import SignableMessage, encode_typed_data
 from eth_hash.auto import keccak
 
 from oasis.crypto.typed_data import TypedDataMessage
@@ -38,7 +38,7 @@ def signable_typed_data(
     domain: dict[str, object],
     primary_type: str,
     message: dict[str, object],
-) -> object:
+) -> SignableMessage:
     r"""Build a ``SignableMessage`` for the given typed-data parameters.
 
     This is a public helper so callers (e.g. ``oasis.api_auth``) can pass

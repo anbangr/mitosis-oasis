@@ -404,15 +404,27 @@ def log_message(
 
     Returns the log_id of the inserted row.
     """
-    payload = msg.model_dump_json()
+    payload = canonical_signed_bytes(msg).hex()
+    payload_json = msg.model_dump_json()
+    signature = getattr(msg, "signature", None) or getattr(
+        msg, "regulatory_signature", None
+    )
     conn = sqlite3.connect(str(db_path))
     try:
         conn.execute("PRAGMA foreign_keys = ON")
         cursor = conn.execute(
             "INSERT INTO message_log "
-            "(session_id, msg_type, sender_did, receiver, payload) "
-            "VALUES (?, ?, ?, ?, ?)",
-            (session_id, msg.msg_type.value, sender_did, receiver, payload),
+            "(session_id, msg_type, sender_did, receiver, payload, signature, payload_json) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (
+                session_id,
+                msg.msg_type.value,
+                sender_did,
+                receiver,
+                payload,
+                signature,
+                payload_json,
+            ),
         )
         conn.commit()
         return cursor.lastrowid  # type: ignore[return-value]
@@ -454,7 +466,7 @@ def get_session_messages(
 
         results = []
         for row in rows:
-            payload_raw = row["payload"]
+            payload_raw = row["payload_json"] if row["payload_json"] else row["payload"]
             try:
                 payload = json.loads(payload_raw) if payload_raw else None
             except (json.JSONDecodeError, TypeError):
@@ -467,6 +479,9 @@ def get_session_messages(
                     "sender_did": row["sender_did"],
                     "receiver": row["receiver"],
                     "payload": payload,
+                    "signed_payload": row["payload"],
+                    "signature": row["signature"],
+                    "payload_json": row["payload_json"],
                     "created_at": row["created_at"],
                 }
             )

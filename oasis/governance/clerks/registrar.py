@@ -187,13 +187,16 @@ class Registrar(BaseClerk):
     def _get_session_min_reputation(self, conn: Any, session_id: str) -> float:
         """Get min_reputation from the MSG1 for this session."""
         row = conn.execute(
-            "SELECT payload FROM message_log "
+            "SELECT payload, payload_json FROM message_log "
             "WHERE session_id = ? AND msg_type = 'IDENTITY_VERIFICATION_REQUEST' "
             "ORDER BY log_id ASC LIMIT 1",
             (session_id,),
         ).fetchone()
-        if row and row["payload"]:
-            data = json.loads(row["payload"])
+        payload_raw = None
+        if row:
+            payload_raw = row["payload_json"] or row["payload"]
+        if payload_raw:
+            data = json.loads(payload_raw)
             return data.get("min_reputation", 0.1)
         # Fallback: use constitution reputation_floor
         floor_row = conn.execute(
@@ -392,14 +395,15 @@ class Registrar(BaseClerk):
         conn = self._connect()
         try:
             rows = conn.execute(
-                "SELECT sender_did, created_at, payload FROM message_log "
+                "SELECT sender_did, created_at, payload, payload_json FROM message_log "
                 "WHERE session_id = ? AND msg_type = 'IDENTITY_ATTESTATION' "
                 "ORDER BY created_at ASC",
                 (session_id,),
             ).fetchall()
             results = []
             for r in rows:
-                payload = json.loads(r["payload"]) if r["payload"] else {}
+                payload_raw = r["payload_json"] if r["payload_json"] else r["payload"]
+                payload = json.loads(payload_raw) if payload_raw else {}
                 results.append(
                     {
                         "agent_did": r["sender_did"],

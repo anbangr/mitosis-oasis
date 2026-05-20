@@ -317,6 +317,15 @@ _DEFAULT_CLERKS = [
 
 def create_governance_tables(db_path: Union[str, Path]) -> None:
     """Create all 15 governance tables.  Idempotent (IF NOT EXISTS)."""
+
+    def add_column_idempotent(column_sql: str) -> None:
+        try:
+            conn.execute(column_sql)
+            conn.commit()
+        except sqlite3.OperationalError as exc:
+            if "duplicate column name" not in str(exc).lower():
+                raise
+
     conn = sqlite3.connect(str(db_path))
     try:
         conn.execute("PRAGMA foreign_keys = ON")
@@ -328,12 +337,7 @@ def create_governance_tables(db_path: Union[str, Path]) -> None:
             "ALTER TABLE bid ADD COLUMN quoted_price REAL NOT NULL DEFAULT 0.0",
             "ALTER TABLE bid ADD COLUMN capability_match REAL NOT NULL DEFAULT 0.0",
         ]:
-            try:
-                conn.execute(column_sql)
-                conn.commit()
-            except sqlite3.OperationalError:
-                # Column already exists — second invocation is a no-op
-                pass
+            add_column_idempotent(column_sql)
 
         # Idempotent column additions for crypto foundation (spec IDN-117)
         for column_sql in [
@@ -341,12 +345,7 @@ def create_governance_tables(db_path: Union[str, Path]) -> None:
             "ALTER TABLE message_log ADD COLUMN signature TEXT",
             "ALTER TABLE message_log ADD COLUMN payload_json TEXT",
         ]:
-            try:
-                conn.execute(column_sql)
-                conn.commit()
-            except sqlite3.OperationalError:
-                # Column already exists — second invocation is a no-op
-                pass
+            add_column_idempotent(column_sql)
     finally:
         conn.close()
 

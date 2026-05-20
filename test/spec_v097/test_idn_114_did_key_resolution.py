@@ -20,8 +20,6 @@ from __future__ import annotations
 
 import hashlib
 
-import pytest
-
 from oasis.crypto import ed25519
 from oasis.crypto.did import did_from_pubkey, resolve
 
@@ -35,9 +33,7 @@ def test_t1_did_format_is_did_key_z(ed25519_keypair):
     r"""T1: did_from_pubkey(pub).startswith("did:key:z") is True."""
     _priv, pub = ed25519_keypair
     did = did_from_pubkey(pub)
-    assert did.startswith("did:key:z"), (
-        f"Expected did:key:z prefix, got {did!r}"
-    )
+    assert did.startswith("did:key:z"), f"Expected did:key:z prefix, got {did!r}"
 
 
 # ---------------------------------------------------------------------------

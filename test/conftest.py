@@ -21,7 +21,7 @@ import pytest
 root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../"))
 sys.path.insert(0, root_path)
 
-from oasis.crypto import ed25519
+from oasis.crypto import ed25519  # noqa: E402
 
 
 @pytest.fixture

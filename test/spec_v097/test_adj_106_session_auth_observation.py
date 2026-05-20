@@ -83,9 +83,7 @@ def test_t4_decisions_route_no_eip712(client: TestClient):
 def test_t5_alerts_route_no_eip712(client: TestClient):
     r"""T5: GET /api/adjudication/alerts does not require EIP-712 (status != 401)."""
     resp = client.get("/api/adjudication/alerts")
-    assert resp.status_code != 401, (
-        f"Alerts GET unexpectedly returned 401: {resp.text}"
-    )
+    assert resp.status_code != 401, f"Alerts GET unexpectedly returned 401: {resp.text}"
 
 
 # ---------------------------------------------------------------------------

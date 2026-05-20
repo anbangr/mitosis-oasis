@@ -127,8 +127,8 @@ def test_t3_verify_wrong_signer(acct, sanction_data):
 def test_t4_hash_constitution_amendment():
     r"""hash_typed_data accepts ConstitutionAmendment primary type and returns 32 bytes."""
     data = ConstitutionAmendmentTypedData(
-        rule_id="rule-001",
-        content="Amend section 4",
+        param_name="reputation_lambda",
+        param_value="0.7",
         nonce=1,
     )
     digest = hash_typed_data(DOMAIN, "ConstitutionAmendment", data.to_dict())

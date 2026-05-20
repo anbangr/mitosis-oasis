@@ -12,8 +12,10 @@ import sqlite3
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field, field_validator
+
+from oasis.api_auth import require_eip712_sig
 
 from oasis.config import PlatformConfig, _GOVERNANCE_MODE_ORDER, _VALID_GOVERNANCE_MODES
 from oasis.governance.clerks.codifier import Codifier
@@ -207,6 +209,12 @@ class ApprovalBody(BaseModel):
     spec_id: str = Field(..., min_length=1)
     proposer_signature: str = Field("", min_length=0)
     regulator_signature: str = Field("", min_length=0)
+
+
+class ConstitutionAmendmentBody(BaseModel):
+    param_name: str = Field(..., min_length=1)
+    param_value: str = Field(..., min_length=1)
+    nonce: int = Field(..., ge=0)
 
 
 # ---------------------------------------------------------------------------
@@ -993,6 +1001,32 @@ async def get_reputation(agent_did: str):
             }
             for h in history
         ],
+    }
+
+
+@_routes.put("/constitution", dependencies=[Depends(require_eip712_sig)])
+async def amend_constitution(body: ConstitutionAmendmentBody) -> dict[str, Any]:
+    """Update a constitutional parameter."""
+    conn = _connect()
+    try:
+        row = conn.execute(
+            "SELECT param_name FROM constitution WHERE param_name = ?",
+            (body.param_name,),
+        ).fetchone()
+        if row is None:
+            raise HTTPException(404, f"Parameter not found: {body.param_name}")
+
+        conn.execute(
+            "UPDATE constitution SET param_value = ? WHERE param_name = ?",
+            (body.param_value, body.param_name),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+    return {
+        "param_name": body.param_name,
+        "param_value": body.param_value,
     }
 
 

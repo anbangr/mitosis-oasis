@@ -67,13 +67,13 @@ class SanctionTypedData(TypedDataMessage):
 class ConstitutionAmendmentTypedData(TypedDataMessage):
     r"""EIP-712 typed data for a constitution amendment proposal."""
 
-    rule_id: str
-    content: str
+    param_name: str
+    param_value: str
     nonce: int
 
     TYPE_SCHEMA: ClassVar[list[dict[str, str]]] = [
-        {"name": "rule_id", "type": "string"},
-        {"name": "content", "type": "string"},
+        {"name": "param_name", "type": "string"},
+        {"name": "param_value", "type": "string"},
         {"name": "nonce", "type": "uint256"},
     ]
     PRIMARY_TYPE: ClassVar[str] = "ConstitutionAmendment"

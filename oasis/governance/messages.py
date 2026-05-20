@@ -320,9 +320,7 @@ def canonical_signed_bytes(msg: ProtocolMessage) -> bytes:
     """
     msg_type = getattr(msg, "msg_type", None)
     if msg_type not in _SIGNED_FIELDS:
-        raise TypeError(
-            f"Unsupported message type: {msg_type!r}"
-        )
+        raise TypeError(f"Unsupported message type: {msg_type!r}")
 
     payload: dict[str, Any] = {
         "msg_type": msg_type.value,
@@ -332,9 +330,7 @@ def canonical_signed_bytes(msg: ProtocolMessage) -> bytes:
         payload[field] = getattr(msg, field)
 
     canonical = _canonicalize_value(payload)
-    return json.dumps(
-        canonical, sort_keys=True, separators=(",", ":")
-    ).encode("utf-8")
+    return json.dumps(canonical, sort_keys=True, separators=(",", ":")).encode("utf-8")
 
 
 # ---------------------------------------------------------------------------

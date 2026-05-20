@@ -12,7 +12,12 @@ from oasis.api import app
 from oasis.crypto import ed25519
 from oasis.crypto.did import did_from_pubkey
 from oasis.governance import endpoints as gov_ep
-from oasis.governance.messages import IdentityAttestation, canonical_signed_bytes
+from oasis.governance.messages import (
+    DAGProposal,
+    IdentityAttestation,
+    TaskBid,
+    canonical_signed_bytes,
+)
 from oasis.governance.state_machine import LegislativeState, LegislativeStateMachine
 
 
@@ -133,6 +138,17 @@ def test_full_pipeline_via_http(http_env):
         ],
         "edges": [{"from_node_id": "h1", "to_node_id": "h2"}],
     }
+    proposal = DAGProposal(
+        session_id=session_id,
+        proposer_did=producers[0]["agent_did"],
+        dag_spec=dag_spec,
+        rationale="HTTP E2E test",
+        token_budget_total=700.0,
+        deadline_ms=60000,
+    )
+    proposal.signature = ed25519.sign(
+        producers[0]["private_key"], canonical_signed_bytes(proposal)
+    ).hex()
     resp = client.post(
         f"/api/governance/sessions/{session_id}/proposals",
         json={
@@ -141,6 +157,7 @@ def test_full_pipeline_via_http(http_env):
             "rationale": "HTTP E2E test",
             "token_budget_total": 700.0,
             "deadline_ms": 60000,
+            "signature": proposal.signature,
         },
     )
     assert resp.status_code == 201, resp.text
@@ -152,11 +169,27 @@ def test_full_pipeline_via_http(http_env):
 
     # 6. Submit bids
     for node_id, svc, bidder_idx in [("h1", "svc-a", 0), ("h2", "svc-b", 1)]:
+        bidder = producers[bidder_idx]
+        bid = TaskBid(
+            session_id=session_id,
+            task_node_id=node_id,
+            bidder_did=bidder["agent_did"],
+            service_id=svc,
+            proposed_code_hash="abcdef1234567890",
+            stake_amount=0.5,
+            estimated_latency_ms=5000,
+            quoted_price=0.5,
+            capability_match=0.5,
+            pop_tier_acceptance=1,
+        )
+        bid.signature = ed25519.sign(
+            bidder["private_key"], canonical_signed_bytes(bid)
+        ).hex()
         resp = client.post(
             f"/api/governance/sessions/{session_id}/bids",
             json={
                 "task_node_id": node_id,
-                "bidder_did": producers[bidder_idx]["agent_did"],
+                "bidder_did": bidder["agent_did"],
                 "service_id": svc,
                 "proposed_code_hash": "abcdef1234567890",
                 "stake_amount": 0.5,
@@ -164,6 +197,7 @@ def test_full_pipeline_via_http(http_env):
                 "quoted_price": 0.5,
                 "capability_match": 0.5,
                 "pop_tier_acceptance": 1,
+                "signature": bid.signature,
             },
         )
         assert resp.status_code == 201, resp.text

@@ -14,6 +14,7 @@ from oasis.governance.messages import (
     DAGProposal,
     IdentityAttestation,
     TaskBid,
+    canonical_signed_bytes,
 )
 from oasis.crypto import ed25519
 from oasis.governance.state_machine import LegislativeState, LegislativeStateMachine
@@ -177,6 +178,9 @@ class TestFailureModes:
             token_budget_total=200.0,
             deadline_ms=60000,
         )
+        proposal.signature = ed25519.sign(
+            producers[0]["private_key"], canonical_signed_bytes(proposal)
+        ).hex()
         res = speaker.receive_proposal(sid, proposal)
         assert not res["passed"]
         assert any("cycle" in e.lower() for e in res["errors"])
@@ -227,6 +231,9 @@ class TestFailureModes:
             token_budget_total=700.0,
             deadline_ms=60000,
         )
+        proposal.signature = ed25519.sign(
+            producers[0]["private_key"], canonical_signed_bytes(proposal)
+        ).hex()
         res = speaker.receive_proposal(sid, proposal)
         assert res["passed"]
 
@@ -250,6 +257,9 @@ class TestFailureModes:
             capability_match=producers[0].get("reputation_score", 0.5),
             pop_tier_acceptance=1,
         )
+        bid.signature = ed25519.sign(
+            producers[0]["private_key"], canonical_signed_bytes(bid)
+        ).hex()
         regulator.receive_bid(sid, bid)
 
         # Cannot transition because n2 is uncovered
@@ -305,6 +315,9 @@ class TestFailureModes:
             token_budget_total=999999.0,  # under cap at proposal level
             deadline_ms=60000,
         )
+        proposal.signature = ed25519.sign(
+            producers[0]["private_key"], canonical_signed_bytes(proposal)
+        ).hex()
         res = speaker.receive_proposal(sid, proposal)
         assert res["passed"]
         res["proposal_id"]
@@ -329,6 +342,9 @@ class TestFailureModes:
                 capability_match=producers[0].get("reputation_score", 0.5),
                 pop_tier_acceptance=1,
             )
+            bid.signature = ed25519.sign(
+                producers[0]["private_key"], canonical_signed_bytes(bid)
+            ).hex()
             regulator.receive_bid(sid, bid)
 
         r = sm.transition(LegislativeState.REGULATORY_REVIEW)
@@ -434,24 +450,29 @@ class TestFailureModes:
             token_budget_total=1000.0,
             deadline_ms=60000,
         )
+        proposal.signature = ed25519.sign(
+            producers[0]["private_key"], canonical_signed_bytes(proposal)
+        ).hex()
         speaker.receive_proposal(sid, proposal)
         sm.transition(LegislativeState.BIDDING_OPEN)
 
         for idx, node in enumerate(dag["nodes"]):
+            bidder = producers[idx % len(producers)]
             bid = TaskBid(
                 session_id=sid,
                 task_node_id=node["node_id"],
-                bidder_did=producers[idx % len(producers)]["agent_did"],
+                bidder_did=bidder["agent_did"],
                 service_id=node["service_id"],
                 proposed_code_hash="abcdef1234567890",
                 stake_amount=0.5,
                 estimated_latency_ms=5000,
                 quoted_price=0.5,
-                capability_match=producers[idx % len(producers)].get(
-                    "reputation_score", 0.5
-                ),
+                capability_match=bidder.get("reputation_score", 0.5),
                 pop_tier_acceptance=1,
             )
+            bid.signature = ed25519.sign(
+                bidder["private_key"], canonical_signed_bytes(bid)
+            ).hex()
             regulator_clerk.receive_bid(sid, bid)
 
         sm.transition(LegislativeState.REGULATORY_REVIEW)
@@ -541,6 +562,9 @@ class TestFailureModes:
                 token_budget_total=700.0,
                 deadline_ms=60000,
             )
+            proposal.signature = ed25519.sign(
+                producers[0]["private_key"], canonical_signed_bytes(proposal)
+            ).hex()
             speaker.receive_proposal(sid, proposal)
 
             r = sm.transition(LegislativeState.BIDDING_OPEN)
@@ -548,20 +572,22 @@ class TestFailureModes:
 
             # Bid on ALL node IDs ever created (guard checks all proposals)
             for idx, (node_id, svc_id) in enumerate(all_node_ids):
+                bidder = producers[idx % len(producers)]
                 bid = TaskBid(
                     session_id=sid,
                     task_node_id=node_id,
-                    bidder_did=producers[idx % len(producers)]["agent_did"],
+                    bidder_did=bidder["agent_did"],
                     service_id=svc_id,
                     proposed_code_hash="abcdef1234567890",
                     stake_amount=0.5,
                     estimated_latency_ms=5000,
                     quoted_price=0.5,
-                    capability_match=producers[idx % len(producers)].get(
-                        "reputation_score", 0.5
-                    ),
+                    capability_match=bidder.get("reputation_score", 0.5),
                     pop_tier_acceptance=1,
                 )
+                bid.signature = ed25519.sign(
+                    bidder["private_key"], canonical_signed_bytes(bid)
+                ).hex()
                 regulator.receive_bid(sid, bid)
 
             r = sm.transition(LegislativeState.REGULATORY_REVIEW)

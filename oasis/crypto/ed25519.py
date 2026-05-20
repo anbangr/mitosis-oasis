@@ -17,6 +17,12 @@ from nacl.exceptions import BadSignatureError
 from nacl.signing import SigningKey, VerifyKey
 
 
+# In-process cache for keypairs generated via ``generate_keypair``.
+# This allows clerks (and tests) to look up a private key given only
+# the public key / DID, without persisting keys to disk.
+_KEYPAIR_CACHE: dict[bytes, bytes] = {}
+
+
 def generate_keypair() -> tuple[bytes, bytes]:
     r"""Generate a fresh Ed25519 keypair.
 
@@ -26,7 +32,15 @@ def generate_keypair() -> tuple[bytes, bytes]:
         (private_key, public_key) — both 32-byte ``bytes``.
     """
     sk = SigningKey.generate()
-    return sk.encode(), sk.verify_key.encode()
+    priv = sk.encode()
+    pub = sk.verify_key.encode()
+    _KEYPAIR_CACHE[pub] = priv
+    return priv, pub
+
+
+def get_private_key(public_key: bytes) -> bytes | None:
+    """Return the cached private key for *public_key*, if any."""
+    return _KEYPAIR_CACHE.get(public_key)
 
 
 def keypair_from_seed(seed: bytes) -> tuple[bytes, bytes]:

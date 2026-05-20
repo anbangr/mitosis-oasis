@@ -24,6 +24,7 @@ _CLERK_ROLES = ["registrar", "speaker", "regulator", "codifier"]
 def ensure_clerk_keys():
     """Lazy import so collection succeeds during Red phase."""
     from oasis.governance.clerks.bootstrap import ensure_clerk_keys as fn
+
     return fn
 
 
@@ -64,7 +65,9 @@ def test_t5_ensure_clerk_keys_mints_fresh_keypairs(tmp_path: Path, ensure_clerk_
     agent_rows = conn.execute(
         "SELECT agent_did, public_key FROM agent_registry WHERE agent_type = 'clerk'"
     ).fetchall()
-    clerk_rows = conn.execute("SELECT agent_did, clerk_role FROM clerk_registry").fetchall()
+    clerk_rows = conn.execute(
+        "SELECT agent_did, clerk_role FROM clerk_registry"
+    ).fetchall()
     conn.close()
 
     assert len(agent_rows) == 4
@@ -124,7 +127,7 @@ def test_t6_ensure_clerk_keys_is_idempotent(tmp_path: Path, ensure_clerk_keys):
 
     # Registry rows unchanged
     conn = _connect(db_path)
-    agent_rows1 = conn.execute(
+    conn.execute(
         "SELECT agent_did, public_key FROM agent_registry WHERE agent_type = 'clerk'"
     ).fetchall()
     conn.close()
@@ -238,7 +241,7 @@ def test_t19_no_did_oasis_clerk_anywhere():
         [
             "git",
             "grep",
-            '-E',
+            "-E",
             r'"did:oasis:clerk-(registrar|speaker|regulator|codifier)"',
             "oasis/",
         ],
@@ -256,7 +259,9 @@ def test_t19_no_did_oasis_clerk_anywhere():
 # ---------------------------------------------------------------------------
 
 
-def test_ensure_clerk_keys_honors_env_var(tmp_path: Path, monkeypatch, ensure_clerk_keys):
+def test_ensure_clerk_keys_honors_env_var(
+    tmp_path: Path, monkeypatch, ensure_clerk_keys
+):
     """When OASIS_CLERK_KEYS_DIR is set, ensure_clerk_keys uses it as default."""
     db_path = tmp_path / "g.db"
     keys_dir = tmp_path / "env_clerk_keys"

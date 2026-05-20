@@ -13,7 +13,7 @@ from pathlib import Path
 import pytest
 
 from oasis.crypto import ed25519
-from oasis.crypto.did import did_from_pubkey, resolve as did_resolve
+from oasis.crypto.did import did_from_pubkey
 from oasis.governance.messages import (
     IdentityAttestation,
     LegislativeApproval,
@@ -22,10 +22,12 @@ from oasis.governance.messages import (
 )
 from oasis.governance.schema import create_governance_tables
 
+
 @pytest.fixture(scope="module")
 def verify_message_signature():
     """Lazy import so collection succeeds during Red phase."""
     from oasis.crypto._signing import verify_message_signature as fn
+
     return fn
 
 
@@ -36,7 +38,9 @@ def _connect(db_path: Path) -> sqlite3.Connection:
     return conn
 
 
-def _register_agent(conn: sqlite3.Connection, agent_did: str, public_key: bytes) -> None:
+def _register_agent(
+    conn: sqlite3.Connection, agent_did: str, public_key: bytes
+) -> None:
     conn.execute(
         "INSERT OR IGNORE INTO agent_registry "
         "(agent_did, agent_type, display_name, human_principal, public_key) "
@@ -204,7 +208,9 @@ def test_t11_verify_helper_msg5_regulatory_signature(
 # ---------------------------------------------------------------------------
 
 
-def test_t12_verify_helper_msg7_dual_cosig_happy_path(db_path: Path, verify_message_signature):
+def test_t12_verify_helper_msg7_dual_cosig_happy_path(
+    db_path: Path, verify_message_signature
+):
     """Both speaker and regulator signatures valid over same canonical bytes."""
     spk_priv, spk_pub = ed25519.generate_keypair()
     reg_priv, reg_pub = ed25519.generate_keypair()

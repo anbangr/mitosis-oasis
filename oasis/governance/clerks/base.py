@@ -26,11 +26,13 @@ class BaseClerk(ABC):
         clerk_did: str,
         llm_enabled: bool = False,
         llm: LLMInterface | None = None,
+        private_key: bytes | None = None,
     ) -> None:
         self.db_path = str(db_path)
         self.clerk_did = clerk_did
         self.llm_enabled = llm_enabled
         self.llm = llm
+        self._private_key = private_key
         self._authority_envelope: Optional[dict] = None
 
     # ------------------------------------------------------------------
@@ -67,6 +69,73 @@ class BaseClerk(ABC):
         if self._authority_envelope is None:
             self._authority_envelope = self._load_authority_envelope()
         return self._authority_envelope
+
+    def _load_private_key(self) -> bytes | None:
+        """Load the clerk's private key if it was not provided at construction.
+
+        Tries, in order:
+        1. The explicitly-provided ``private_key`` kwarg.
+        2. A bootstrap key file whose stored DID matches ``self.clerk_did``.
+        3. A bootstrap key file for the clerk's role (looked up in the DB).
+        4. The in-process Ed25519 keypair cache (for keys minted via
+           ``ed25519.generate_keypair()`` in the same process).
+        """
+        if self._private_key is not None:
+            return self._private_key
+
+        import json
+        import os
+        import sqlite3
+        from pathlib import Path
+
+        keys_dir = os.environ.get("OASIS_CLERK_KEYS_DIR", "data/clerk_keys")
+        keys_path = Path(keys_dir)
+
+        # 2. Key file with matching DID
+        if keys_path.exists():
+            for key_file in keys_path.glob("*.json"):
+                try:
+                    data = json.loads(key_file.read_text())
+                    if data.get("did") == self.clerk_did:
+                        self._private_key = bytes.fromhex(data["private_key_hex"])
+                        return self._private_key
+                except (ValueError, KeyError, json.JSONDecodeError):
+                    continue
+
+        # 3. Key file for the clerk's role
+        try:
+            conn = sqlite3.connect(self.db_path)
+            conn.row_factory = sqlite3.Row
+            row = conn.execute(
+                "SELECT clerk_role FROM clerk_registry WHERE agent_did = ?",
+                (self.clerk_did,),
+            ).fetchone()
+            conn.close()
+            if row is not None and keys_path.exists():
+                role = row["clerk_role"]
+                key_file = keys_path / f"{role}.json"
+                if key_file.exists():
+                    data = json.loads(key_file.read_text())
+                    self._private_key = bytes.fromhex(data["private_key_hex"])
+                    return self._private_key
+        except Exception:
+            pass
+
+        # 4. In-process cache (for test-generated keypairs)
+        if self.clerk_did.startswith("did:key:"):
+            try:
+                from oasis.crypto.did import resolve as did_resolve
+                from oasis.crypto import ed25519
+
+                pub = did_resolve(self.clerk_did)
+                cached_priv = ed25519.get_private_key(pub)
+                if cached_priv is not None:
+                    self._private_key = cached_priv
+                    return self._private_key
+            except Exception:
+                pass
+
+        return None
 
     def authority_check(self, action: str) -> bool:
         """Verify *action* is within this clerk's authority envelope.

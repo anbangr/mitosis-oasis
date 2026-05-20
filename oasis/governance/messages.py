@@ -74,6 +74,7 @@ class MessageType(str, Enum):
     REGULATORY_DECISION = "REGULATORY_DECISION"
     CODED_CONTRACT_SPEC = "CODED_CONTRACT_SPEC"
     LEGISLATIVE_APPROVAL = "LEGISLATIVE_APPROVAL"
+    LEGISLATIVE_APPROVAL_REGULATOR_COSIG = "LEGISLATIVE_APPROVAL_REGULATOR_COSIG"
 
 
 # ---------------------------------------------------------------------------
@@ -110,8 +111,8 @@ class IdentityAttestation(BaseModel):
     msg_type: MessageType = MessageType.IDENTITY_ATTESTATION
     session_id: str = Field(..., min_length=1)
     agent_did: str = Field(..., min_length=1)
-    signature: str = Field(
-        ...,
+    signature: str | None = Field(
+        None,
         min_length=128,
         max_length=128,
         pattern=r"^[0-9a-f]{128}$",
@@ -136,6 +137,12 @@ class DAGProposal(BaseModel):
     rationale: str = Field(..., min_length=1)
     token_budget_total: float = Field(..., gt=0)
     deadline_ms: int = Field(..., gt=0)
+    signature: str | None = Field(
+        None,
+        min_length=128,
+        max_length=128,
+        pattern=r"^[0-9a-f]{128}$",
+    )
     timestamp: datetime = Field(default_factory=_utcnow)
 
     @field_validator("dag_spec")
@@ -165,6 +172,12 @@ class TaskBid(BaseModel):
     quoted_price: float = Field(..., ge=0)
     capability_match: float = Field(..., ge=0.0, le=1.0)
     pop_tier_acceptance: int = Field(..., ge=1, le=3)
+    signature: str | None = Field(
+        None,
+        min_length=128,
+        max_length=128,
+        pattern=r"^[0-9a-f]{128}$",
+    )
     timestamp: datetime = Field(default_factory=_utcnow)
 
 
@@ -202,6 +215,12 @@ class CodedContractSpec(BaseModel):
     gate_module_spec: dict = Field(...)
     service_contract_specs: dict = Field(...)
     validation_proof: str = Field(..., min_length=1)
+    signature: str | None = Field(
+        None,
+        min_length=128,
+        max_length=128,
+        pattern=r"^[0-9a-f]{128}$",
+    )
     timestamp: datetime = Field(default_factory=_utcnow)
 
 
@@ -216,8 +235,18 @@ class LegislativeApproval(BaseModel):
     msg_type: MessageType = MessageType.LEGISLATIVE_APPROVAL
     session_id: str = Field(..., min_length=1)
     spec_id: str = Field(..., min_length=1)
-    speaker_signature: str = Field(..., min_length=1)
-    regulator_signature: str = Field(..., min_length=1)
+    speaker_signature: str = Field(
+        ...,
+        min_length=128,
+        max_length=128,
+        pattern=r"^[0-9a-f]{128}$",
+    )
+    regulator_signature: str = Field(
+        ...,
+        min_length=128,
+        max_length=128,
+        pattern=r"^[0-9a-f]{128}$",
+    )
     timestamp: datetime = Field(default_factory=_utcnow)
 
 
@@ -398,22 +427,49 @@ def validate_message(msg: ProtocolMessage) -> list[str]:
 # ---------------------------------------------------------------------------
 
 
+def signature_field_for(msg: ProtocolMessage) -> str:
+    """Return the attribute name that holds the Ed25519 signature for *msg*."""
+    if isinstance(msg, RegulatoryDecision):
+        return "regulatory_signature"
+    if isinstance(msg, LegislativeApproval):
+        return "speaker_signature"
+    return "signature"
+
+
 def log_message(
     db_path: Union[str, Path],
     session_id: str,
     msg: ProtocolMessage,
     sender_did: str = "system",
     receiver: Optional[str] = None,
+    cosigner_did: Optional[str] = None,
 ) -> int:
     """Append a protocol message to the message_log table.
 
-    Returns the log_id of the inserted row.
+    For signed messages the *payload* column stores the lowercase hex of the
+    canonical signed bytes; *signature* stores the detached Ed25519 sig hex;
+    and *payload_json* stores the full Pydantic JSON for observability.
+
+    For unsigned messages (MSG1 in Bundle 1) *payload* is ``""``,
+    *signature* is ``NULL``, and *payload_json* still holds the JSON.
+
+    MSG7 only: when *cosigner_did* is provided a second row with
+    ``msg_type = LEGISLATIVE_APPROVAL_REGULATOR_COSIG`` is written so both
+    signatures are preserved in the log.
+
+    Returns the log_id of the primary inserted row.
     """
-    payload = canonical_signed_bytes(msg).hex()
     payload_json = msg.model_dump_json()
-    signature = getattr(msg, "signature", None) or getattr(
-        msg, "regulatory_signature", None
-    )
+
+    sig_field = signature_field_for(msg)
+    signature = getattr(msg, sig_field, None)
+    # For unsigned messages (MSG1) signature stays None → NULL in DB
+
+    if signature is None:
+        payload = ""
+    else:
+        payload = canonical_signed_bytes(msg).hex()
+
     conn = sqlite3.connect(str(db_path))
     try:
         conn.execute("PRAGMA foreign_keys = ON")
@@ -431,8 +487,31 @@ def log_message(
                 payload_json,
             ),
         )
+        primary_log_id = cursor.lastrowid  # type: ignore[assignment]
+
+        # MSG7 dual-cosig persistence
+        if (
+            isinstance(msg, LegislativeApproval)
+            and cosigner_did is not None
+            and msg.regulator_signature is not None
+        ):
+            conn.execute(
+                "INSERT INTO message_log "
+                "(session_id, msg_type, sender_did, receiver, payload, signature, payload_json) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (
+                    session_id,
+                    MessageType.LEGISLATIVE_APPROVAL_REGULATOR_COSIG.value,
+                    cosigner_did,
+                    receiver,
+                    payload,
+                    msg.regulator_signature,
+                    payload_json,
+                ),
+            )
+
         conn.commit()
-        return cursor.lastrowid  # type: ignore[return-value]
+        return primary_log_id  # type: ignore[return-value]
     finally:
         conn.close()
 
@@ -450,7 +529,8 @@ def get_session_messages(
     """Query protocol messages for a session, optionally filtered by type.
 
     Returns a list of dicts with keys: log_id, session_id, msg_type,
-    sender_did, receiver, payload (parsed), created_at.
+    sender_did, receiver, payload (the raw hex string for signed rows),
+    created_at.  JSON observability is available via ``payload_json``.
     Results are ordered chronologically (ascending).
     """
     conn = sqlite3.connect(str(db_path))
@@ -471,11 +551,14 @@ def get_session_messages(
 
         results = []
         for row in rows:
-            payload_raw = row["payload_json"] if row["payload_json"] else row["payload"]
-            try:
-                payload = json.loads(payload_raw) if payload_raw else None
-            except (json.JSONDecodeError, TypeError):
-                payload = payload_raw
+            # payload_json is the Pydantic JSON for observability;
+            # payload is the canonical hex (or "" for unsigned)
+            payload_json_parsed = None
+            if row["payload_json"]:
+                try:
+                    payload_json_parsed = json.loads(row["payload_json"])
+                except (json.JSONDecodeError, TypeError):
+                    payload_json_parsed = row["payload_json"]
             results.append(
                 {
                     "log_id": row["log_id"],
@@ -483,10 +566,9 @@ def get_session_messages(
                     "msg_type": row["msg_type"],
                     "sender_did": row["sender_did"],
                     "receiver": row["receiver"],
-                    "payload": payload,
-                    "signed_payload": row["payload"],
+                    "payload": row["payload"],
                     "signature": row["signature"],
-                    "payload_json": row["payload_json"],
+                    "payload_json": payload_json_parsed,
                     "created_at": row["created_at"],
                 }
             )

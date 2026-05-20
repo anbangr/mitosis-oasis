@@ -16,8 +16,13 @@ from oasis.api import app
 from oasis.crypto import ed25519
 from oasis.crypto.did import did_from_pubkey
 from oasis.governance import endpoints as gov_ep
-from oasis.governance.messages import canonical_signed_bytes, IdentityAttestation
-from oasis.governance.schema import get_clerk_keypair
+from oasis.governance.messages import (
+    canonical_signed_bytes,
+    IdentityAttestation,
+    DAGProposal,
+    TaskBid,
+)
+from oasis.governance.schema import get_clerk_keypair, get_clerk_did
 
 
 @pytest.fixture()
@@ -202,6 +207,20 @@ def session_factory(client, registered_producers, gov_db):
             ],
             "edges": [{"from_node_id": "n1", "to_node_id": "n2"}],
         }
+        proposal_unsigned = DAGProposal(
+            session_id=session_id,
+            proposer_did=registered_producers[0]["agent_did"],
+            dag_spec=dag_spec,
+            rationale="Test proposal",
+            token_budget_total=300.0,
+            deadline_ms=60000,
+            signature="ab" * 64,
+        )
+        sig_hex = ed25519.sign(
+            registered_producers[0]["private_key"],
+            canonical_signed_bytes(proposal_unsigned),
+        ).hex()
+
         resp = client.post(
             f"/api/governance/sessions/{session_id}/proposals",
             json={
@@ -210,6 +229,7 @@ def session_factory(client, registered_producers, gov_db):
                 "rationale": "Test proposal",
                 "token_budget_total": 300.0,
                 "deadline_ms": 60000,
+                "signature": sig_hex,
             },
         )
         assert resp.status_code == 201, resp.text
@@ -223,6 +243,24 @@ def session_factory(client, registered_producers, gov_db):
 
         # Submit bids for both nodes
         for node_id, svc, bidder_idx in [("n1", "svc-a", 0), ("n2", "svc-b", 0)]:
+            bid_unsigned = TaskBid(
+                session_id=session_id,
+                task_node_id=node_id,
+                bidder_did=registered_producers[bidder_idx]["agent_did"],
+                service_id=svc,
+                proposed_code_hash="abcdef1234567890",
+                stake_amount=0.5,
+                estimated_latency_ms=5000,
+                pop_tier_acceptance=1,
+                quoted_price=1.0,
+                capability_match=0.9,
+                signature="ab" * 64,
+            )
+            sig_hex = ed25519.sign(
+                registered_producers[bidder_idx]["private_key"],
+                canonical_signed_bytes(bid_unsigned),
+            ).hex()
+
             resp = client.post(
                 f"/api/governance/sessions/{session_id}/bids",
                 json={
@@ -235,6 +273,7 @@ def session_factory(client, registered_producers, gov_db):
                     "pop_tier_acceptance": 1,
                     "quoted_price": 1.0,
                     "capability_match": 0.9,
+                    "signature": sig_hex,
                 },
             )
             assert resp.status_code == 201, resp.text
@@ -249,9 +288,7 @@ def session_factory(client, registered_producers, gov_db):
         # Evaluate bids
         resp = client.post(
             f"/api/governance/sessions/{session_id}/regulatory/decision",
-            json={
-                "submitter_did": "did:key:z6Mkop5toaiwyZq5Lm7Ldr6MFdYtvb3gtQ2B4U5ZRXNkXyuN"
-            },
+            json={"submitter_did": get_clerk_did("regulator")},
         )
         assert resp.status_code == 200, resp.text
 

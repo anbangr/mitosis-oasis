@@ -259,6 +259,8 @@ def drive_session_to_deployed(
         token_budget_total=total_budget,
         deadline_ms=60000,
     )
+    canonical = canonical_signed_bytes(proposal)
+    proposal.signature = ed25519.sign(producers[0]["private_key"], canonical).hex()
     prop_result = speaker.receive_proposal(sid, proposal)
     assert prop_result["passed"], f"Proposal failed: {prop_result['errors']}"
     proposal_id = prop_result["proposal_id"]
@@ -283,6 +285,8 @@ def drive_session_to_deployed(
             capability_match=bidder.get("reputation_score", 0.5),
             pop_tier_acceptance=node.get("pop_tier", 1),
         )
+        canonical = canonical_signed_bytes(bid)
+        bid.signature = ed25519.sign(bidder["private_key"], canonical).hex()
         bid_result = regulator.receive_bid(sid, bid)
         assert bid_result["passed"], (
             f"Bid failed for {node['node_id']}: {bid_result['errors']}"

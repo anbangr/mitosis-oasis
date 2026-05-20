@@ -23,8 +23,10 @@ from pathlib import Path
 
 import pytest
 
+from oasis.crypto import ed25519
+from oasis.crypto.did import did_from_pubkey
 from oasis.governance.clerks.regulator import Regulator
-from oasis.governance.messages import TaskBid
+from oasis.governance.messages import TaskBid, canonical_signed_bytes
 from oasis.governance.schema import create_governance_tables, seed_constitution
 
 
@@ -316,16 +318,20 @@ def test_t7_ingestion_persists_new_fields(tmp_path: Path):
         "INSERT OR IGNORE INTO legislative_session "
         "(session_id, state, epoch) VALUES ('sess-ingest', 'BIDDING_OPEN', 0)"
     )
+    bidder_priv, bidder_pub = ed25519.generate_keypair()
+    bidder_did = did_from_pubkey(bidder_pub)
     conn.execute(
         "INSERT OR IGNORE INTO agent_registry "
-        "(agent_did, agent_type, display_name, human_principal, reputation_score) "
-        "VALUES ('did:mock:bidder-1', 'producer', 'Bidder', 'test@example.com', 0.5)"
+        "(agent_did, agent_type, display_name, human_principal, reputation_score, public_key) "
+        "VALUES (?, 'producer', 'Bidder', 'test@example.com', 0.5, ?)",
+        (bidder_did, bidder_pub.hex()),
     )
     conn.execute(
         "INSERT INTO proposal "
         "(proposal_id, session_id, proposer_did, dag_spec, "
         "token_budget_total, deadline_ms, status) "
-        "VALUES ('prop-1', 'sess-ingest', 'did:mock:bidder-1', '{}', 1000, 60000, 'submitted')"
+        "VALUES ('prop-1', 'sess-ingest', ?, '{}', 1000, 60000, 'submitted')",
+        (bidder_did,),
     )
     conn.execute(
         "INSERT INTO dag_node "
@@ -338,7 +344,7 @@ def test_t7_ingestion_persists_new_fields(tmp_path: Path):
     bid = TaskBid(
         session_id="sess-ingest",
         task_node_id="node-1",
-        bidder_did="did:mock:bidder-1",
+        bidder_did=bidder_did,
         service_id="svc-data",
         proposed_code_hash="a1b2c3d4e5f6g7h8",
         stake_amount=1.0,
@@ -347,6 +353,7 @@ def test_t7_ingestion_persists_new_fields(tmp_path: Path):
         quoted_price=250.0,
         capability_match=0.8,
     )
+    bid.signature = ed25519.sign(bidder_priv, canonical_signed_bytes(bid)).hex()
     result = reg.receive_bid("sess-ingest", bid)
     assert result["passed"] is True
     bid_id = result["bid_id"]

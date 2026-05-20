@@ -289,8 +289,8 @@ def test_log_message_splits_canonical_payload_and_payload_json(tmp_path: Path):
     assert payload_json["timestamp"] is not None
 
     messages = get_session_messages(str(db_path), session_id)
-    assert messages[0]["payload"]["signature"] == msg.signature
-    assert messages[0]["signed_payload"] == canonical_signed_bytes(msg).hex()
+    assert messages[0]["payload_json"]["signature"] == msg.signature
+    assert messages[0]["payload"] == canonical_signed_bytes(msg).hex()
 
 
 def test_canonical_signed_bytes_raises_for_unknown_type():
@@ -475,8 +475,8 @@ def test_canonical_signed_bytes_all_msg_types():
     msg7 = LegislativeApproval(
         session_id="s7",
         spec_id="spec1",
-        speaker_signature="ij" * 64,
-        regulator_signature="kl" * 64,
+        speaker_signature="ab" * 64,
+        regulator_signature="cd" * 64,
     )
     cb7 = canonical_signed_bytes(msg7)
     data7 = json.loads(cb7.decode("utf-8"))

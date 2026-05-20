@@ -12,7 +12,7 @@ def test_signature_generated(governance_db: Path):
     )
     result = sp.issue_approval("sess-approve", "spec-abc")
     assert result["speaker_signature"] is not None
-    assert len(result["speaker_signature"]) == 64  # SHA-256 hex
+    assert len(result["speaker_signature"]) == 128  # Ed25519 hex
     assert result["spec_id"] == "spec-abc"
     assert "timestamp" in result
 

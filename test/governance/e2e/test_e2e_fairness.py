@@ -111,6 +111,9 @@ def test_monopolist_bid_rejected(e2e_db, producers):
         token_budget_total=1800.0,
         deadline_ms=60000,
     )
+    proposal.signature = ed25519.sign(
+        producers[0]["private_key"], canonical_signed_bytes(proposal)
+    ).hex()
     res = speaker.receive_proposal(sid, proposal)
     assert res["passed"], f"Proposal failed: {res['errors']}"
 
@@ -135,6 +138,9 @@ def test_monopolist_bid_rejected(e2e_db, producers):
             capability_match=1.0,
             pop_tier_acceptance=1,
         )
+        bid.signature = ed25519.sign(
+            monopolist["private_key"], canonical_signed_bytes(bid)
+        ).hex()
         regulator.receive_bid(sid, bid)
 
     # Other producers also bid but with lower stake — they'll lose
@@ -152,6 +158,9 @@ def test_monopolist_bid_rejected(e2e_db, producers):
             capability_match=0.1,
             pop_tier_acceptance=1,
         )
+        bid.signature = ed25519.sign(
+            other_bidder["private_key"], canonical_signed_bytes(bid)
+        ).hex()
         regulator.receive_bid(sid, bid)
 
     sm.transition(LegislativeState.REGULATORY_REVIEW)

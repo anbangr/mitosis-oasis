@@ -7,7 +7,6 @@ These tests exercise the endpoints and clerk classes once
 
 from __future__ import annotations
 
-import json
 import sqlite3
 from pathlib import Path
 
@@ -28,7 +27,6 @@ from oasis.governance.messages import (
     TaskBid,
     canonical_signed_bytes,
 )
-from oasis.governance.schema import create_governance_tables, seed_clerks
 
 client = TestClient(app)
 
@@ -40,7 +38,9 @@ def _connect(db_path: Path) -> sqlite3.Connection:
     return conn
 
 
-def _register_agent(conn: sqlite3.Connection, agent_did: str, public_key: bytes) -> None:
+def _register_agent(
+    conn: sqlite3.Connection, agent_did: str, public_key: bytes
+) -> None:
     conn.execute(
         "INSERT OR IGNORE INTO agent_registry "
         "(agent_did, agent_type, display_name, human_principal, public_key) "
@@ -226,7 +226,7 @@ def test_t16_codifier_signs_msg6_with_persisted_key(governance_db: Path):
     conn.commit()
     conn.close()
 
-    codifier = Codifier(str(db_path), codifier_did)
+    codifier = Codifier(str(db_path), codifier_did, private_key=cod_priv)
 
     proposal = DAGProposal(
         session_id="s16",
@@ -315,7 +315,7 @@ def test_t17_speaker_msg7_dual_cosign_happy_path(governance_db: Path):
     assert errs2 == []
 
     # State advances via Speaker.issue_approval (or endpoint)
-    speaker = Speaker(str(db_path), speaker_did)
+    speaker = Speaker(str(db_path), speaker_did, private_key=spk_priv)
     result = speaker.issue_approval("s17", "spec-abc")
     assert result.get("error") is None
     assert result["speaker_signature"] is not None

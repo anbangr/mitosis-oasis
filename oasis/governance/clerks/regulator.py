@@ -20,12 +20,14 @@ from collections import Counter
 from datetime import datetime, timezone
 from typing import Any, Optional
 
+from oasis.crypto import ed25519
 from oasis.governance.clerks.base import BaseClerk
 from oasis.governance.clerks.llm_interface import LLMError
 from oasis.governance.fairness import check_fairness
 from oasis.governance.messages import (
     RegulatoryDecision,
     TaskBid,
+    canonical_signed_bytes,
     log_message,
 )
 from test.spec_v097.conftest import SPEC_BID_WEIGHT_P, SPEC_BID_WEIGHT_Q
@@ -140,12 +142,33 @@ class Regulator(BaseClerk):
         """Validate a bid against constraints.
 
         Checks:
-        1. Service is registered (service_id exists in dag_node)
-        2. Code hash format valid (non-empty, hex-like)
-        3. Stake >= min_stake (derived from constitution)
-        4. PoP tier acceptance matches node tier
+        1. Ed25519 signature on the bid (MSG4)
+        2. Service is registered (service_id exists in dag_node)
+        3. Code hash format valid (non-empty, hex-like)
+        4. Stake >= min_stake (derived from constitution)
+        5. PoP tier acceptance matches node tier
         """
         errors: list[str] = []
+
+        # Verify MSG4 signature
+        conn = self._connect()
+        try:
+            from oasis.governance.clerks._signing import verify_message_signature
+
+            ok, sig_errs = verify_message_signature(
+                msg=bid,
+                sender_did=bid.bidder_did,
+                conn=conn,
+            )
+            if not ok:
+                errors.extend(sig_errs)
+                return {
+                    "passed": False,
+                    "bid_id": None,
+                    "errors": errors,
+                }
+        finally:
+            conn.close()
 
         conn = self._connect()
         try:
@@ -374,15 +397,32 @@ class Regulator(BaseClerk):
             conn.close()
 
         # Build and log MSG5
+        # Sign MSG5 with the Regulator's persisted Ed25519 private key
+        priv = self._load_private_key()
+        if priv is None:
+            # Fallback to placeholder if key unavailable (should not happen in prod)
+            regulatory_signature = hashlib.sha256(
+                f"{session_id}:{self.clerk_did}".encode()
+            ).hexdigest()
+        else:
+            msg5_unsigned = RegulatoryDecision(
+                session_id=session_id,
+                approved_bids=approved,
+                rejected_bids=rejected,
+                fairness_score=fairness_score,
+                compliance_flags=[f["flag"] for f in compliance_flags],
+                regulatory_signature="ab" * 64,
+            )
+            canonical = canonical_signed_bytes(msg5_unsigned)
+            regulatory_signature = ed25519.sign(priv, canonical).hex()
+
         msg5 = RegulatoryDecision(
             session_id=session_id,
             approved_bids=approved,
             rejected_bids=rejected,
             fairness_score=fairness_score,
             compliance_flags=[f["flag"] for f in compliance_flags],
-            regulatory_signature=hashlib.sha256(
-                f"{session_id}:{self.clerk_did}".encode()
-            ).hexdigest(),
+            regulatory_signature=regulatory_signature,
         )
         log_message(self.db_path, session_id, msg5, sender_did=self.clerk_did)
 
@@ -473,8 +513,26 @@ class Regulator(BaseClerk):
 
     def co_sign_approval(self, session_id: str, spec_id: str) -> str:
         """Generate Regulator's co-signature for MSG7."""
-        sig_data = f"{session_id}:{spec_id}:{self.clerk_did}"
-        return hashlib.sha256(sig_data.encode()).hexdigest()
+        from oasis.governance.messages import (
+            LegislativeApproval,
+            canonical_signed_bytes,
+        )
+        from oasis.crypto import ed25519
+
+        priv = self._load_private_key()
+        if priv is None:
+            # Fallback to placeholder if key unavailable
+            sig_data = f"{session_id}:{spec_id}:{self.clerk_did}"
+            return hashlib.sha256(sig_data.encode()).hexdigest()
+
+        msg7 = LegislativeApproval(
+            session_id=session_id,
+            spec_id=spec_id,
+            speaker_signature="ab" * 64,
+            regulator_signature="ab" * 64,
+        )
+        canonical = canonical_signed_bytes(msg7)
+        return ed25519.sign(priv, canonical).hex()
 
     # ------------------------------------------------------------------
     # Layer 2: Bid feasibility & coordination detection

@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from oasis.crypto import ed25519
+from oasis.governance.messages import DAGProposal, canonical_signed_bytes
+
 
 def test_submit_proposal(client, session_factory, registered_producers):
     """POST proposals submits a valid DAG proposal."""
@@ -19,14 +22,25 @@ def test_submit_proposal(client, session_factory, registered_producers):
         ],
         "edges": [],
     }
+    proposer = registered_producers[0]
+    proposal = DAGProposal(
+        session_id=session_id,
+        proposer_did=proposer["agent_did"],
+        dag_spec=dag_spec,
+        rationale="Test single-node",
+        token_budget_total=50.0,
+        deadline_ms=30000,
+    )
+    sig = ed25519.sign(proposer["private_key"], canonical_signed_bytes(proposal)).hex()
     resp = client.post(
         f"/api/governance/sessions/{session_id}/proposals",
         json={
-            "proposer_did": registered_producers[0]["agent_did"],
+            "proposer_did": proposer["agent_did"],
             "dag_spec": dag_spec,
             "rationale": "Test single-node",
             "token_budget_total": 50.0,
             "deadline_ms": 30000,
+            "signature": sig,
         },
     )
     assert resp.status_code == 201
@@ -51,14 +65,25 @@ def test_get_proposal_details(client, session_factory, registered_producers):
         ],
         "edges": [],
     }
+    proposer = registered_producers[1]
+    proposal = DAGProposal(
+        session_id=session_id,
+        proposer_did=proposer["agent_did"],
+        dag_spec=dag_spec,
+        rationale="Get test",
+        token_budget_total=100.0,
+        deadline_ms=60000,
+    )
+    sig = ed25519.sign(proposer["private_key"], canonical_signed_bytes(proposal)).hex()
     resp = client.post(
         f"/api/governance/sessions/{session_id}/proposals",
         json={
-            "proposer_did": registered_producers[1]["agent_did"],
+            "proposer_did": proposer["agent_did"],
             "dag_spec": dag_spec,
             "rationale": "Get test",
             "token_budget_total": 100.0,
             "deadline_ms": 60000,
+            "signature": sig,
         },
     )
     pid = resp.json()["proposal_id"]
@@ -95,14 +120,25 @@ def test_invalid_dag_400(client, session_factory, registered_producers):
             {"from_node_id": "b", "to_node_id": "a"},
         ],
     }
+    proposer = registered_producers[0]
+    proposal = DAGProposal(
+        session_id=session_id,
+        proposer_did=proposer["agent_did"],
+        dag_spec=dag_spec,
+        rationale="Cyclic test",
+        token_budget_total=100.0,
+        deadline_ms=30000,
+    )
+    sig = ed25519.sign(proposer["private_key"], canonical_signed_bytes(proposal)).hex()
     resp = client.post(
         f"/api/governance/sessions/{session_id}/proposals",
         json={
-            "proposer_did": registered_producers[0]["agent_did"],
+            "proposer_did": proposer["agent_did"],
             "dag_spec": dag_spec,
             "rationale": "Cyclic test",
             "token_budget_total": 100.0,
             "deadline_ms": 30000,
+            "signature": sig,
         },
     )
     assert resp.status_code == 400
@@ -124,14 +160,25 @@ def test_budget_exceeded_400(client, session_factory, registered_producers):
         ],
         "edges": [],
     }
+    proposer = registered_producers[0]
+    proposal = DAGProposal(
+        session_id=session_id,
+        proposer_did=proposer["agent_did"],
+        dag_spec=dag_spec,
+        rationale="Over budget",
+        token_budget_total=2_000_000.0,
+        deadline_ms=30000,
+    )
+    sig = ed25519.sign(proposer["private_key"], canonical_signed_bytes(proposal)).hex()
     resp = client.post(
         f"/api/governance/sessions/{session_id}/proposals",
         json={
-            "proposer_did": registered_producers[0]["agent_did"],
+            "proposer_did": proposer["agent_did"],
             "dag_spec": dag_spec,
             "rationale": "Over budget",
             "token_budget_total": 2_000_000.0,
             "deadline_ms": 30000,
+            "signature": sig,
         },
     )
     assert resp.status_code == 400

@@ -8,7 +8,11 @@ from oasis.governance.clerks.llm_interface import MockLLM
 from oasis.governance.clerks.registrar import Registrar
 from oasis.governance.clerks.regulator import Regulator
 from oasis.governance.clerks.speaker import Speaker
-from oasis.governance.messages import DAGProposal, IdentityAttestation
+from oasis.governance.messages import (
+    DAGProposal,
+    IdentityAttestation,
+    canonical_signed_bytes,
+)
 from oasis.governance.state_machine import LegislativeState, LegislativeStateMachine
 
 from oasis.crypto import ed25519
@@ -128,8 +132,6 @@ class TestLayer2:
         sm = LegislativeStateMachine(sid, db)
         sm.transition(LegislativeState.IDENTITY_VERIFICATION)
 
-        from oasis.governance.messages import canonical_signed_bytes
-
         for p in producers:
             att = IdentityAttestation(
                 session_id=sid,
@@ -192,6 +194,9 @@ class TestLayer2:
                 token_budget_total=700.0,
                 deadline_ms=60000,
             )
+            proposal.signature = ed25519.sign(
+                producers[0]["private_key"], canonical_signed_bytes(proposal)
+            ).hex()
             speaker.receive_proposal(sid, proposal)
 
         # Get proposal IDs

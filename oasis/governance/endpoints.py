@@ -165,6 +165,7 @@ class ProposalBody(BaseModel):
     rationale: str = Field("", min_length=0)
     token_budget_total: float = Field(..., gt=0)
     deadline_ms: int = Field(..., gt=0)
+    signature: str = Field("", min_length=0)
 
 
 class StrawPollBody(BaseModel):
@@ -187,10 +188,11 @@ class BidBody(BaseModel):
     service_id: str = Field(..., min_length=1)
     proposed_code_hash: str = Field(..., min_length=1)
     stake_amount: float = Field(..., ge=0)
-    estimated_latency_ms: int = Field(..., gt=0)
+    estimated_latency_ms: int = Field(..., ge=0)
     quoted_price: float = Field(..., ge=0)
     capability_match: float = Field(..., ge=0.0, le=1.0)
     pop_tier_acceptance: int = Field(..., ge=1, le=3)
+    signature: str = Field("", min_length=0)
 
 
 class RegulatoryDecisionBody(BaseModel):
@@ -404,6 +406,7 @@ async def submit_proposal(session_id: str, body: ProposalBody):
         rationale=body.rationale or "No rationale provided",
         token_budget_total=body.token_budget_total,
         deadline_ms=body.deadline_ms,
+        signature=body.signature or None,
     )
     result = speaker.receive_proposal(session_id, proposal)
     if not result["passed"]:
@@ -637,6 +640,7 @@ async def submit_bid(session_id: str, body: BidBody):
         quoted_price=body.quoted_price,
         capability_match=body.capability_match,
         pop_tier_acceptance=body.pop_tier_acceptance,
+        signature=body.signature or None,
     )
     result = regulator.receive_bid(session_id, bid)
     if not result["passed"]:

@@ -24,6 +24,7 @@ from oasis.governance.messages import (
     IdentityAttestation,
     LegislativeApproval,
     TaskBid,
+    canonical_signed_bytes,
     log_message,
 )
 from oasis.governance.schema import (
@@ -212,7 +213,6 @@ def drive_to_deployed(
     assert result.allowed, f"→ IDENTITY_VERIFICATION failed: {result.reason}"
 
     # 2. Attest all producers
-    from oasis.governance.messages import canonical_signed_bytes
 
     for p in producers:
         att = IdentityAttestation(
@@ -254,6 +254,9 @@ def drive_to_deployed(
         token_budget_total=1000.0,
         deadline_ms=60000,
     )
+    proposal.signature = ed25519.sign(
+        producers[0]["private_key"], canonical_signed_bytes(proposal)
+    ).hex()
     prop_result = speaker.receive_proposal(sid, proposal)
     assert prop_result["passed"], f"Proposal failed: {prop_result['errors']}"
     proposal_id = prop_result["proposal_id"]
@@ -278,6 +281,9 @@ def drive_to_deployed(
             capability_match=bidder.get("reputation_score", 0.5),
             pop_tier_acceptance=node.get("pop_tier", 1),
         )
+        bid.signature = ed25519.sign(
+            bidder["private_key"], canonical_signed_bytes(bid)
+        ).hex()
         bid_result = regulator.receive_bid(sid, bid)
         assert bid_result["passed"], (
             f"Bid failed for {node['node_id']}: {bid_result['errors']}"

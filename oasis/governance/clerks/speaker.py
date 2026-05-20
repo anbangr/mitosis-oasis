@@ -13,7 +13,6 @@ Handles:
 
 from __future__ import annotations
 
-import hashlib
 import json
 import random
 import uuid
@@ -21,6 +20,7 @@ from collections import Counter
 from datetime import datetime, timezone
 from typing import Any, Optional
 
+from oasis.crypto import ed25519
 from oasis.governance.clerks.base import BaseClerk
 from oasis.governance.clerks.llm_interface import LLMError
 from oasis.governance.dag import (
@@ -31,7 +31,12 @@ from oasis.governance.dag import (
     topological_sort,
     validate_dag,
 )
-from oasis.governance.messages import DAGProposal, log_message
+from oasis.governance.messages import (
+    DAGProposal,
+    LegislativeApproval,
+    canonical_signed_bytes,
+    log_message,
+)
 from oasis.governance.voting import CopelandVoting, coordination_detection
 
 
@@ -65,11 +70,33 @@ class Speaker(BaseClerk):
         """Validate and accept a DAG proposal.
 
         Checks:
-        1. DAG is acyclic (topological sort succeeds)
-        2. Budget <= budget_cap_max
-        3. Deadline <= proposal_deadline_max_ms
+        1. Ed25519 signature on the proposal (MSG3)
+        2. DAG is acyclic (topological sort succeeds)
+        3. Budget <= budget_cap_max
+        4. Deadline <= proposal_deadline_max_ms
         """
         errors: list[str] = []
+
+        # Verify MSG3 signature
+        conn = self._connect()
+        try:
+            from oasis.governance.clerks._signing import verify_message_signature
+
+            ok, sig_errs = verify_message_signature(
+                msg=proposal,
+                sender_did=proposal.proposer_did,
+                conn=conn,
+            )
+            if not ok:
+                errors.extend(sig_errs)
+                return {
+                    "passed": False,
+                    "proposal_id": None,
+                    "topological_order": [],
+                    "errors": errors,
+                }
+        finally:
+            conn.close()
         dag_spec_dict = proposal.dag_spec
 
         # Build DAGSpec from dict
@@ -484,9 +511,23 @@ class Speaker(BaseClerk):
                 "error": "Unauthorized: speaker:issue_approval not in authority envelope",
             }
 
-        # Generate deterministic signature
-        sig_data = f"{session_id}:{spec_id}:{self.clerk_did}"
-        signature = hashlib.sha256(sig_data.encode()).hexdigest()
+        # Sign with the Speaker's persisted Ed25519 private key
+        priv = self._load_private_key()
+        if priv is None:
+            return {
+                "speaker_signature": None,
+                "spec_id": spec_id,
+                "error": "Speaker private key not available",
+            }
+
+        msg7 = LegislativeApproval(
+            session_id=session_id,
+            spec_id=spec_id,
+            speaker_signature="ab" * 64,
+            regulator_signature="ab" * 64,
+        )
+        canonical = canonical_signed_bytes(msg7)
+        signature = ed25519.sign(priv, canonical).hex()
 
         return {
             "speaker_signature": signature,

@@ -9,7 +9,6 @@ from __future__ import annotations
 import sqlite3
 from pathlib import Path
 
-import pytest
 
 from oasis.crypto import ed25519
 from oasis.crypto.did import did_from_pubkey
@@ -32,7 +31,9 @@ def _connect(db_path: Path) -> sqlite3.Connection:
     return conn
 
 
-def _register_agent(conn: sqlite3.Connection, agent_did: str, public_key: bytes) -> None:
+def _register_agent(
+    conn: sqlite3.Connection, agent_did: str, public_key: bytes
+) -> None:
     conn.execute(
         "INSERT OR IGNORE INTO agent_registry "
         "(agent_did, agent_type, display_name, human_principal, public_key) "

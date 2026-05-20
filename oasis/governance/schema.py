@@ -385,56 +385,36 @@ def seed_constitution(db_path: Union[str, Path]) -> None:
 
 
 def get_clerk_keypair(role: str) -> tuple[bytes, bytes, str]:
-    """Return the deterministic (priv, pub, did) for a clerk role.
+    """Return the (priv, pub, did) for a clerk role by reading the bootstrap key file."""
+    import json
+    import os
+    from pathlib import Path
 
-    The keypair is derived from a deterministic Ed25519 seed based on
-    the role name so that ``seed_clerks`` and callers agree on the value.
-    """
-    return _clerk_keypair(role)
+    keys_dir = os.environ.get("OASIS_CLERK_KEYS_DIR", "data/clerk_keys")
+    key_file = Path(keys_dir) / f"{role}.json"
+    if not key_file.exists():
+        raise RuntimeError(
+            f"Clerk key file not found: {key_file}. Run ensure_clerk_keys first."
+        )
+    data = json.loads(key_file.read_text())
+    priv = bytes.fromhex(data["private_key_hex"])
+    pub = bytes.fromhex(data["public_key_hex"])
+    return priv, pub, data["did"]
 
 
 def get_clerk_did(role: str) -> str:
-    """Return the deterministic did:key DID for a clerk role.
-
-    The DID is derived from a deterministic Ed25519 keypair seeded by
-    the role name so that ``seed_clerks`` and callers agree on the value.
-    """
-    _, pub, did = _clerk_keypair(role)
+    """Return the did:key DID for a clerk role by reading the bootstrap key file."""
+    _, _, did = get_clerk_keypair(role)
     return did
 
 
 def seed_clerks(db_path: Union[str, Path]) -> None:
     """Register the 4 clerk agents with authority envelopes.
 
-    Inserts into both ``agent_registry`` and ``clerk_registry``.
-    Idempotent (INSERT OR IGNORE).
+    Calls ``ensure_clerk_keys`` so that clerks are always registered with
+    real did:key DIDs derived from persisted Ed25519 keypairs.  This
+    replaces the Bundle-0 static ``did:oasis:clerk-*`` seeding path.
     """
-    conn = sqlite3.connect(str(db_path))
-    try:
-        conn.execute("PRAGMA foreign_keys = ON")
-        for clerk in _DEFAULT_CLERKS:
-            conn.execute(
-                "INSERT OR IGNORE INTO agent_registry "
-                "(agent_did, agent_type, display_name, human_principal, public_key) "
-                "VALUES (?, ?, ?, ?, ?)",
-                (
-                    clerk["agent_did"],
-                    clerk["agent_type"],
-                    clerk["display_name"],
-                    clerk["human_principal"],
-                    clerk.get("public_key"),
-                ),
-            )
-            conn.execute(
-                "INSERT OR IGNORE INTO clerk_registry "
-                "(agent_did, clerk_role, authority_envelope) "
-                "VALUES (?, ?, ?)",
-                (
-                    clerk["agent_did"],
-                    clerk["clerk_role"],
-                    clerk["authority_envelope"],
-                ),
-            )
-        conn.commit()
-    finally:
-        conn.close()
+    from oasis.governance.clerks.bootstrap import ensure_clerk_keys
+
+    ensure_clerk_keys(db_path)

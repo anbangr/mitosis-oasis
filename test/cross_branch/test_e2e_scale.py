@@ -197,6 +197,9 @@ def test_scale_50_agents_20_tasks(tmp_path):
         token_budget_total=5000.0,
         deadline_ms=120000,
     )
+    proposal.signature = ed25519.sign(
+        agents[0]["private_key"], canonical_signed_bytes(proposal)
+    ).hex()
     prop_result = speaker.receive_proposal(sid, proposal)
     assert prop_result["passed"]
 
@@ -218,6 +221,9 @@ def test_scale_50_agents_20_tasks(tmp_path):
             capability_match=bidder.get("reputation_score", 0.5),
             pop_tier_acceptance=1,
         )
+        bid.signature = ed25519.sign(
+            bidder["private_key"], canonical_signed_bytes(bid)
+        ).hex()
         bid_result = regulator.receive_bid(sid, bid)
         assert bid_result["passed"]
 

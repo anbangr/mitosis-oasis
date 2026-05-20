@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
+from oasis.crypto import ed25519
+from oasis.governance.messages import DAGProposal, canonical_signed_bytes
+
 
 def test_submit_ranking(client, session_factory, registered_producers):
     """POST /vote submits valid rankings and returns a winner."""
     session_id = session_factory("PROPOSAL_OPEN")
 
     # Create two proposals as candidates
+    proposer = registered_producers[0]
     for label in ["X", "Y"]:
         dag = {
             "nodes": [
@@ -22,14 +26,26 @@ def test_submit_ranking(client, session_factory, registered_producers):
             ],
             "edges": [],
         }
+        proposal = DAGProposal(
+            session_id=session_id,
+            proposer_did=proposer["agent_did"],
+            dag_spec=dag,
+            rationale=label,
+            token_budget_total=50.0,
+            deadline_ms=30000,
+        )
+        sig = ed25519.sign(
+            proposer["private_key"], canonical_signed_bytes(proposal)
+        ).hex()
         resp = client.post(
             f"/api/governance/sessions/{session_id}/proposals",
             json={
-                "proposer_did": registered_producers[0]["agent_did"],
+                "proposer_did": proposer["agent_did"],
                 "dag_spec": dag,
                 "rationale": label,
                 "token_budget_total": 50.0,
                 "deadline_ms": 30000,
+                "signature": sig,
             },
         )
         assert resp.status_code == 201

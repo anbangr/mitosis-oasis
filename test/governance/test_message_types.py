@@ -109,9 +109,9 @@ def test_msg7_legislative_approval():
         session_id="sess-001",
         spec_id="spec-001",
         speaker_signature="ef" * 64,
-        regulator_signature="gh" * 64,
+        regulator_signature="cd" * 64,
     )
     assert msg.msg_type == MessageType.LEGISLATIVE_APPROVAL
     assert msg.spec_id == "spec-001"
     assert msg.speaker_signature == "ef" * 64
-    assert msg.regulator_signature == "gh" * 64
+    assert msg.regulator_signature == "cd" * 64

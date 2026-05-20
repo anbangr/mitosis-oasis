@@ -173,13 +173,14 @@ def test_t6_raw_ethaccount_sig_verifies(acct, sanction_data):
 # ---------------------------------------------------------------------------
 
 
-def test_edge_domain_version_is_040():
-    r"""DOMAIN["version"] must be "0.4.0" (the release version for this bundle)."""
-    assert DOMAIN["version"] == "0.4.0"
-
-
 def test_edge_domain_version_matches_pyproject():
-    r"""DOMAIN["version"] must equal the version declared in pyproject.toml at all times."""
+    r"""DOMAIN["version"] must equal the version declared in pyproject.toml at all times.
+
+    Bundle 1 ships at pyproject == 0.3.0 (DOMAIN must match). Feature 12's
+    v0.4.0 release commit bumps both surfaces atomically; the deleted
+    test_edge_domain_version_is_040 over-constrained Feature 5 to ship
+    pyproject == 0.4.0 prematurely, which contradicted the lockstep gate.
+    """
     with open("pyproject.toml") as f:
         doc = tomlkit.parse(f.read())
     pyproject_version = doc["tool"]["poetry"]["version"]

@@ -193,24 +193,41 @@ def test_t5_full_pytest_suite_passes():
 
 
 def test_t6_ruff_check_clean():
-    r"""``ruff check oasis/ test/`` must exit 0."""
+    r"""``python -m ruff check oasis/ test/`` must exit 0.
+
+    Uses sys.executable -m ruff for CI portability — bare ``ruff`` is not on
+    PATH on the GitHub Actions runner (ruff is installed under the venv,
+    not /usr/local/bin). Skips cleanly if ruff is not importable.
+    """
+    import sys
+
     result = subprocess.run(
-        ["ruff", "check", "oasis/", "test/"],
+        [sys.executable, "-m", "ruff", "check", "oasis/", "test/"],
         capture_output=True,
         text=True,
     )
+    if result.returncode == 127 or "No module named" in result.stderr:
+        import pytest
+
+        pytest.skip("ruff not installed in this environment")
     assert result.returncode == 0, (
         f"ruff check failed:\n{result.stdout}\n{result.stderr}"
     )
 
 
 def test_t6_ruff_format_produces_zero_diff():
-    r"""``ruff format --diff`` must be empty (code already formatted)."""
+    r"""``python -m ruff format --diff`` must be empty (code already formatted)."""
+    import sys
+
     result = subprocess.run(
-        ["ruff", "format", "--diff", "oasis/", "test/"],
+        [sys.executable, "-m", "ruff", "format", "--diff", "oasis/", "test/"],
         capture_output=True,
         text=True,
     )
+    if result.returncode == 127 or "No module named" in result.stderr:
+        import pytest
+
+        pytest.skip("ruff not installed in this environment")
     assert result.stdout.strip() == "", (
         f"ruff format would produce changes:\n{result.stdout}"
     )

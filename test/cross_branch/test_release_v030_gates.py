@@ -32,7 +32,7 @@ from pathlib import Path
 
 def test_t1_version_lockstep():
     r"""T1: pyproject.toml, oasis/__init__.py, and oasis/api.py each contain
-    exactly one ``"0.3.0"`` and no stale ``0.2.5``/``0.2.6``/``0.4.0`` strings.
+    exactly one ``"0.4.0"`` and no stale ``0.2.5``/``0.2.6``/``0.3.0`` strings.
     """
     project_root = Path(__file__).parent.parent.parent
     files = {
@@ -41,8 +41,8 @@ def test_t1_version_lockstep():
         "oasis/api.py": project_root / "oasis" / "api.py",
     }
 
-    stale_pattern = re.compile(r'"(0\.2\.[56]|0\.4\.0)"')
-    target_pattern = re.compile(r'"0\.3\.0"')
+    stale_pattern = re.compile(r'"(0\.2\.[56]|0\.3\.0)"')
+    target_pattern = re.compile(r'"0\.4\.0"')
 
     for name, path in files.items():
         content = path.read_text()
@@ -203,8 +203,8 @@ def test_t4_acceptance_gates():
 
     # Gate 3 — pyproject.toml version
     pyproject = (project_root / "pyproject.toml").read_text()
-    assert 'version = "0.3.0"' in pyproject, (
-        "pyproject.toml does not declare version 0.3.0"
+    assert 'version = "0.4.0"' in pyproject, (
+        "pyproject.toml does not declare version 0.4.0"
     )
 
     # Gate 4 — CHANGELOG [0.3.0] entry

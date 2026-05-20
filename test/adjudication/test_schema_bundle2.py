@@ -9,7 +9,6 @@ from __future__ import annotations
 import sqlite3
 from pathlib import Path
 
-import pytest
 
 from oasis.adjudication.schema import create_adjudication_tables
 from oasis.governance.schema import create_governance_tables, seed_constitution
@@ -27,7 +26,8 @@ def test_new_adjudication_tables_present(tmp_path: Path) -> None:
 
     conn = sqlite3.connect(str(db_path))
     tables = {
-        r[0] for r in conn.execute(
+        r[0]
+        for r in conn.execute(
             "SELECT name FROM sqlite_master WHERE type='table'"
         ).fetchall()
     }
@@ -141,7 +141,8 @@ def test_create_adjudication_tables_idempotent(tmp_path: Path) -> None:
 
     conn = sqlite3.connect(str(db_path))
     tables = {
-        r[0] for r in conn.execute(
+        r[0]
+        for r in conn.execute(
             "SELECT name FROM sqlite_master WHERE type='table'"
         ).fetchall()
     }
@@ -248,7 +249,8 @@ def test_pre_bundle1_db_migrates_forward(tmp_path: Path) -> None:
 
     # Verify new adjudication columns added
     adj_cols = {
-        r["name"] for r in conn.execute("PRAGMA table_info(adjudication_decision)").fetchall()
+        r["name"]
+        for r in conn.execute("PRAGMA table_info(adjudication_decision)").fetchall()
     }
     assert "frozen_at" in adj_cols
     assert "manual_extension" in adj_cols
@@ -256,7 +258,8 @@ def test_pre_bundle1_db_migrates_forward(tmp_path: Path) -> None:
 
     # Verify new tables exist
     tables = {
-        r[0] for r in conn.execute(
+        r[0]
+        for r in conn.execute(
             "SELECT name FROM sqlite_master WHERE type='table'"
         ).fetchall()
     }

@@ -74,6 +74,40 @@ CREATE TABLE IF NOT EXISTS insurance_pool (
     decision_id TEXT REFERENCES adjudication_decision(decision_id),
     created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+-- 5. Adjudicator registry
+CREATE TABLE IF NOT EXISTS adjudicator_registry (
+    adjudicator_did  TEXT PRIMARY KEY,
+    eth_address      TEXT,
+    public_key       TEXT,
+    stake_amount     REAL NOT NULL DEFAULT 0.0,
+    is_banned        BOOLEAN NOT NULL DEFAULT 0,
+    registered_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 6. Impeachment motions
+CREATE TABLE IF NOT EXISTS impeachment (
+    motion_id          TEXT PRIMARY KEY,
+    target_did         TEXT NOT NULL,
+    evidence_cid       TEXT,
+    signatures_json    TEXT,
+    signatures_count   INTEGER NOT NULL DEFAULT 0,
+    required_threshold INTEGER NOT NULL DEFAULT 0,
+    status             TEXT NOT NULL DEFAULT 'pending',
+    slashed_amount     REAL,
+    created_at         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    executed_at        TIMESTAMP
+);
+
+-- 7. Watchdog anomaly records
+CREATE TABLE IF NOT EXISTS watchdog_anomaly (
+    anomaly_id      TEXT PRIMARY KEY,
+    adjudicator_did TEXT NOT NULL,
+    anomaly_type    TEXT NOT NULL,
+    zscore          REAL NOT NULL,
+    window_decisions INTEGER NOT NULL DEFAULT 0,
+    detected_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 """
 
 
@@ -91,6 +125,19 @@ def create_adjudication_tables(db_path: Union[str, Path]) -> None:
                     f"ALTER TABLE {table} ADD COLUMN decision_id TEXT "
                     f"REFERENCES adjudication_decision(decision_id)"
                 )
+                conn.commit()
+            except sqlite3.OperationalError:
+                # Column already exists; second invocation is a no-op.
+                pass
+
+        # Idempotent ALTER TABLE for Bundle-2 adjudication decision columns.
+        for column_sql in (
+            "ALTER TABLE adjudication_decision ADD COLUMN frozen_at TIMESTAMP",
+            "ALTER TABLE adjudication_decision ADD COLUMN manual_extension BOOLEAN NOT NULL DEFAULT 0",
+            "ALTER TABLE adjudication_decision ADD COLUMN issued_by_did TEXT",
+        ):
+            try:
+                conn.execute(column_sql)
                 conn.commit()
             except sqlite3.OperationalError:
                 # Column already exists; second invocation is a no-op.

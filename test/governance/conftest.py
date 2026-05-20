@@ -6,6 +6,7 @@ interfere with each other.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import sqlite3
 from pathlib import Path
@@ -172,9 +173,10 @@ def db_conn(governance_db: Path) -> Generator[sqlite3.Connection, None, None]:
 
 
 @pytest.fixture()
-def ed25519_keypair() -> tuple[bytes, bytes]:
-    """Return a fresh Ed25519 keypair as (private_key, public_key) bytes."""
-    return ed25519.generate_keypair()
+def ed25519_keypair(request) -> tuple[bytes, bytes]:
+    """Return a deterministic Ed25519 keypair for the test node."""
+    seed = hashlib.sha256(request.node.name.encode()).digest()
+    return ed25519.keypair_from_seed(seed)
 
 
 # ---------------------------------------------------------------------------

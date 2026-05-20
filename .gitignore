@@ -110,3 +110,8 @@ log/
 data/clerk_keys/
 refactor.py
 BLOCKED-feature-*.md
+
+# Bundle-1 F11 ephemeral artifacts
+.gstack/
+inbox/
+uv.lock

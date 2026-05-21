@@ -23,6 +23,7 @@ repository = "https://github.com/camel-ai/oasis.git"
 
 [tool.poetry.dependencies]
 python = ">=3.10.0,<3.12"
+apscheduler = "^3.10.4"
 pandas = "2.2.2"
 igraph = "0.11.6"
 cairocffi = "1.7.1"

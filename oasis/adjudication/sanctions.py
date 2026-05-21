@@ -488,8 +488,9 @@ class SanctionEngine:
         conn.execute(
             "INSERT INTO adjudication_decision "
             "(decision_id, alert_id, flag_id, agent_did, decision_type, "
-            "severity, reason, layer1_result, layer2_advisory, issued_by_did) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "severity, reason, layer1_result, layer2_advisory, issued_by_did, frozen_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "
+            "CASE WHEN ? = 'freeze' THEN CURRENT_TIMESTAMP ELSE NULL END)",
             (
                 decision_id,
                 alert_id,
@@ -501,6 +502,7 @@ class SanctionEngine:
                 layer1_result,
                 None,
                 issued_by_did,
+                decision_type,
             ),
         )
         return AdjudicationDecision(

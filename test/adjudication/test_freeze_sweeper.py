@@ -27,6 +27,8 @@ import pytest
 
 from oasis.adjudication.schema import create_adjudication_tables
 from oasis.adjudication.freeze_sweeper import sweep_expired_freezes
+from oasis.adjudication.sanctions import SanctionEngine
+from oasis.config import PlatformConfig
 
 
 MAX_FREEZE_DURATION_MS = 259_200_000
@@ -317,3 +319,25 @@ def test_expired_freeze_with_later_unfreeze_ignored(adj_db: Path) -> None:
     conn.close()
 
     assert len(rows) == 2  # no new rows added
+
+
+def test_live_freeze_decision_is_sweepable(adj_db: Path) -> None:
+    """Freeze rows written through SanctionEngine carry frozen_at for sweeping."""
+    engine = SanctionEngine(PlatformConfig())
+
+    engine.freeze_agent("did:key:zAgent1", "integration freeze", adj_db)
+
+    conn = sqlite3.connect(str(adj_db))
+    conn.row_factory = sqlite3.Row
+    freeze_row = conn.execute(
+        "SELECT frozen_at FROM adjudication_decision "
+        "WHERE agent_did = ? AND decision_type = 'freeze'",
+        ("did:key:zAgent1",),
+    ).fetchone()
+    conn.close()
+
+    assert freeze_row["frozen_at"] is not None
+
+    count = sweep_expired_freezes(db_path=adj_db, max_duration_ms=0)
+
+    assert count == 1

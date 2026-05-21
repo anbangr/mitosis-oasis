@@ -1,3 +1,16 @@
+# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
+# Licensed under the Apache License, Version 2.0 (the “License”);
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an “AS IS” BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 """Rotation policy helper tests (Feature 3, Phase 1).
 
 These tests verify the ``last_n_decisions`` and ``enforce_rotation`` helpers
@@ -45,17 +58,22 @@ def _seed_decisions(
     """Insert adjudication_decision rows.
 
     Each tuple is (decision_type, issued_by_did, agent_did).
-    created_at is staggered so ordering is deterministic.
+    created_at is staggered so ordering is deterministic: array index 0
+    is the OLDEST decision, the last element is the most recent. This
+    matches the chronological reading of the scenarios (e.g. "Adj1 then
+    Adj2" puts Adj2 at the end and makes it the most recent row).
     """
     conn = sqlite3.connect(str(db_path))
     conn.execute("PRAGMA foreign_keys = ON")
+    total = len(decisions)
     for idx, (decision_type, issued_by_did, agent_did) in enumerate(decisions):
+        offset = total - 1 - idx
         conn.execute(
             "INSERT INTO adjudication_decision "
             "(decision_id, agent_did, decision_type, severity, reason, "
             "layer1_result, issued_by_did, created_at) "
             "VALUES (?, ?, ?, 'INFO', 'test reason', 'test', ?, "
-            "datetime('now', '-{} seconds'))".format(idx),
+            "datetime('now', '-{} seconds'))".format(offset),
             (
                 f"dec-{idx:04d}",
                 agent_did,

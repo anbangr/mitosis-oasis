@@ -46,6 +46,7 @@ from oasis.adjudication.endpoints import (
     v1_router as adjudication_v1_router,
 )
 from oasis.adjudication.schema import create_adjudication_tables
+from oasis.adjudication.scheduler import start_scheduler, stop_scheduler
 from oasis.observatory.endpoints import (
     init_observatory_db,
     router as observatory_router,
@@ -136,9 +137,13 @@ async def lifespan(app: FastAPI):
     # Also initialize the EventBus singleton with the observatory DB
     EventBus.get_instance(_obs_db)
 
+    start_scheduler(adj_db_path=_adj_db, gov_db_path=_gov_db, config=_cfg)
+
     logger.info("Mitosis-OASIS platform started")
 
     yield  # Server is now running
+
+    stop_scheduler()
 
     # Graceful shutdown: send EXIT action
     if channel is not None:

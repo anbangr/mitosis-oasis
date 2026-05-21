@@ -378,7 +378,9 @@ def test_rw4_service_level_rotation_violation(rot_db: Path) -> None:
     try:
         from oasis.adjudication.rotation import RotationViolationError
     except ImportError:
-        pytest.fail("RotationViolationError not yet defined in oasis.adjudication.rotation")
+        pytest.fail(
+            "RotationViolationError not yet defined in oasis.adjudication.rotation"
+        )
 
     _seed_agents(
         rot_db,
@@ -404,6 +406,126 @@ def test_rw4_service_level_rotation_violation(rot_db: Path) -> None:
         engine.freeze_agent(
             agent_did="did:adj:agent3",
             reason="test freeze rw4",
+            db_path=rot_db,
+            issued_by_did="did:adj:adj1",
+        )
+
+
+# ---------------------------------------------------------------------------
+# RW5 — Service-level RotationViolationError for slash_stake
+# ---------------------------------------------------------------------------
+
+
+def test_rw5_slash_stake_rotation_violation(rot_db: Path) -> None:
+    """Direct call to slash_stake with 2 prior consecutive slashes raises."""
+    from oasis.adjudication.sanctions import SanctionEngine
+    from oasis.config import PlatformConfig
+    from oasis.adjudication.rotation import RotationViolationError
+
+    _seed_agents(
+        rot_db,
+        [
+            {"agent_did": "did:adj:agent1"},
+            {"agent_did": "did:adj:agent2"},
+            {"agent_did": "did:adj:agent3"},
+        ],
+    )
+
+    # Seed 2 consecutive slashes by Adj1
+    _seed_decisions(
+        rot_db,
+        [
+            ("slash", "did:adj:adj1", "did:adj:agent1"),
+            ("slash", "did:adj:adj1", "did:adj:agent2"),
+        ],
+    )
+
+    engine = SanctionEngine(PlatformConfig())
+
+    with pytest.raises(RotationViolationError):
+        engine.slash_stake(
+            agent_did="did:adj:agent3",
+            amount=10.0,
+            reason="test slash rw5",
+            db_path=rot_db,
+            issued_by_did="did:adj:adj1",
+        )
+
+
+# ---------------------------------------------------------------------------
+# RW6 — Service-level RotationViolationError for record_override
+# ---------------------------------------------------------------------------
+
+
+def test_rw6_record_override_rotation_violation(rot_db: Path) -> None:
+    """Direct call to record_override with 2 prior consecutive overrides raises."""
+    from oasis.adjudication.sanctions import SanctionEngine
+    from oasis.config import PlatformConfig
+    from oasis.adjudication.rotation import RotationViolationError
+
+    _seed_agents(
+        rot_db,
+        [
+            {"agent_did": "did:adj:agent1"},
+            {"agent_did": "did:adj:agent2"},
+            {"agent_did": "did:adj:agent3"},
+        ],
+    )
+
+    # Seed 2 consecutive overrides by Adj1
+    _seed_decisions(
+        rot_db,
+        [
+            ("override", "did:adj:adj1", "did:adj:agent1"),
+            ("override", "did:adj:adj1", "did:adj:agent2"),
+        ],
+    )
+
+    engine = SanctionEngine(PlatformConfig())
+
+    with pytest.raises(RotationViolationError):
+        engine.record_override(
+            agent_did="did:adj:agent3",
+            reason="test override rw6",
+            db_path=rot_db,
+            issued_by_did="did:adj:adj1",
+        )
+
+
+# ---------------------------------------------------------------------------
+# RW7 — Service-level RotationViolationError for unfreeze_agent
+# ---------------------------------------------------------------------------
+
+
+def test_rw7_unfreeze_agent_rotation_violation(rot_db: Path) -> None:
+    """Direct call to unfreeze_agent with 2 prior consecutive unfreezes raises."""
+    from oasis.adjudication.sanctions import SanctionEngine
+    from oasis.config import PlatformConfig
+    from oasis.adjudication.rotation import RotationViolationError
+
+    _seed_agents(
+        rot_db,
+        [
+            {"agent_did": "did:adj:agent1"},
+            {"agent_did": "did:adj:agent2"},
+            {"agent_did": "did:adj:agent3"},
+        ],
+    )
+
+    # Seed 2 consecutive unfreezes by Adj1
+    _seed_decisions(
+        rot_db,
+        [
+            ("unfreeze", "did:adj:adj1", "did:adj:agent1"),
+            ("unfreeze", "did:adj:adj1", "did:adj:agent2"),
+        ],
+    )
+
+    engine = SanctionEngine(PlatformConfig())
+
+    with pytest.raises(RotationViolationError):
+        engine.unfreeze_agent(
+            agent_did="did:adj:agent3",
             db_path=rot_db,
             issued_by_did="did:adj:adj1",
         )

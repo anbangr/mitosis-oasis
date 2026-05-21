@@ -68,6 +68,31 @@ def auth_client(tmp_path: Path) -> TestClient:
     return TestClient(app, raise_server_exceptions=False)
 
 
+def _seed_acct_as_adjudicator(acct) -> None:
+    r"""Register *acct* in the active adjudication DB's adjudicator_registry.
+
+    Bundle-2 wires ``/slash``, ``/freeze``, and ``/override`` behind
+    ``_resolve_adjudicator_did_from_signer``; the Bundle-1 EIP-712 tests
+    therefore need to plant the signer's eth address before they can prove
+    valid signatures are accepted (the resolver returns ``None`` otherwise
+    and the endpoint short-circuits to HTTP 401).
+    """
+    import sqlite3
+
+    from oasis.adjudication import endpoints as adj_ep
+
+    conn = sqlite3.connect(adj_ep._get_db())
+    try:
+        conn.execute(
+            "INSERT OR IGNORE INTO adjudicator_registry "
+            "(adjudicator_did, eth_address) VALUES (?, ?)",
+            (f"did:adj:{acct.address.lower()}", acct.address),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
 # ---------------------------------------------------------------------------
 # T1 — slash without headers → 401
 # ---------------------------------------------------------------------------
@@ -95,6 +120,7 @@ def test_t1_slash_without_headers(auth_client):
 
 def test_t2_slash_with_valid_eip712(auth_client, acct):
     r"""POST /api/adjudication/slash with valid EIP-712 headers is accepted."""
+    _seed_acct_as_adjudicator(acct)
     body = {
         "target_did": "did:key:zVictim",
         "amount_wei": 100,
@@ -239,6 +265,7 @@ def test_t9_unmapped_route_returns_none(_route_to_primary_type):
 
 def test_edge_signature_with_0x_prefix(auth_client, acct):
     r"""X-EIP712-Signature may include an optional 0x prefix."""
+    _seed_acct_as_adjudicator(acct)
     body = {
         "target_did": "did:key:zVictim",
         "amount_wei": 100,
@@ -261,6 +288,7 @@ def test_edge_signature_with_0x_prefix(auth_client, acct):
 
 def test_edge_signer_case_insensitive(auth_client, acct):
     r"""Recovered signer is compared case-insensitively to X-EIP712-Signer."""
+    _seed_acct_as_adjudicator(acct)
     body = {
         "target_did": "did:key:zVictim",
         "amount_wei": 100,

@@ -418,9 +418,11 @@ def test_w5_override_panel_gated(
     conn.close()
     assert row["c"] == 0
 
+
 # ---------------------------------------------------------------------------
 # W6 & W7 — Unknown / Banned Signer Gating
 # ---------------------------------------------------------------------------
+
 
 def test_w6_unknown_signer_rejected_at_endpoint(
     coi_db: Path,
@@ -499,4 +501,3 @@ def test_w7_banned_adjudicator_treated_as_unknown(
 
     assert resp.status_code == 401
     assert "not a registered adjudicator" in resp.text.lower()
-

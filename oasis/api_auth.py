@@ -21,10 +21,16 @@ from oasis.crypto.eip712 import _resolve_schema, verify
 from oasis.crypto.typed_data import DOMAIN
 
 
-def _extract_eip712_message(primary_type: str, body: dict[str, object]) -> dict[str, object]:
+def _extract_eip712_message(
+    primary_type: str, body: dict[str, object]
+) -> dict[str, object]:
     r"""Project the request body down to only the fields defined in the EIP-712 schema."""
     schema = _resolve_schema(primary_type)
-    return {field["name"]: body.get(field["name"]) for field in schema if field["name"] in body}
+    return {
+        field["name"]: body.get(field["name"])
+        for field in schema
+        if field["name"] in body
+    }
 
 
 def _route_to_primary_type(method: str, path: str) -> str | None:

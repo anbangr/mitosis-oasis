@@ -417,3 +417,86 @@ def test_w5_override_panel_gated(
     ).fetchone()
     conn.close()
     assert row["c"] == 0
+
+# ---------------------------------------------------------------------------
+# W6 & W7 — Unknown / Banned Signer Gating
+# ---------------------------------------------------------------------------
+
+def test_w6_unknown_signer_rejected_at_endpoint(
+    coi_db: Path,
+    coi_client: TestClient,
+) -> None:
+    """Unknown signer (not in adjudicator_registry) rejected at POST /slash → HTTP 401."""
+    acct = Account.create()
+
+    # NOT seeding the adjudicator in the registry
+    _seed_agents_with_ownership(
+        coi_db,
+        [{"agent_did": "did:adj:agent1", "human_principal": "did:adj:adj1"}],
+    )
+    _seed_mission(coi_db, "mission-X", "did:adj:agent1")
+
+    body = {
+        "target_did": "did:adj:agent1",
+        "amount_wei": 100,
+        "reason": "test w6",
+        "nonce": 1,
+    }
+    sig = sign(acct.key, DOMAIN, "Sanction", body)
+
+    resp = coi_client.post(
+        "/api/adjudication/slash",
+        json=body,
+        headers={
+            "X-EIP712-Signature": sig.hex(),
+            "X-EIP712-Signer": acct.address,
+        },
+    )
+
+    assert resp.status_code == 401
+    assert "not a registered adjudicator" in resp.text.lower()
+
+
+def test_w7_banned_adjudicator_treated_as_unknown(
+    coi_db: Path,
+    coi_client: TestClient,
+) -> None:
+    """Banned adjudicator (is_banned=1) rejected at POST /slash → HTTP 401."""
+    acct = Account.create()
+
+    # Seed the adjudicator, but mark as banned (is_banned = 1)
+    conn = sqlite3.connect(str(coi_db))
+    conn.execute(
+        "INSERT INTO adjudicator_registry (adjudicator_did, eth_address, is_banned) "
+        "VALUES (?, ?, 1)",
+        ("did:adj:adj3", acct.address),
+    )
+    conn.commit()
+    conn.close()
+
+    _seed_agents_with_ownership(
+        coi_db,
+        [{"agent_did": "did:adj:agent1", "human_principal": "did:adj:adj1"}],
+    )
+    _seed_mission(coi_db, "mission-X", "did:adj:agent1")
+
+    body = {
+        "target_did": "did:adj:agent1",
+        "amount_wei": 100,
+        "reason": "test w7",
+        "nonce": 1,
+    }
+    sig = sign(acct.key, DOMAIN, "Sanction", body)
+
+    resp = coi_client.post(
+        "/api/adjudication/slash",
+        json=body,
+        headers={
+            "X-EIP712-Signature": sig.hex(),
+            "X-EIP712-Signer": acct.address,
+        },
+    )
+
+    assert resp.status_code == 401
+    assert "not a registered adjudicator" in resp.text.lower()
+

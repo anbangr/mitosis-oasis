@@ -17,8 +17,14 @@ from __future__ import annotations
 
 from fastapi import HTTPException, Request
 
-from oasis.crypto.eip712 import verify
+from oasis.crypto.eip712 import _resolve_schema, verify
 from oasis.crypto.typed_data import DOMAIN
+
+
+def _extract_eip712_message(primary_type: str, body: dict[str, object]) -> dict[str, object]:
+    r"""Project the request body down to only the fields defined in the EIP-712 schema."""
+    schema = _resolve_schema(primary_type)
+    return {field["name"]: body.get(field["name"]) for field in schema if field["name"] in body}
 
 
 def _route_to_primary_type(method: str, path: str) -> str | None:
@@ -32,6 +38,8 @@ def _route_to_primary_type(method: str, path: str) -> str | None:
         ("POST", "/api/v1/adjudication/slash"): "Sanction",
         ("POST", "/api/adjudication/freeze"): "Sanction",
         ("POST", "/api/v1/adjudication/freeze"): "Sanction",
+        ("POST", "/api/adjudication/override"): "Sanction",
+        ("POST", "/api/v1/adjudication/override"): "Sanction",
         ("PUT", "/api/governance/constitution"): "ConstitutionAmendment",
         ("PUT", "/api/v1/governance/constitution"): "ConstitutionAmendment",
     }
@@ -80,11 +88,12 @@ async def require_eip712_sig(request: Request) -> str:
         )
 
     body = await request.json()
+    typed_message = _extract_eip712_message(primary_type, body)
 
     if not verify(
         domain=DOMAIN,
         primary_type=primary_type,
-        message=body,
+        message=typed_message,
         signature=signature,
         expected_signer=signer,
     ):

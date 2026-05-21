@@ -198,8 +198,7 @@ async def test_job_wrappers_swallow_exceptions(
             pending = [
                 x
                 for x in w
-                if "pending" in str(x.message).lower()
-                or "Future" in str(x.message)
+                if "pending" in str(x.message).lower() or "Future" in str(x.message)
             ]
             assert not pending, f"Unexpected pending-Future warnings: {pending}"
         finally:

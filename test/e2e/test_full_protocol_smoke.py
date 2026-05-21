@@ -348,9 +348,14 @@ def test_bundle2_impeachment_path(tmp_path: Path) -> None:
         conn_adj.commit()
         conn_gov.commit()
 
-        assert conn_adj.execute("SELECT COUNT(*) FROM adjudicator_registry").fetchone()[0] == 7
+        assert (
+            conn_adj.execute("SELECT COUNT(*) FROM adjudicator_registry").fetchone()[0]
+            == 7
+        )
         assert conn_adj.execute("SELECT COUNT(*) FROM agent_balance").fetchone()[0] == 7
-        assert conn_gov.execute("SELECT COUNT(*) FROM agent_registry").fetchone()[0] == 7
+        assert (
+            conn_gov.execute("SELECT COUNT(*) FROM agent_registry").fetchone()[0] == 7
+        )
 
         target_did = "did:key:zAdj0"
         evidence_cid = "ipfs://smoke"

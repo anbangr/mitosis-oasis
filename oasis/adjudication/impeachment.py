@@ -268,8 +268,7 @@ def _apply_impeachment_consequences(
         conn_gov.execute("PRAGMA foreign_keys = ON")
         try:
             conn_gov.execute(
-                "UPDATE agent_registry SET banned = 1, active = 0 "
-                "WHERE agent_did = ?",
+                "UPDATE agent_registry SET banned = 1, active = 0 WHERE agent_did = ?",
                 (target_did,),
             )
             conn_gov.commit()

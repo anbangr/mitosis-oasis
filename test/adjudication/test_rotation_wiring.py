@@ -542,3 +542,74 @@ def test_rw7_unfreeze_agent_rotation_violation(rot_db: Path) -> None:
             db_path=rot_db,
             issued_by_did="did:adj:adj1",
         )
+
+
+# ---------------------------------------------------------------------------
+# RW8 — Constitution amendments invalidate rotation parameter cache
+# ---------------------------------------------------------------------------
+
+
+def test_rw8_constitution_amendment_invalidates_rotation_cache(
+    rot_db: Path,
+    rot_client: TestClient,
+) -> None:
+    """Raising max_consecutive through the API takes effect in the same process."""
+    from oasis.adjudication._constitution import _get_constitution_param
+    from oasis.adjudication.sanctions import SanctionEngine
+    from oasis.config import PlatformConfig
+
+    acct_adj = Account.create()
+    acct_admin = Account.create()
+
+    _seed_adjudicators(
+        rot_db,
+        [{"adjudicator_did": "did:adj:adj1", "eth_address": acct_adj.address}],
+    )
+    _seed_agents(
+        rot_db,
+        [
+            {"agent_did": "did:adj:agent1"},
+            {"agent_did": "did:adj:agent2"},
+            {"agent_did": "did:adj:agent3"},
+        ],
+    )
+    _seed_decisions(
+        rot_db,
+        [
+            ("freeze", "did:adj:adj1", "did:adj:agent1"),
+            ("freeze", "did:adj:adj1", "did:adj:agent2"),
+        ],
+    )
+
+    # Warm the per-process cache at the seeded value of 2. After the
+    # amendment below, the third freeze should be allowed because the new
+    # limit is 3.
+    assert _get_constitution_param(rot_db, "rotation_max_consecutive", 2.0) == 2.0
+
+    amendment_body = {
+        "param_name": "rotation_max_consecutive",
+        "param_value": "3",
+        "nonce": 1,
+    }
+    amendment_sig = sign(
+        acct_admin.key, DOMAIN, "ConstitutionAmendment", amendment_body
+    )
+    amendment_resp = rot_client.put(
+        "/api/governance/constitution",
+        json=amendment_body,
+        headers={
+            "X-EIP712-Signature": amendment_sig.hex(),
+            "X-EIP712-Signer": acct_admin.address,
+        },
+    )
+    assert amendment_resp.status_code == 200
+
+    engine = SanctionEngine(PlatformConfig())
+    decision = engine.freeze_agent(
+        agent_did="did:adj:agent3",
+        reason="cache should observe amended max_consecutive",
+        db_path=rot_db,
+        issued_by_did="did:adj:adj1",
+    )
+
+    assert decision.decision_type == "freeze"

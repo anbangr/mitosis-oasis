@@ -28,6 +28,20 @@ from typing import Union
 _CACHE: dict[tuple[str, str], float] = {}
 
 
+def invalidate_constitution_param(
+    db_path: Union[str, Path], name: str | None = None
+) -> None:
+    """Drop cached constitution parameter values for a database."""
+    db_key = str(db_path)
+    if name is not None:
+        _CACHE.pop((db_key, name), None)
+        return
+
+    for key in list(_CACHE):
+        if key[0] == db_key:
+            _CACHE.pop(key, None)
+
+
 def _get_constitution_param(
     db_path: Union[str, Path], name: str, default: float
 ) -> float:

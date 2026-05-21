@@ -8,7 +8,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Union
 
+from oasis.adjudication._constitution import _get_constitution_param
 from oasis.adjudication.coi import ConflictedAdjudicatorError, is_conflicted
+from oasis.adjudication.rotation import RotationViolationError, enforce_rotation
 from oasis.config import PlatformConfig
 
 
@@ -98,6 +100,33 @@ class SanctionEngine:
                 f"adjudicator {issued_by_did} recused: owns agent in mission {_mission}"
             )
 
+    def _check_rotation(
+        self,
+        *,
+        issued_by_did: str | None,
+        decision_type: str,
+        adj_db_path: Union[str, Path],
+        gov_db_path: Union[str, Path, None] = None,
+    ) -> None:
+        """Raise RotationViolationError if the adjudicator has exceeded the consecutive limit."""
+        if issued_by_did is None:
+            return
+
+        _adj_db = str(adj_db_path)
+        _gov_db = str(gov_db_path or adj_db_path)
+
+        max_consecutive = int(
+            _get_constitution_param(_gov_db, "rotation_max_consecutive", default=2.0)
+        )
+        result = enforce_rotation(
+            adjudicator_did=issued_by_did,
+            decision_type=decision_type,
+            max_consecutive=max_consecutive,
+            db_path=_adj_db,
+        )
+        if not result.allowed:
+            raise RotationViolationError(result.reason)
+
     def freeze_agent(
         self,
         agent_did: str,
@@ -116,6 +145,12 @@ class SanctionEngine:
             target_did=agent_did,
             db_path=db_path,
             adj_db_path=adj_db_path,
+            gov_db_path=gov_db_path,
+        )
+        self._check_rotation(
+            issued_by_did=issued_by_did,
+            decision_type="freeze",
+            adj_db_path=adj_db_path or db_path,
             gov_db_path=gov_db_path,
         )
 
@@ -146,8 +181,16 @@ class SanctionEngine:
         db_path: Union[str, Path],
         *,
         issued_by_did: str | None = None,
+        adj_db_path: Union[str, Path, None] = None,
+        gov_db_path: Union[str, Path, None] = None,
     ) -> AdjudicationDecision:
         """Reactivate a frozen agent."""
+        self._check_rotation(
+            issued_by_did=issued_by_did,
+            decision_type="unfreeze",
+            adj_db_path=adj_db_path or db_path,
+            gov_db_path=gov_db_path,
+        )
         conn = self._connect(db_path)
         try:
             conn.execute(
@@ -195,6 +238,12 @@ class SanctionEngine:
             target_did=agent_did,
             db_path=db_path,
             adj_db_path=adj_db_path,
+            gov_db_path=gov_db_path,
+        )
+        self._check_rotation(
+            issued_by_did=issued_by_did,
+            decision_type="slash",
+            adj_db_path=adj_db_path or db_path,
             gov_db_path=gov_db_path,
         )
 
@@ -287,6 +336,12 @@ class SanctionEngine:
             target_did=agent_did,
             db_path=db_path,
             adj_db_path=adj_db_path,
+            gov_db_path=gov_db_path,
+        )
+        self._check_rotation(
+            issued_by_did=issued_by_did,
+            decision_type="override",
+            adj_db_path=adj_db_path or db_path,
             gov_db_path=gov_db_path,
         )
 

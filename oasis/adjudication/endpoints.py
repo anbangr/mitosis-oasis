@@ -21,6 +21,7 @@ from oasis.adjudication.coi import (
     ConflictedAdjudicatorError,
     _resolve_adjudicator_did_from_signer,
 )
+from oasis.adjudication.rotation import RotationViolationError
 from oasis.adjudication.sanctions import SanctionEngine
 from oasis.config import PlatformConfig
 
@@ -346,6 +347,11 @@ async def slash(
         raise HTTPException(
             403, detail="adjudicator recused: owns agent in mission"
         ) from None
+    except RotationViolationError as exc:
+        raise HTTPException(
+            409,
+            detail="rotation policy: adjudicator has issued max_consecutive same-type decisions; rotate to another adjudicator",
+        ) from exc
 
     return {
         "decision_id": decision.decision_id,
@@ -386,6 +392,11 @@ async def freeze(
         raise HTTPException(
             403, detail="adjudicator recused: owns agent in mission"
         ) from None
+    except RotationViolationError as exc:
+        raise HTTPException(
+            409,
+            detail="rotation policy: adjudicator has issued max_consecutive same-type decisions; rotate to another adjudicator",
+        ) from exc
 
     return {
         "decision_id": decision.decision_id,
@@ -429,6 +440,11 @@ async def override(
         raise HTTPException(
             403, detail="adjudicator recused: owns agent in mission"
         ) from None
+    except RotationViolationError as exc:
+        raise HTTPException(
+            409,
+            detail="rotation policy: adjudicator has issued max_consecutive same-type decisions; rotate to another adjudicator",
+        ) from exc
 
     return {
         "decision_id": decision.decision_id,

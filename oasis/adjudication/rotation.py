@@ -25,6 +25,12 @@ from pathlib import Path
 from typing import Union
 
 
+class RotationViolationError(Exception):
+    """Raised when an adjudicator exceeds the max_consecutive same-type decision limit."""
+
+    pass
+
+
 @dataclass
 class RotationResult:
     """Outcome of an ``enforce_rotation`` check."""

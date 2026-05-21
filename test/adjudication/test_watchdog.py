@@ -423,8 +423,8 @@ def test_scan_anomalies_window_boundary_included(adj_db: Path) -> None:
 
 def test_scan_anomalies_double_scan_persists_twice(adj_db: Path) -> None:
     """Two successive scans without new decisions → both persist anomalies."""
-    _seed_adjudicator(adj_db, "did:key:zAdj0")
-    _seed_adjudicator(adj_db, "did:key:zAdj1")
+    for i in range(5):
+        _seed_adjudicator(adj_db, f"did:key:zAdj{i}")
 
     # Adj0: 10 approve, 0 reject → 100%
     for idx in range(10):
@@ -436,22 +436,24 @@ def test_scan_anomalies_double_scan_persists_twice(adj_db: Path) -> None:
             issued_by_did="did:key:zAdj0",
         )
 
-    # Adj1: 5 approve, 5 reject → 50%
-    for idx in range(5):
-        _insert_decision(
-            adj_db,
-            decision_id=f"d-a1-app-{idx}",
-            agent_did="did:key:zAgent1",
-            decision_type="approve",
-            issued_by_did="did:key:zAdj1",
-        )
-        _insert_decision(
-            adj_db,
-            decision_id=f"d-a1-rej-{idx}",
-            agent_did="did:key:zAgent1",
-            decision_type="reject",
-            issued_by_did="did:key:zAdj1",
-        )
+    # Adj1-4: 5 approve, 5 reject → 50%
+    for i in range(1, 5):
+        adj_did = f"did:key:zAdj{i}"
+        for idx in range(5):
+            _insert_decision(
+                adj_db,
+                decision_id=f"d-{i}-app-{idx}",
+                agent_did="did:key:zAgent1",
+                decision_type="approve",
+                issued_by_did=adj_did,
+            )
+            _insert_decision(
+                adj_db,
+                decision_id=f"d-{i}-rej-{idx}",
+                agent_did="did:key:zAgent1",
+                decision_type="reject",
+                issued_by_did=adj_did,
+            )
 
     scan_anomalies(db_path=str(adj_db), window_days=30, zscore_threshold=2.0)
     scan_anomalies(db_path=str(adj_db), window_days=30, zscore_threshold=2.0)
@@ -470,8 +472,8 @@ def test_scan_anomalies_double_scan_persists_twice(adj_db: Path) -> None:
 
 def test_scan_anomalies_persists_to_watchdog_anomaly(adj_db: Path) -> None:
     """Detected anomalies are persisted to the watchdog_anomaly table."""
-    _seed_adjudicator(adj_db, "did:key:zAdj0")
-    _seed_adjudicator(adj_db, "did:key:zAdj1")
+    for i in range(5):
+        _seed_adjudicator(adj_db, f"did:key:zAdj{i}")
 
     # Adj0: 10 approve, 0 reject → outlier
     for idx in range(10):
@@ -483,22 +485,24 @@ def test_scan_anomalies_persists_to_watchdog_anomaly(adj_db: Path) -> None:
             issued_by_did="did:key:zAdj0",
         )
 
-    # Adj1: 5 approve, 5 reject → normal
-    for idx in range(5):
-        _insert_decision(
-            adj_db,
-            decision_id=f"d-a1-app-{idx}",
-            agent_did="did:key:zAgent1",
-            decision_type="approve",
-            issued_by_did="did:key:zAdj1",
-        )
-        _insert_decision(
-            adj_db,
-            decision_id=f"d-a1-rej-{idx}",
-            agent_did="did:key:zAgent1",
-            decision_type="reject",
-            issued_by_did="did:key:zAdj1",
-        )
+    # Adj1-4: 5 approve, 5 reject → normal
+    for i in range(1, 5):
+        adj_did = f"did:key:zAdj{i}"
+        for idx in range(5):
+            _insert_decision(
+                adj_db,
+                decision_id=f"d-{i}-app-{idx}",
+                agent_did="did:key:zAgent1",
+                decision_type="approve",
+                issued_by_did=adj_did,
+            )
+            _insert_decision(
+                adj_db,
+                decision_id=f"d-{i}-rej-{idx}",
+                agent_did="did:key:zAgent1",
+                decision_type="reject",
+                issued_by_did=adj_did,
+            )
 
     result = scan_anomalies(
         db_path=str(adj_db),
@@ -524,10 +528,10 @@ def test_scan_anomalies_persists_to_watchdog_anomaly(adj_db: Path) -> None:
 
 def test_scan_anomalies_freeze_lift_rate_deviation(adj_db: Path) -> None:
     """Freeze/lift rate outliers are also detected and persisted."""
-    _seed_adjudicator(adj_db, "did:key:zAdj0")
-    _seed_adjudicator(adj_db, "did:key:zAdj1")
+    for i in range(5):
+        _seed_adjudicator(adj_db, f"did:key:zAdj{i}")
 
-    # Adj0: 10 freezes, 0 unfreezes → 0% lift rate (outlier if others are high)
+    # Adj0: 10 freezes, 0 unfreezes → 0% lift rate (outlier)
     for idx in range(10):
         _insert_decision(
             adj_db,
@@ -537,22 +541,24 @@ def test_scan_anomalies_freeze_lift_rate_deviation(adj_db: Path) -> None:
             issued_by_did="did:key:zAdj0",
         )
 
-    # Adj1: 5 freezes, 5 unfreezes → 100% lift rate
-    for idx in range(5):
-        _insert_decision(
-            adj_db,
-            decision_id=f"d-a1-fr-{idx}",
-            agent_did="did:key:zAgent1",
-            decision_type="freeze",
-            issued_by_did="did:key:zAdj1",
-        )
-        _insert_decision(
-            adj_db,
-            decision_id=f"d-a1-uf-{idx}",
-            agent_did="did:key:zAgent1",
-            decision_type="unfreeze",
-            issued_by_did="did:key:zAdj1",
-        )
+    # Adj1-4: 5 freezes, 5 unfreezes → 100% lift rate
+    for i in range(1, 5):
+        adj_did = f"did:key:zAdj{i}"
+        for idx in range(5):
+            _insert_decision(
+                adj_db,
+                decision_id=f"d-{i}-fr-{idx}",
+                agent_did="did:key:zAgent1",
+                decision_type="freeze",
+                issued_by_did=adj_did,
+            )
+            _insert_decision(
+                adj_db,
+                decision_id=f"d-{i}-uf-{idx}",
+                agent_did="did:key:zAgent1",
+                decision_type="unfreeze",
+                issued_by_did=adj_did,
+            )
 
     result = scan_anomalies(
         db_path=str(adj_db),

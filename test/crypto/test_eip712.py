@@ -330,4 +330,6 @@ def test_c2_raw_ethaccount_sig_over_bundle2_message_verifies(acct):
         message_data=message,
     )
     signed = Account.sign_message(signable, private_key=acct.key)
-    assert verify(DOMAIN, "Impeachment", message, signed.signature, acct.address) is True
+    assert (
+        verify(DOMAIN, "Impeachment", message, signed.signature, acct.address) is True
+    )

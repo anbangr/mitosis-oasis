@@ -406,7 +406,9 @@ def impeach_client():
 def test_c3_route_to_primary_type_resolves_impeachment_routes(_route_to_primary_type):
     r"""Both impeachment routes map to primary_type 'Impeachment'."""
     assert _route_to_primary_type("POST", "/api/adjudication/impeach") == "Impeachment"
-    assert _route_to_primary_type("POST", "/api/v1/adjudication/impeach") == "Impeachment"
+    assert (
+        _route_to_primary_type("POST", "/api/v1/adjudication/impeach") == "Impeachment"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -414,7 +416,9 @@ def test_c3_route_to_primary_type_resolves_impeachment_routes(_route_to_primary_
 # ---------------------------------------------------------------------------
 
 
-def test_c4_extract_eip712_message_drops_signatures_for_impeachment(_extract_eip712_message):
+def test_c4_extract_eip712_message_drops_signatures_for_impeachment(
+    _extract_eip712_message,
+):
     r"""For primary_type Impeachment, the signatures envelope field is stripped."""
     body = {
         "target_did": "did:key:zVictim",
@@ -494,7 +498,9 @@ def test_c6_fastapi_dependency_accepts_valid_impeach_post(impeach_client, acct):
 # ---------------------------------------------------------------------------
 
 
-def test_c7_fastapi_dependency_401_when_header_signs_wrong_message(impeach_client, acct):
+def test_c7_fastapi_dependency_401_when_header_signs_wrong_message(
+    impeach_client, acct
+):
     r"""Signature over a wrong message (missing evidence_cid) returns 401."""
     body = {
         "target_did": "did:key:zVictim",

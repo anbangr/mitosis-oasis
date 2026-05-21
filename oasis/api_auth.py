@@ -17,11 +17,13 @@ from __future__ import annotations
 
 from fastapi import HTTPException, Request
 
-from oasis.crypto.eip712 import _resolve_schema, verify
+from oasis.crypto.eip712 import verify
 from oasis.crypto.typed_data import DOMAIN
 
 
-def _extract_eip712_message(primary_type: str, body: dict[str, object]) -> dict[str, object]:
+def _extract_eip712_message(
+    primary_type: str, body: dict[str, object]
+) -> dict[str, object]:
     r"""Project the EIP-712 message out of the request body.
 
     For Sanction / ConstitutionAmendment, the message is the body verbatim

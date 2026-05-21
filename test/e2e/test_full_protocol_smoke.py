@@ -276,3 +276,131 @@ class TestCanonicalEnumContract:
         """Sanity: the canonical string is used for attestations."""
         source = Path(__file__).read_text()
         assert "IDENTITY_ATTESTATION" in source
+
+
+# ---------------------------------------------------------------------------
+# Bundle-2 — Impeachment E2E waypoint
+# ---------------------------------------------------------------------------
+
+
+def test_bundle2_impeachment_path(tmp_path: Path) -> None:
+    """E2E: 5/7 supermajority impeaches Adj0; full stake slash; ban in both registries.
+
+    Uses live ``eth_account.Account.create()`` keypairs — EIP-712 sign/verify
+    are NOT stubbed.  The test is *red* until ``oasis.adjudication.impeachment``
+    (Feature 6) is merged; that is the expected Bundle-2 e2e waypoint contract.
+    """
+    import sqlite3
+
+    from eth_account import Account
+
+    from oasis.adjudication.impeachment import submit_motion, tally_motion
+    from oasis.adjudication.schema import create_adjudication_tables
+    from oasis.crypto.eip712 import sign
+    from oasis.crypto.typed_data import DOMAIN
+    from oasis.governance.schema import create_governance_tables, seed_constitution
+
+    gov_db = tmp_path / "gov.db"
+    adj_db = tmp_path / "adj.db"
+
+    create_governance_tables(gov_db)
+    seed_constitution(gov_db)
+    create_adjudication_tables(adj_db)
+
+    # Mint 7 real adjudicator keypairs
+    adjudicators = []
+    for i in range(7):
+        acct = Account.create()
+        did = f"did:key:zAdj{i}"
+        adjudicators.append({"did": did, "acct": acct})
+
+    conn_adj = sqlite3.connect(str(adj_db))
+    conn_adj.execute("PRAGMA foreign_keys = ON")
+    conn_adj.row_factory = sqlite3.Row
+
+    conn_gov = sqlite3.connect(str(gov_db))
+    conn_gov.execute("PRAGMA foreign_keys = ON")
+    conn_gov.row_factory = sqlite3.Row
+
+    try:
+        # T1 — seed 7 rows in each of the three tables
+        for adj in adjudicators:
+            did = adj["did"]
+            acct = adj["acct"]
+
+            conn_adj.execute(
+                "INSERT INTO adjudicator_registry (adjudicator_did, eth_address, stake_amount) "
+                "VALUES (?, ?, ?)",
+                (did, acct.address, 5000.0),
+            )
+            conn_adj.execute(
+                "INSERT INTO agent_balance (agent_did, total_balance, locked_stake, available_balance) "
+                "VALUES (?, ?, ?, ?)",
+                (did, 5000.0, 5000.0, 0.0),
+            )
+            # agent_registry in gov DB — include NOT NULL columns from prior bundles
+            conn_gov.execute(
+                "INSERT INTO agent_registry (agent_did, agent_type, display_name, reputation_score, active) "
+                "VALUES (?, ?, ?, ?, ?)",
+                (did, "producer", f"Adjudicator {did}", 0.5, 1),
+            )
+
+        conn_adj.commit()
+        conn_gov.commit()
+
+        assert conn_adj.execute("SELECT COUNT(*) FROM adjudicator_registry").fetchone()[0] == 7
+        assert conn_adj.execute("SELECT COUNT(*) FROM agent_balance").fetchone()[0] == 7
+        assert conn_gov.execute("SELECT COUNT(*) FROM agent_registry").fetchone()[0] == 7
+
+        target_did = "did:key:zAdj0"
+        evidence_cid = "ipfs://smoke"
+        motion_id = "smoke-motion-1"
+
+        # 5 adjudicators (Adj1–Adj5) sign the impeachment motion
+        signatures = []
+        for adj in adjudicators[1:6]:
+            message = {
+                "target_did": target_did,
+                "evidence_cid": evidence_cid,
+                "motion_id": motion_id,
+            }
+            sig = sign(adj["acct"].key, DOMAIN, "Impeachment", message)
+            signatures.append({"signer": adj["acct"].address, "signature": sig.hex()})
+
+        # T2 — submit then tally
+        submit_motion(
+            motion_id=motion_id,
+            target_did=target_did,
+            evidence_cid=evidence_cid,
+            signatures=signatures,
+            adj_db_path=str(adj_db),
+            gov_db_path=str(gov_db),
+            agents_in_mission=(),
+        )
+        verdict = tally_motion(
+            motion_id=motion_id,
+            adj_db_path=str(adj_db),
+            gov_db_path=str(gov_db),
+            agents_in_mission=(),
+        )
+
+        assert verdict.status == "accepted"
+        assert verdict.slashed_amount == 5000.0
+
+        # T3 — ban applied in both registries
+        row_adj = conn_adj.execute(
+            "SELECT is_banned FROM adjudicator_registry WHERE adjudicator_did = ?",
+            (target_did,),
+        ).fetchone()
+        assert row_adj is not None
+        assert row_adj["is_banned"] == 1
+
+        row_gov = conn_gov.execute(
+            "SELECT banned FROM agent_registry WHERE agent_did = ?",
+            (target_did,),
+        ).fetchone()
+        assert row_gov is not None
+        assert row_gov["banned"] == 1
+    finally:
+        conn_adj.close()
+        conn_gov.close()

@@ -154,6 +154,7 @@ def scan_anomalies(
             f"""
             SELECT COUNT(*) FROM adjudication_decision
             WHERE created_at >= datetime('now', '-{window_days} days')
+              AND issued_by_did IS NOT NULL
             """,
         ).fetchone()[0]
 

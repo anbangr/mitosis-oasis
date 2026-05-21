@@ -389,6 +389,40 @@ def test_scan_anomalies_single_adjudicator_no_outliers(adj_db: Path) -> None:
     assert result["anomalies"] == []
 
 
+def test_scan_anomalies_calibration_ignores_unissued_decisions(adj_db: Path) -> None:
+    """Calibration counts only decisions attributed to an adjudicator."""
+    _seed_adjudicator(adj_db, "did:key:zAdj0")
+
+    conn = sqlite3.connect(str(adj_db))
+    conn.execute("PRAGMA foreign_keys = ON")
+    for idx in range(CALIBRATION_FLOOR):
+        conn.execute(
+            "INSERT INTO adjudication_decision "
+            "(decision_id, agent_did, decision_type, severity, reason, "
+            "layer1_result, issued_by_did, created_at) "
+            "VALUES (?, 'did:key:zAgent1', 'approve', 'INFO', 'legacy', "
+            "'legacy', NULL, datetime('now', '-1 days'))",
+            (f"d-legacy-{idx}",),
+        )
+    conn.execute(
+        "INSERT INTO adjudication_decision "
+        "(decision_id, agent_did, decision_type, severity, reason, "
+        "layer1_result, issued_by_did, created_at) "
+        "VALUES ('d-issued', 'did:key:zAgent1', 'approve', 'INFO', 'test', "
+        "'test', 'did:key:zAdj0', datetime('now', '-1 days'))"
+    )
+    conn.commit()
+    conn.close()
+
+    result = scan_anomalies(
+        db_path=str(adj_db),
+        window_days=30,
+        zscore_threshold=2.0,
+    )
+
+    assert result == {"calibrating": True, "anomalies": []}
+
+
 def test_scan_anomalies_window_boundary_included(adj_db: Path) -> None:
     """A decision exactly window_days old is included (>= boundary)."""
     _seed_adjudicator(adj_db, "did:key:zAdj0")

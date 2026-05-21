@@ -69,9 +69,9 @@ class SanctionEngine:
             finally:
                 conn.close()
 
-        # Gather agents in the mission; always include the target agent so
-        # that a direct ownership conflict is caught even when the mission
-        # table has not been seeded (defensive for test fixtures).
+        # Gather agents in the mission. Split-DB production paths only check
+        # an actual mission; legacy single-DB fixtures may omit task_assignment
+        # rows, so keep the target as the minimal mission set there.
         conn = sqlite3.connect(_gov_db)
         conn.row_factory = sqlite3.Row
         try:
@@ -83,7 +83,8 @@ class SanctionEngine:
                 agents_in_mission = {r["agent_did"] for r in rows}
             else:
                 agents_in_mission = set()
-            agents_in_mission.add(target_did)
+            if _mission is not None or _gov_db == str(db_path):
+                agents_in_mission.add(target_did)
         finally:
             conn.close()
 
@@ -120,6 +121,7 @@ class SanctionEngine:
 
         conn = self._connect(db_path)
         try:
+            self._ensure_agent_registry_row(conn, agent_did)
             conn.execute(
                 "UPDATE agent_registry SET active = 0 WHERE agent_did = ?",
                 (agent_did,),
@@ -198,6 +200,7 @@ class SanctionEngine:
 
         conn = self._connect(db_path)
         try:
+            self._ensure_agent_registry_row(conn, agent_did)
             # Get current locked stake
             bal = conn.execute(
                 "SELECT locked_stake FROM agent_balance WHERE agent_did = ?",
@@ -289,6 +292,7 @@ class SanctionEngine:
 
         conn = self._connect(db_path)
         try:
+            self._ensure_agent_registry_row(conn, agent_did)
             decision = self._record_decision(
                 conn,
                 agent_did=agent_did,
@@ -399,6 +403,18 @@ class SanctionEngine:
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
+
+    @staticmethod
+    def _ensure_agent_registry_row(conn: sqlite3.Connection, agent_did: str) -> None:
+        try:
+            conn.execute(
+                "INSERT OR IGNORE INTO agent_registry "
+                "(agent_did, agent_type, display_name) VALUES (?, 'producer', ?)",
+                (agent_did, agent_did),
+            )
+        except sqlite3.OperationalError:
+            # Legacy adjudication-only fixtures may not carry agent_registry.
+            pass
 
     def _record_decision(
         self,

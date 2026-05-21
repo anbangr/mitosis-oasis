@@ -113,6 +113,7 @@ async def lifespan(app: FastAPI):
     # Initialise governance database (in-memory, colocated with platform DB)
     _gov_db = os.path.join(tempfile.gettempdir(), f"oasis_gov_{os.getpid()}.db")
     init_governance_db(_gov_db)
+    app.state.gov_db_path = _gov_db
     set_admin_db(_gov_db)
 
     _exec_db = os.path.join(tempfile.gettempdir(), f"oasis_exec_{os.getpid()}.db")
@@ -122,6 +123,7 @@ async def lifespan(app: FastAPI):
     _adj_db = os.path.join(tempfile.gettempdir(), f"oasis_adj_{os.getpid()}.db")
     create_adjudication_tables(_adj_db)
     init_adjudication_db(_adj_db)
+    app.state.adj_db_path = _adj_db
 
     _obs_db = os.path.join(tempfile.gettempdir(), f"oasis_obs_{os.getpid()}.db")
     init_observatory_db(

@@ -13,11 +13,34 @@ from typing import Union
 
 _DDL = """
 -- Cross-branch tables adjudication reads directly in the standalone HTTP path.
+CREATE TABLE IF NOT EXISTS agent_registry (
+    agent_did         TEXT PRIMARY KEY,
+    agent_type        TEXT NOT NULL CHECK(agent_type IN ('producer', 'clerk')),
+    capability_tier   TEXT NOT NULL DEFAULT 't1' CHECK(capability_tier IN ('t1', 't3', 't5')),
+    display_name      TEXT NOT NULL,
+    human_principal   TEXT,
+    reputation_score  REAL NOT NULL DEFAULT 0.5,
+    strategy          TEXT,
+    registered_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    active            BOOLEAN NOT NULL DEFAULT 1,
+    public_key        TEXT,
+    banned            BOOLEAN NOT NULL DEFAULT 0
+);
+
 CREATE TABLE IF NOT EXISTS agent_balance (
     agent_did          TEXT PRIMARY KEY,
     total_balance      REAL NOT NULL DEFAULT 100.0,
     locked_stake       REAL NOT NULL DEFAULT 0.0,
     available_balance  REAL NOT NULL DEFAULT 100.0
+);
+
+CREATE TABLE IF NOT EXISTS guardian_alert (
+    alert_id    TEXT PRIMARY KEY,
+    task_id     TEXT NOT NULL,
+    alert_type  TEXT NOT NULL,
+    severity    TEXT NOT NULL,
+    details     TEXT,
+    created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- 1. Coordination flags (detected collusion / coordination patterns)

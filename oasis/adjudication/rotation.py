@@ -76,28 +76,28 @@ def enforce_rotation(
 ) -> RotationResult:
     """Block a decision when the adjudicator has already hit the limit.
 
-    A decision is blocked only when ``max_consecutive`` or more prior
-decisions of the same *decision_type* were all issued by
-    *adjudicator_did*.  An intervening decision by a different
-    adjudicator resets the streak.
+        A decision is blocked only when ``max_consecutive`` or more prior
+    decisions of the same *decision_type* were all issued by
+        *adjudicator_did*.  An intervening decision by a different
+        adjudicator resets the streak.
 
-    Parameters
-    ----------
-    adjudicator_did:
-        DID of the adjudator about to issue a decision.
-    decision_type:
-        Type of decision being considered (e.g. ``'freeze'``).
-    max_consecutive:
-        Maximum number of consecutive decisions of this type allowed
-        from a single adjudicator.
-    db_path:
-        Path to the SQLite database containing ``adjudication_decision``.
+        Parameters
+        ----------
+        adjudicator_did:
+            DID of the adjudator about to issue a decision.
+        decision_type:
+            Type of decision being considered (e.g. ``'freeze'``).
+        max_consecutive:
+            Maximum number of consecutive decisions of this type allowed
+            from a single adjudicator.
+        db_path:
+            Path to the SQLite database containing ``adjudication_decision``.
 
-    Returns
-    -------
-    RotationResult
-        ``allowed=False`` when the streak has been exceeded;
-        ``allowed=True`` otherwise.
+        Returns
+        -------
+        RotationResult
+            ``allowed=False`` when the streak has been exceeded;
+            ``allowed=True`` otherwise.
     """
     if max_consecutive <= 0:
         return RotationResult(allowed=True, reason="")

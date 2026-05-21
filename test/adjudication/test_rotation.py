@@ -16,7 +16,6 @@ from oasis.adjudication.schema import create_adjudication_tables
 from oasis.adjudication.rotation import (
     enforce_rotation,
     last_n_decisions,
-    RotationResult,
 )
 
 

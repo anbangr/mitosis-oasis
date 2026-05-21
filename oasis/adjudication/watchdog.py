@@ -37,10 +37,16 @@ def _approval_rates(*, db_path: Union[str, Path], window_days: int) -> dict[str,
     finally:
         conn.close()
 
-    return {row["issued_by_did"]: row["positive"] / row["total"] for row in rows if row["total"] > 0}
+    return {
+        row["issued_by_did"]: row["positive"] / row["total"]
+        for row in rows
+        if row["total"] > 0
+    }
 
 
-def _freeze_lift_rates(*, db_path: Union[str, Path], window_days: int) -> dict[str, float]:
+def _freeze_lift_rates(
+    *, db_path: Union[str, Path], window_days: int
+) -> dict[str, float]:
     """Return {adjudicator_did: lift_rate} over the window.
 
     Lift rate = unfreeze / freeze.  Returns 0.0 when freeze count is 0.

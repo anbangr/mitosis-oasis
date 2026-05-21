@@ -27,7 +27,6 @@ import pytest
 
 from oasis.adjudication.schema import create_adjudication_tables
 from oasis.adjudication.watchdog import (
-    CALIBRATION_FLOOR,
     scan_anomalies,
     should_system_freeze,
 )

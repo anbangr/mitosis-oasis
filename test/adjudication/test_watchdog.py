@@ -288,7 +288,7 @@ def test_freeze_lift_rates_no_unfreeze_returns_zero(adj_db: Path) -> None:
 def test_zscore_outliers_detects_high_outlier() -> None:
     """A value significantly above the median is flagged."""
     rates = {
-        "did:key:zAdj0": 1.0,   # outlier
+        "did:key:zAdj0": 1.0,  # outlier
         "did:key:zAdj1": 0.5,
         "did:key:zAdj2": 0.5,
         "did:key:zAdj3": 0.5,
@@ -305,7 +305,7 @@ def test_zscore_outliers_detects_high_outlier() -> None:
 def test_zscore_outliers_detects_low_outlier() -> None:
     """A value significantly below the median is flagged."""
     rates = {
-        "did:key:zAdj0": 0.0,   # outlier
+        "did:key:zAdj0": 0.0,  # outlier
         "did:key:zAdj1": 0.5,
         "did:key:zAdj2": 0.5,
         "did:key:zAdj3": 0.5,

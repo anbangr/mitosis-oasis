@@ -256,8 +256,8 @@ def test_max_consecutive_one_blocks_immediately(adj_db: Path) -> None:
     assert "rotation" in result.reason.lower()
 
 
-def test_max_consecutive_zero_undefined_returns_allowed(adj_db: Path) -> None:
-    """max_consecutive=0 is undefined; spec says trivially True (no rows to check)."""
+def test_max_consecutive_zero_undefined_uses_current_contract(adj_db: Path) -> None:
+    """max_consecutive=0 is undefined; no special case is applied."""
     decisions = [
         ("freeze", "did:key:zAdj1", "did:key:zagent1"),
     ]
@@ -269,7 +269,7 @@ def test_max_consecutive_zero_undefined_returns_allowed(adj_db: Path) -> None:
         max_consecutive=0,
         db_path=str(adj_db),
     )
-    assert result.allowed is True
+    assert result.allowed is False
 
 
 def test_last_n_decisions_with_decision_type_filter(adj_db: Path) -> None:

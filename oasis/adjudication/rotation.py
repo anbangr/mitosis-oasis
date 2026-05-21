@@ -30,7 +30,7 @@ class RotationResult:
     """Outcome of an ``enforce_rotation`` check."""
 
     allowed: bool
-    reason: str
+    reason: str = ""
 
 
 def last_n_decisions(
@@ -112,9 +112,6 @@ def enforce_rotation(
             ``allowed=False`` when the streak has been exceeded;
             ``allowed=True`` otherwise.
     """
-    if max_consecutive <= 0:
-        return RotationResult(allowed=True, reason="")
-
     conn = sqlite3.connect(str(db_path))
     conn.row_factory = sqlite3.Row
     try:

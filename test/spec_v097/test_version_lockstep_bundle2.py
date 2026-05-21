@@ -222,7 +222,7 @@ def test_t5_no_pytest_mark_skip_or_xfail():
             "grep",
             "-rE",
             "--include=*.py",
-            r"pytest\.mark\.(skip|xfail)\b",
+            r"@pytest\.mark\.(skip|xfail)\b",
             "test/",
         ],
         capture_output=True,

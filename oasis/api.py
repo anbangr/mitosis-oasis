@@ -151,7 +151,11 @@ async def lifespan(app: FastAPI):
     EventBus.get_instance().subscribe(_refine_on_failure)
 
     start_scheduler(
-        adj_db_path=_adj_db, gov_db_path=_gov_db, obs_db_path=_obs_db, config=_cfg
+        adj_db_path=_adj_db,
+        gov_db_path=_gov_db,
+        obs_db_path=_obs_db,
+        exec_db_path=_exec_db,
+        config=_cfg,
     )
 
     logger.info("Mitosis-OASIS platform started")

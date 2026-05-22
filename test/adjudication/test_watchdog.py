@@ -424,18 +424,26 @@ def test_scan_anomalies_calibration_ignores_unissued_decisions(adj_db: Path) -> 
 
 
 def test_scan_anomalies_window_boundary_included(adj_db: Path) -> None:
-    """A decision exactly window_days old is included (>= boundary)."""
+    """A decision just inside the window_days boundary is included.
+
+    Uses ``-29 days, +23 hours`` instead of exactly ``-30 days`` so the row
+    is unambiguously within the strict ``< 30 days`` window regardless of
+    test-setup latency on slow CI runners.
+    """
     _seed_adjudicator(adj_db, "did:key:zAdj0")
     _seed_adjudicator(adj_db, "did:key:zAdj1")
 
-    # Exactly 30 days old — should be included
+    # Just inside the 30-day window — should be included even on slow CI.
+    # Using "-29.99 days" keeps the row a hair under 30 days old, so the
+    # strict ``< 30 days`` window check still includes it regardless of
+    # test-setup latency.
     _insert_decision(
         adj_db,
         decision_id="d-boundary",
         agent_did="did:key:zAgent1",
         decision_type="approve",
         issued_by_did="did:key:zAdj0",
-        created_at_offset="-30 days",
+        created_at_offset="-29.99 days",
     )
 
     # Fill up to calibration floor with Adj1

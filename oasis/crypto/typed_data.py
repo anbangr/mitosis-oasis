@@ -19,7 +19,7 @@ from pydantic import BaseModel
 
 DOMAIN = {
     "name": "MitosisOasis",
-    "version": "0.5.0",
+    "version": "0.6.0",
     "chainId": 0,
     "verifyingContract": "0x" + "0" * 40,
 }

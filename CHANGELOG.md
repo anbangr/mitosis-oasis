@@ -2,6 +2,32 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.0] — 2026-05-22 — Bundle 3 (Hybrid Security)
+
+### Added
+
+- **Merkle anchoring** (spec exec §7): pure-Python balanced-binary
+  Merkle tree at `oasis/crypto/merkle.py`. Background apscheduler job
+  every `tau_anchor` seconds (default 10s small DAGs / 60s large)
+  commits one Merkle root + sequence range to `on_chain_anchor`.
+- **Mission-boundary reconciliation** (spec exec §7.9):
+  `reconcile_mission()` recomputes each anchor's Merkle root from the
+  current event_log payloads and compares against the stored root.
+  Divergence → DIVERGED status; caller suspends mission.
+- New table: `on_chain_anchor`. New `event_log.anchor_id` and
+  `event_log.mission_id` columns.
+- New constitution params: `tau_anchor_small_seconds`,
+  `tau_anchor_large_seconds`, `anchor_batch_max_size`,
+  `anchor_large_dag_threshold`.
+- New spec_v097 tests: EXE-088 (τ_anchor), EXE-089 (Merkle off-chain),
+  EXE-091 (reconciliation), INV-140 (SP-hybrid invariants).
+- E2E waypoint: `test_bundle3_anchoring_and_reconciliation` proves the
+  full anchor + tamper + reconcile divergence pipeline.
+
+### Changed
+
+- EIP-712 DOMAIN.version bumped from `0.5.0` → `0.6.0`.
+
 ## [0.5.0] — 2026-05-21 — Bundle 2 (Adjudicator Accountability)
 
 ### Added

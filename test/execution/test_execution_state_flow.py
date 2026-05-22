@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import sqlite3
 
 import pytest
 
@@ -51,6 +52,15 @@ class TestExecutionStateFlow:
         task = tasks[0]
         dispatcher = ExecutionDispatcher(llm_config, db)
 
+        def _task_state(task_id: str) -> str:
+            conn = sqlite3.connect(str(db))
+            conn.row_factory = sqlite3.Row
+            row = conn.execute(
+                "SELECT state FROM task_assignment WHERE task_id = ?", (task_id,)
+            ).fetchone()
+            conn.close()
+            return row["state"] if row else None
+
         # pending
         status = dispatcher.get_task_status(task["task_id"])
         assert status.status == "pending"
@@ -59,11 +69,13 @@ class TestExecutionStateFlow:
         commit_to_task(task["task_id"], task["agent_did"], db)
         status = dispatcher.get_task_status(task["task_id"])
         assert status.status == "committed"
+        assert _task_state(task["task_id"]) == "ELIGIBLE"
 
         # → executing
         dispatcher.dispatch_task(task["task_id"])
         status = dispatcher.get_task_status(task["task_id"])
         assert status.status == "executing"
+        assert _task_state(task["task_id"]) == "EXECUTING"
 
         # → completed
         output_data = json.dumps(
@@ -77,6 +89,7 @@ class TestExecutionStateFlow:
         dispatcher.receive_output(task["task_id"], output_data, task["agent_did"])
         status = dispatcher.get_task_status(task["task_id"])
         assert status.status == "completed"
+        assert _task_state(task["task_id"]) == "COMPLETED"
 
     def test_full_flow_failure(self, tasks_and_db, llm_config):
         """Full flow: pending → committed → executing → failed (bad output)."""
@@ -84,14 +97,27 @@ class TestExecutionStateFlow:
         task = tasks[1] if len(tasks) > 1 else tasks[0]
         dispatcher = ExecutionDispatcher(llm_config, db)
 
+        def _task_state(task_id: str) -> str:
+            conn = sqlite3.connect(str(db))
+            conn.row_factory = sqlite3.Row
+            row = conn.execute(
+                "SELECT state FROM task_assignment WHERE task_id = ?", (task_id,)
+            ).fetchone()
+            conn.close()
+            return row["state"] if row else None
+
         commit_to_task(task["task_id"], task["agent_did"], db)
+        assert _task_state(task["task_id"]) == "ELIGIBLE"
+
         dispatcher.dispatch_task(task["task_id"])
+        assert _task_state(task["task_id"]) == "EXECUTING"
 
         # Submit output with bad schema
         output_data = json.dumps({"bad_field": True})
         dispatcher.receive_output(task["task_id"], output_data, task["agent_did"])
         status = dispatcher.get_task_status(task["task_id"])
         assert status.status == "failed"
+        assert _task_state(task["task_id"]) == "FAILED"
 
     def test_uncommitted_output_rejected(self, tasks_and_db, llm_config):
         """Cannot submit output for a task that is not committed/executing."""

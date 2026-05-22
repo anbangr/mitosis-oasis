@@ -167,7 +167,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Mitosis-OASIS API",
     description="REST API for OASIS social simulation platform",
-    version="0.6.0",
+    version="0.7.0",
     lifespan=lifespan,
 )
 

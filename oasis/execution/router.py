@@ -66,8 +66,8 @@ def route_tasks(session_id: str, db_path: Union[str, Path]) -> list[dict]:
             task_id = f"task-{uuid.uuid4().hex[:8]}"
             conn.execute(
                 "INSERT INTO task_assignment "
-                "(task_id, session_id, node_id, agent_did, status) "
-                "VALUES (?, ?, ?, ?, 'pending')",
+                "(task_id, session_id, node_id, agent_did, status, state) "
+                "VALUES (?, ?, ?, ?, 'pending', 'WAITING')",
                 (task_id, session_id, bid["task_node_id"], bid["bidder_did"]),
             )
             assignments.append(

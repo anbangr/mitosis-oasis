@@ -131,6 +131,19 @@ async def get_task_status(task_id: str):
         raise HTTPException(exc.status_code, str(exc))
 
 
+# ========================= Task transitions ==================================
+
+
+@_routes.get("/tasks/{task_id}/transitions", response_model=list[dict[str, Any]])
+async def get_task_transitions(task_id: str):
+    """Get ordered state transition audit rows for a task."""
+    svc = _get_service()
+    try:
+        return svc.get_task_transitions(task_id)
+    except ExecutionServiceError as exc:
+        raise HTTPException(exc.status_code, str(exc))
+
+
 # ========================= Settlement result =================================
 
 

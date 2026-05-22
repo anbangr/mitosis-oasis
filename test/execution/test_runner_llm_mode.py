@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import sqlite3
 
 import pytest
 
@@ -54,6 +55,15 @@ class TestRunnerLLMMode:
 
         status = llm_dispatcher.get_task_status(committed_task["task_id"])
         assert status.status == "executing"
+
+        conn = sqlite3.connect(str(llm_dispatcher.db_path))
+        conn.row_factory = sqlite3.Row
+        row = conn.execute(
+            "SELECT state FROM task_assignment WHERE task_id = ?",
+            (committed_task["task_id"],),
+        ).fetchone()
+        conn.close()
+        assert row["state"] == "EXECUTING"
 
     def test_dispatch_status_is_executing(self, llm_dispatcher, committed_task):
         """After dispatch, get_task_status returns 'executing'."""

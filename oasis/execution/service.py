@@ -95,6 +95,8 @@ class ExecutionService:
                 "session_id": task["session_id"],
                 "node_id": task["node_id"],
                 "agent_did": task["agent_did"],
+                "state": task["state"],
+                "stage": task["stage"],
                 "status": task["status"],
                 "created_at": task["created_at"],
                 "node": node_info,
@@ -163,6 +165,25 @@ class ExecutionService:
                     "settled_at": settlement["settled_at"],
                 },
             }
+        finally:
+            conn.close()
+
+    def get_task_transitions(self, task_id: str) -> list[dict[str, Any]]:
+        """Return state transition audit rows for a task, ordered by time."""
+        conn = self._connect()
+        try:
+            task = conn.execute(
+                "SELECT task_id FROM task_assignment WHERE task_id = ?", (task_id,)
+            ).fetchone()
+            if task is None:
+                raise ExecutionServiceError(f"Task not found: {task_id}", 404)
+
+            rows = conn.execute(
+                "SELECT * FROM task_state_transition WHERE task_id = ? "
+                "ORDER BY transitioned_at ASC",
+                (task_id,),
+            ).fetchall()
+            return [dict(r) for r in rows]
         finally:
             conn.close()
 

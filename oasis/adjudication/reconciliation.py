@@ -9,6 +9,7 @@ Failure modes:
     2. Recomputed Merkle root for an anchor's events ≠ stored root → DIVERGED.
     3. Anchor row exists but referenced events are missing → DIVERGED.
 """
+
 from __future__ import annotations
 
 import json
@@ -21,7 +22,7 @@ from oasis.crypto import merkle
 
 @dataclass
 class ReconciliationResult:
-    status: str               # "PASS" | "DIVERGED"
+    status: str  # "PASS" | "DIVERGED"
     mission_id: str
     divergence_count: int
     reason: str = ""
@@ -37,8 +38,7 @@ def reconcile_mission(
     try:
         # 1. Any unanchored events for this mission?
         unanchored = conn.execute(
-            "SELECT COUNT(*) FROM event_log "
-            "WHERE mission_id = ? AND anchor_id IS NULL",
+            "SELECT COUNT(*) FROM event_log WHERE mission_id = ? AND anchor_id IS NULL",
             (mission_id,),
         ).fetchone()[0]
         if unanchored:

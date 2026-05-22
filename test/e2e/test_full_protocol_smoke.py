@@ -422,7 +422,8 @@ def test_bundle3_anchoring_and_reconciliation(tmp_path):
     from oasis.adjudication.anchor_publisher import publish_anchor
     from oasis.adjudication.reconciliation import reconcile_mission
     from oasis.observatory.schema import create_observatory_tables
-    import sqlite3, json
+    import sqlite3
+    import json
 
     obs_db = tmp_path / "obs.db"
     create_observatory_tables(str(obs_db))
@@ -434,14 +435,14 @@ def test_bundle3_anchoring_and_reconciliation(tmp_path):
             "INSERT INTO event_log "
             "(event_id, event_type, timestamp, payload, sequence_number, mission_id) "
             "VALUES (?, 'TASK', ?, ?, ?, 'mission-smoke')",
-            (f"e{i}", float(i),
-             json.dumps({"i": i}, sort_keys=True), i + 1),
+            (f"e{i}", float(i), json.dumps({"i": i}, sort_keys=True), i + 1),
         )
     conn.commit()
     conn.close()
 
-    anchor = publish_anchor(db_path=str(obs_db), batch_max_size=1000,
-                             mission_id="mission-smoke")
+    anchor = publish_anchor(
+        db_path=str(obs_db), batch_max_size=1000, mission_id="mission-smoke"
+    )
     assert anchor["event_count"] == 100
 
     result = reconcile_mission(mission_id="mission-smoke", db_path=str(obs_db))
@@ -450,8 +451,7 @@ def test_bundle3_anchoring_and_reconciliation(tmp_path):
     # Tamper
     conn = sqlite3.connect(str(obs_db))
     conn.execute(
-        "UPDATE event_log SET payload = '{\"tampered\": 1}' "
-        "WHERE event_id = 'e42'"
+        "UPDATE event_log SET payload = '{\"tampered\": 1}' WHERE event_id = 'e42'"
     )
     conn.commit()
     conn.close()

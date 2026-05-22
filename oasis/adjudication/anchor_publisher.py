@@ -1,5 +1,6 @@
 """Anchor publisher: commits one Merkle root per τ_anchor interval over
 un-anchored event_log rows. Spec exec §7 (hybrid security)."""
+
 from __future__ import annotations
 
 import json
@@ -61,13 +62,13 @@ def publish_anchor(
         event_ids = [r["event_id"] for r in rows]
         placeholders = ",".join("?" for _ in event_ids)
         conn.execute(
-            f"UPDATE event_log SET anchor_id = ? "
-            f"WHERE event_id IN ({placeholders})",
+            f"UPDATE event_log SET anchor_id = ? WHERE event_id IN ({placeholders})",
             (anchor_id, *event_ids),
         )
         conn.commit()
-        log.info("anchored %d events as %s (root=%s)",
-                  len(rows), anchor_id, root.hex()[:16])
+        log.info(
+            "anchored %d events as %s (root=%s)", len(rows), anchor_id, root.hex()[:16]
+        )
         return {
             "anchor_id": anchor_id,
             "merkle_root_hex": root.hex(),

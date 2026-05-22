@@ -4,6 +4,7 @@ Damage bound N_unaudited ≤ r × τ_anchor (events per sec × checkpoint interv
 At each τ_anchor boundary, publish_anchor(batch_max_size=r×τ_anchor) must
 leave zero unanchored events provided the ingress rate has not exceeded r.
 """
+
 from __future__ import annotations
 
 import sqlite3
@@ -30,6 +31,7 @@ def obs_db(tmp_path: Path) -> str:
 @pytest.fixture
 def _seed_events(obs_db: str) -> None:
     """Helper fixture: returns a closure that seeds N events."""
+
     def _inner(n: int, start_seq: int = 1) -> None:
         conn = sqlite3.connect(obs_db)
         for i in range(n):
@@ -41,6 +43,7 @@ def _seed_events(obs_db: str) -> None:
             )
         conn.commit()
         conn.close()
+
     return _inner
 
 
@@ -148,9 +151,7 @@ def test_zero_rate_produces_no_events_and_no_anchor(obs_db: str) -> None:
     assert result is None
 
     conn = sqlite3.connect(obs_db)
-    total_events = conn.execute(
-        "SELECT COUNT(*) FROM event_log"
-    ).fetchone()[0]
+    total_events = conn.execute("SELECT COUNT(*) FROM event_log").fetchone()[0]
     conn.close()
 
     assert total_events == 0
@@ -188,7 +189,9 @@ def test_large_tau_small_rate_anchors_correctly(obs_db: str, _seed_events) -> No
 # ---------------------------------------------------------------------------
 
 
-def test_damage_bound_holds_across_multiple_intervals(obs_db: str, _seed_events) -> None:
+def test_damage_bound_holds_across_multiple_intervals(
+    obs_db: str, _seed_events
+) -> None:
     """Simulate two consecutive intervals: 1000 events in first window,
     500 in second. After anchoring each window, zero unanchored remain."""
     r = 100
@@ -222,9 +225,7 @@ def test_damage_bound_holds_across_multiple_intervals(obs_db: str, _seed_events)
     ).fetchone()[0]
     conn.close()
 
-    assert remaining == 0, (
-        f"Expected 0 unanchored after two intervals, got {remaining}"
-    )
+    assert remaining == 0, f"Expected 0 unanchored after two intervals, got {remaining}"
 
 
 # ---------------------------------------------------------------------------
@@ -232,7 +233,9 @@ def test_damage_bound_holds_across_multiple_intervals(obs_db: str, _seed_events)
 # ---------------------------------------------------------------------------
 
 
-def test_burst_at_exact_damage_bound_is_fully_anchored(obs_db: str, _seed_events) -> None:
+def test_burst_at_exact_damage_bound_is_fully_anchored(
+    obs_db: str, _seed_events
+) -> None:
     """A burst of exactly r × τ_anchor events must be completely anchored."""
     r = 100
     tau_anchor = 10

@@ -1,9 +1,9 @@
 """Spec exec §7, §9: off-chain logs anchored to on-chain Merkle roots
 at checkpoint boundaries. Anchor must cover sequence ranges
 contiguously with no gaps."""
+
 import json
 import sqlite3
-from pathlib import Path
 
 import pytest
 
@@ -49,7 +49,7 @@ def test_consecutive_anchors_have_no_seq_gap(obs_db):
             "INSERT INTO event_log "
             "(event_id, event_type, timestamp, payload, sequence_number) "
             "VALUES (?, 'TEST', ?, ?, ?)",
-            (f"e{i}", float(i), '{}', i + 1),
+            (f"e{i}", float(i), "{}", i + 1),
         )
     conn.commit()
     conn.close()

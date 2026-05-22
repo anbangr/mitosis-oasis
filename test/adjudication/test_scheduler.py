@@ -330,9 +330,7 @@ async def test_anchor_publisher_exception_resilience(
 
         assert s.running is True
         error_records = [
-            r
-            for r in caplog.records
-            if "anchor_publisher job failed" in str(r.message)
+            r for r in caplog.records if "anchor_publisher job failed" in str(r.message)
         ]
         assert len(error_records) >= 1
     finally:
@@ -346,7 +344,7 @@ def test_anchor_publisher_replace_existing_on_restart(
     """Stopping and restarting the scheduler leaves exactly one anchor_publisher job."""
     from oasis.adjudication.scheduler import start_scheduler, stop_scheduler
 
-    s1 = start_scheduler(
+    start_scheduler(
         adj_db_path=str(adj_db),
         gov_db_path=str(gov_db),
         obs_db_path=str(obs_db),
@@ -425,9 +423,7 @@ async def test_anchor_publisher_none_db_path_survives(
 
         assert s.running is True
         error_records = [
-            r
-            for r in caplog.records
-            if "anchor_publisher job failed" in str(r.message)
+            r for r in caplog.records if "anchor_publisher job failed" in str(r.message)
         ]
         assert len(error_records) >= 1
     finally:
@@ -458,9 +454,7 @@ async def test_anchor_publisher_invalid_db_path_survives(
 
         assert s.running is True
         error_records = [
-            r
-            for r in caplog.records
-            if "anchor_publisher job failed" in str(r.message)
+            r for r in caplog.records if "anchor_publisher job failed" in str(r.message)
         ]
         assert len(error_records) >= 1
     finally:
@@ -538,9 +532,7 @@ async def test_anchor_publisher_no_log_when_no_events(
         await asyncio.sleep(0.3)
 
         info_records = [
-            r
-            for r in caplog.records
-            if "anchor_publisher committed" in str(r.message)
+            r for r in caplog.records if "anchor_publisher committed" in str(r.message)
         ]
         assert len(info_records) == 0
     finally:

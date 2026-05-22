@@ -1,9 +1,7 @@
 """Spec exec §7: τ_anchor default 10s (small DAGs) / 60s (large DAGs).
 Constitutional parameter."""
-import sqlite3
-from pathlib import Path
 
-import pytest
+import sqlite3
 
 from oasis.governance.schema import create_governance_tables, seed_constitution
 

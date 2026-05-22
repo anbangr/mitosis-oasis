@@ -1,10 +1,10 @@
 """anchor_publisher commits one Merkle root per τ_anchor interval over
 un-anchored event_log rows."""
+
 from __future__ import annotations
 
 import json
 import sqlite3
-from pathlib import Path
 
 import pytest
 

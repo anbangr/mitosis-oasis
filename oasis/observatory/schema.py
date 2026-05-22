@@ -62,9 +62,7 @@ def create_observatory_tables(db_path: Union[str, Path]) -> None:
 
         # Idempotent column addition for mission-level reconciliation
         try:
-            conn.execute(
-                "ALTER TABLE event_log ADD COLUMN mission_id TEXT"
-            )
+            conn.execute("ALTER TABLE event_log ADD COLUMN mission_id TEXT")
             conn.commit()
         except sqlite3.OperationalError as exc:
             if "duplicate column name" not in str(exc).lower():

@@ -24,6 +24,7 @@ from oasis.governance.schema import create_governance_tables, seed_constitution
 # T1 — on_chain_anchor table created
 # ---------------------------------------------------------------------------
 
+
 def test_on_chain_anchor_table_present(tmp_path: Path) -> None:
     """Fresh observatory database contains on_chain_anchor table."""
     db = tmp_path / "obs.db"
@@ -31,9 +32,8 @@ def test_on_chain_anchor_table_present(tmp_path: Path) -> None:
     conn = sqlite3.connect(str(db))
     try:
         tables = {
-            r[0] for r in conn.execute(
-                "SELECT name FROM sqlite_master WHERE type='table'"
-            )
+            r[0]
+            for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")
         }
         assert "on_chain_anchor" in tables
     finally:
@@ -43,6 +43,7 @@ def test_on_chain_anchor_table_present(tmp_path: Path) -> None:
 # ---------------------------------------------------------------------------
 # T2 — event_log.anchor_id column
 # ---------------------------------------------------------------------------
+
 
 def test_event_log_has_anchor_id_column(tmp_path: Path) -> None:
     """event_log schema contains anchor_id column after creation."""
@@ -60,6 +61,7 @@ def test_event_log_has_anchor_id_column(tmp_path: Path) -> None:
 # T3 — Idempotent rerun
 # ---------------------------------------------------------------------------
 
+
 def test_idempotent_rerun(tmp_path: Path) -> None:
     """Calling create_observatory_tables twice on the same DB raises no error."""
     db = tmp_path / "obs.db"
@@ -69,9 +71,8 @@ def test_idempotent_rerun(tmp_path: Path) -> None:
     conn = sqlite3.connect(str(db))
     try:
         tables = {
-            r[0] for r in conn.execute(
-                "SELECT name FROM sqlite_master WHERE type='table'"
-            )
+            r[0]
+            for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")
         }
         assert "on_chain_anchor" in tables
         cols = {r[1] for r in conn.execute("PRAGMA table_info(event_log)")}
@@ -83,6 +84,7 @@ def test_idempotent_rerun(tmp_path: Path) -> None:
 # ---------------------------------------------------------------------------
 # E1 — Foreign-key reference validity
 # ---------------------------------------------------------------------------
+
 
 def test_anchor_id_foreign_key_valid(tmp_path: Path) -> None:
     """event_log.anchor_id references on_chain_anchor(anchor_id) correctly."""
@@ -128,7 +130,16 @@ def test_anchor_id_foreign_key_invalid_rejected(tmp_path: Path) -> None:
                 "INSERT INTO event_log "
                 "(event_id, event_type, timestamp, session_id, agent_did, payload, sequence_number, anchor_id) "
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                ("evt-002", "TEST", 0.0, "sess-001", "did:test:1", "{}", 1, "nonexistent"),
+                (
+                    "evt-002",
+                    "TEST",
+                    0.0,
+                    "sess-001",
+                    "did:test:1",
+                    "{}",
+                    1,
+                    "nonexistent",
+                ),
             )
             conn.commit()
     finally:
@@ -156,7 +167,9 @@ def gov_db(tmp_path: Path) -> Path:
     return db
 
 
-@pytest.mark.parametrize("param_name,expected_value,expected_type", _BUNDLE3_CONSTITUTION_PARAMS)
+@pytest.mark.parametrize(
+    "param_name,expected_value,expected_type", _BUNDLE3_CONSTITUTION_PARAMS
+)
 def test_bundle3_constitution_params_present(
     gov_db: Path, param_name: str, expected_value: float, expected_type: str
 ) -> None:
@@ -185,7 +198,9 @@ def test_bundle3_constitution_params_idempotent(gov_db: Path) -> None:
                 "SELECT param_value, param_type FROM constitution WHERE param_name = ?",
                 (param_name,),
             ).fetchone()
-            assert row is not None, f"Missing constitution param after re-seed: {param_name}"
+            assert row is not None, (
+                f"Missing constitution param after re-seed: {param_name}"
+            )
             assert row[0] == expected_value
             assert row[1] == expected_type
     finally:

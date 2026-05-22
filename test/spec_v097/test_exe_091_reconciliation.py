@@ -1,10 +1,10 @@
 """Spec exec §7.9: at Mission boundary, verify off-chain event_log vs
 on-chain anchor rows. Divergence suspends the mission."""
+
 from __future__ import annotations
 
 import json
 import sqlite3
-from pathlib import Path
 
 import pytest
 
@@ -28,9 +28,13 @@ def _seed_mission_events(db: str, mission_id: str, n: int, start_seq: int = 1):
             "(event_id, event_type, timestamp, payload, sequence_number, "
             "mission_id) "
             "VALUES (?, 'TEST', ?, ?, ?, ?)",
-            (f"e-{mission_id}-{i}", float(i),
-             json.dumps({"mission": mission_id, "i": i}, sort_keys=True),
-             start_seq + i, mission_id),
+            (
+                f"e-{mission_id}-{i}",
+                float(i),
+                json.dumps({"mission": mission_id, "i": i}, sort_keys=True),
+                start_seq + i,
+                mission_id,
+            ),
         )
     conn.commit()
     conn.close()
@@ -59,8 +63,7 @@ def test_mission_with_unanchored_events_diverges(obs_db):
 
 def test_mission_with_tampered_payload_diverges(obs_db):
     _seed_mission_events(obs_db, "mission-C", n=5)
-    anchor = publish_anchor(db_path=obs_db, batch_max_size=100,
-                             mission_id="mission-C")
+    publish_anchor(db_path=obs_db, batch_max_size=100, mission_id="mission-C")
 
     # Tamper with one event payload AFTER anchoring
     conn = sqlite3.connect(obs_db)
@@ -107,9 +110,13 @@ def test_malformed_payload_falls_back_to_empty_object(obs_db):
             "INSERT INTO event_log "
             "(event_id, event_type, timestamp, payload, sequence_number, mission_id) "
             "VALUES (?, 'TEST', ?, ?, ?, ?)",
-            (f"e-malformed-{i}", float(i),
-             json.dumps({"i": i}, sort_keys=True),
-             i + 1, "mission-malformed"),
+            (
+                f"e-malformed-{i}",
+                float(i),
+                json.dumps({"i": i}, sort_keys=True),
+                i + 1,
+                "mission-malformed",
+            ),
         )
     # One malformed payload
     conn.execute(
@@ -121,8 +128,7 @@ def test_malformed_payload_falls_back_to_empty_object(obs_db):
     conn.commit()
     conn.close()
 
-    publish_anchor(db_path=obs_db, batch_max_size=100,
-                   mission_id="mission-malformed")
+    publish_anchor(db_path=obs_db, batch_max_size=100, mission_id="mission-malformed")
 
     result = reconcile_mission(mission_id="mission-malformed", db_path=obs_db)
     assert result.status == "PASS"

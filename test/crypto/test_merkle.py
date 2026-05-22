@@ -12,6 +12,7 @@
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 """Tests for oasis.crypto.merkle — balanced-binary Merkle tree, SHA-256."""
+
 from __future__ import annotations
 
 import hashlib
@@ -171,7 +172,7 @@ def test_edge_two_leaves_proof_roundtrip():
 def test_edge_verify_rejects_wrong_root():
     r"""verify_proof returns False when root does not match."""
     leaves = [f"leaf-{i}".encode() for i in range(8)]
-    root = merkle.build_root(leaves)
+    merkle.build_root(leaves)
     proof = merkle.proof(leaves, 0)
     wrong_root = b"\xab" * 32
     assert merkle.verify_proof(wrong_root, leaves[0], 0, proof) is False

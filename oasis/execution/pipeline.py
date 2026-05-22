@@ -18,12 +18,12 @@ from pathlib import Path
 
 class ExecutionStage(str, Enum):
     ORCHESTRATE = "ORCHESTRATE"  # code-hash verify, capability match
-    INVOKE = "INVOKE"            # dispatch to agent
-    COMMIT = "COMMIT"            # agent submits output + Merkle root
-    GUARD = "GUARD"              # behavioural-deviation detection
-    VERIFY = "VERIFY"            # PoP tier 1/2/3 verification
-    GATE = "GATE"                # constitutional output predicates
-    RECORD = "RECORD"            # anchor into event_log
+    INVOKE = "INVOKE"  # dispatch to agent
+    COMMIT = "COMMIT"  # agent submits output + Merkle root
+    GUARD = "GUARD"  # behavioural-deviation detection
+    VERIFY = "VERIFY"  # PoP tier 1/2/3 verification
+    GATE = "GATE"  # constitutional output predicates
+    RECORD = "RECORD"  # anchor into event_log
 
 
 PIPELINE_ORDER: list[ExecutionStage] = [

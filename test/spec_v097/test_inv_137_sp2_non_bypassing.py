@@ -4,7 +4,6 @@ seven-stage pipeline. No skips allowed.
 
 from __future__ import annotations
 
-import pytest
 
 from oasis.execution.pipeline import (
     ExecutionStage,

@@ -45,15 +45,18 @@ def test_seven_stages_defined() -> None:
 
 
 def test_pipeline_order_matches_enum_sequence() -> None:
-    expected = [ExecutionStage(s) for s in [
-        "ORCHESTRATE",
-        "INVOKE",
-        "COMMIT",
-        "GUARD",
-        "VERIFY",
-        "GATE",
-        "RECORD",
-    ]]
+    expected = [
+        ExecutionStage(s)
+        for s in [
+            "ORCHESTRATE",
+            "INVOKE",
+            "COMMIT",
+            "GUARD",
+            "VERIFY",
+            "GATE",
+            "RECORD",
+        ]
+    ]
     assert PIPELINE_ORDER == expected
 
 
@@ -136,7 +139,10 @@ def test_is_legal_advance_guard_to_record_is_false() -> None:
 
 
 def test_is_legal_advance_same_stage_is_false() -> None:
-    assert is_legal_advance(ExecutionStage.ORCHESTRATE, ExecutionStage.ORCHESTRATE) is False
+    assert (
+        is_legal_advance(ExecutionStage.ORCHESTRATE, ExecutionStage.ORCHESTRATE)
+        is False
+    )
 
 
 def test_is_legal_advance_backward_is_false() -> None:
@@ -165,6 +171,7 @@ def _seed_task_assignment(db: str | Path, task_id: str, stage: str) -> None:
 def test_advance_stage_updates_task_assignment(tmp_path: Path) -> None:
     db = tmp_path / "exec.db"
     from oasis.execution.schema import create_execution_tables
+
     create_execution_tables(str(db))
     _seed_task_assignment(db, "t1", "ORCHESTRATE")
 
@@ -181,6 +188,7 @@ def test_advance_stage_updates_task_assignment(tmp_path: Path) -> None:
 def test_advance_stage_records_audit_row(tmp_path: Path) -> None:
     db = tmp_path / "exec.db"
     from oasis.execution.schema import create_execution_tables
+
     create_execution_tables(str(db))
     _seed_task_assignment(db, "t1", "ORCHESTRATE")
 
@@ -197,6 +205,7 @@ def test_advance_stage_records_audit_row(tmp_path: Path) -> None:
 def test_advance_stage_records_from_stage_when_no_prior_stage(tmp_path: Path) -> None:
     db = tmp_path / "exec.db"
     from oasis.execution.schema import create_execution_tables
+
     create_execution_tables(str(db))
     _seed_task_assignment(db, "t1", "ORCHESTRATE")
 
@@ -211,9 +220,12 @@ def test_advance_stage_records_from_stage_when_no_prior_stage(tmp_path: Path) ->
     assert row[1] == "INVOKE"
 
 
-def test_advance_stage_multiple_transitions_create_multiple_audit_rows(tmp_path: Path) -> None:
+def test_advance_stage_multiple_transitions_create_multiple_audit_rows(
+    tmp_path: Path,
+) -> None:
     db = tmp_path / "exec.db"
     from oasis.execution.schema import create_execution_tables
+
     create_execution_tables(str(db))
     _seed_task_assignment(db, "t1", "ORCHESTRATE")
 
@@ -233,6 +245,7 @@ def test_advance_stage_multiple_transitions_create_multiple_audit_rows(tmp_path:
 def test_advance_stage_nonexistent_task_raises(tmp_path: Path) -> None:
     db = tmp_path / "exec.db"
     from oasis.execution.schema import create_execution_tables
+
     create_execution_tables(str(db))
 
     with pytest.raises(Exception):

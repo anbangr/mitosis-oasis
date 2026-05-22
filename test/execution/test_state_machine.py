@@ -5,13 +5,10 @@ from __future__ import annotations
 import sqlite3
 from pathlib import Path
 
-import pytest
-
 from oasis.execution.state_machine import (
     ExecutionNodeState,
     TRANSITIONS,
     can_transition,
-    GuardResult,
     transition,
 )
 
@@ -32,9 +29,15 @@ def _seed_task(db: str | Path, task_id: str, state: str) -> None:
 
 def test_all_nine_states_defined() -> None:
     expected = {
-        "WAITING", "ELIGIBLE", "EXECUTING",
-        "PENDING_VERIFICATION", "PENDING_REVIEW",
-        "COMPLETED", "FROZEN", "FAILED", "PENDING_FINALIZATION",
+        "WAITING",
+        "ELIGIBLE",
+        "EXECUTING",
+        "PENDING_VERIFICATION",
+        "PENDING_REVIEW",
+        "COMPLETED",
+        "FROZEN",
+        "FAILED",
+        "PENDING_FINALIZATION",
     }
     actual = {s.value for s in ExecutionNodeState}
     assert actual == expected
@@ -119,15 +122,16 @@ def test_guard_waiting_to_eligible_blocks_when_predecessors_incomplete(
         "VALUES ('succ', 's1', 'succ-node', 'a1', 'WAITING')"
     )
     conn.execute(
-        "INSERT INTO dag_node (node_id, proposal_id, label, service_id) "
-        "VALUES ('pred-node', 'p1', 'pred', 'svc')"
+        "INSERT INTO dag_node (node_id, proposal_id, label, service_id, pop_tier, "
+        "token_budget, timeout_ms) VALUES ('pred-node', 'p1', 'pred', 'svc', 1, 100.0, 60000)"
     )
     conn.execute(
-        "INSERT INTO dag_node (node_id, proposal_id, label, service_id) "
-        "VALUES ('succ-node', 'p1', 'succ', 'svc')"
+        "INSERT INTO dag_node (node_id, proposal_id, label, service_id, pop_tier, "
+        "token_budget, timeout_ms) VALUES ('succ-node', 'p1', 'succ', 'svc', 1, 100.0, 60000)"
     )
     conn.execute(
-        "INSERT INTO dag_edge (from_node_id, to_node_id) VALUES ('pred-node', 'succ-node')"
+        "INSERT INTO dag_edge (proposal_id, from_node_id, to_node_id) "
+        "VALUES ('p1', 'pred-node', 'succ-node')"
     )
     conn.commit()
     conn.close()
@@ -157,15 +161,16 @@ def test_guard_waiting_to_eligible_allows_when_all_predecessors_completed(
         "VALUES ('succ', 's1', 'succ-node', 'a1', 'WAITING')"
     )
     conn.execute(
-        "INSERT INTO dag_node (node_id, proposal_id, label, service_id) "
-        "VALUES ('pred-node', 'p1', 'pred', 'svc')"
+        "INSERT INTO dag_node (node_id, proposal_id, label, service_id, pop_tier, "
+        "token_budget, timeout_ms) VALUES ('pred-node', 'p1', 'pred', 'svc', 1, 100.0, 60000)"
     )
     conn.execute(
-        "INSERT INTO dag_node (node_id, proposal_id, label, service_id) "
-        "VALUES ('succ-node', 'p1', 'succ', 'svc')"
+        "INSERT INTO dag_node (node_id, proposal_id, label, service_id, pop_tier, "
+        "token_budget, timeout_ms) VALUES ('succ-node', 'p1', 'succ', 'svc', 1, 100.0, 60000)"
     )
     conn.execute(
-        "INSERT INTO dag_edge (from_node_id, to_node_id) VALUES ('pred-node', 'succ-node')"
+        "INSERT INTO dag_edge (proposal_id, from_node_id, to_node_id) "
+        "VALUES ('p1', 'pred-node', 'succ-node')"
     )
     conn.commit()
     conn.close()

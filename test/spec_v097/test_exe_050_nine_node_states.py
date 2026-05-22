@@ -20,7 +20,13 @@ from oasis.execution.state_machine import ExecutionNodeState
 def test_nine_states_exactly() -> None:
     names = {s.value for s in ExecutionNodeState}
     assert names == {
-        "WAITING", "ELIGIBLE", "EXECUTING",
-        "PENDING_VERIFICATION", "PENDING_REVIEW",
-        "COMPLETED", "FROZEN", "FAILED", "PENDING_FINALIZATION",
+        "WAITING",
+        "ELIGIBLE",
+        "EXECUTING",
+        "PENDING_VERIFICATION",
+        "PENDING_REVIEW",
+        "COMPLETED",
+        "FROZEN",
+        "FAILED",
+        "PENDING_FINALIZATION",
     }, f"expected exactly 9 spec states, got {names}"

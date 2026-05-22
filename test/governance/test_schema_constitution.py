@@ -33,6 +33,10 @@ EXPECTED_PARAMS = {
     "tau_anchor_large_seconds": 60.0,
     "anchor_batch_max_size": 1000.0,
     "anchor_large_dag_threshold": 100.0,
+    "sponsorship_min": 5.0,
+    "milestone_round_interval": 20.0,
+    "petition_threshold": 0.20,
+    "adaptive_iteration_budget": 3.0,
 }
 
 
@@ -50,7 +54,7 @@ def test_default_params_seeded(db_path: Path):
     conn = _connect(db_path)
     rows = conn.execute("SELECT param_name FROM constitution").fetchall()
     conn.close()
-    assert len(rows) == 24
+    assert len(rows) == 28
 
 
 def test_all_params_present(db_path: Path):
@@ -106,4 +110,4 @@ def test_seed_idempotent(db_path: Path):
     conn = _connect(db_path)
     rows = conn.execute("SELECT COUNT(*) AS cnt FROM constitution").fetchone()
     conn.close()
-    assert rows["cnt"] == 24
+    assert rows["cnt"] == 28

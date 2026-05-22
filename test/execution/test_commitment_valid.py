@@ -43,12 +43,13 @@ def test_status_transitions_to_committed(
     conn = sqlite3.connect(str(execution_db))
     conn.row_factory = sqlite3.Row
     row = conn.execute(
-        "SELECT status FROM task_assignment WHERE task_id = ?",
+        "SELECT state, status FROM task_assignment WHERE task_id = ?",
         (task["task_id"],),
     ).fetchone()
     conn.close()
 
     assert row["status"] == "committed"
+    assert row["state"] == "ELIGIBLE"
 
 
 def test_commitment_record_created(execution_db: Path, deployed_session: dict) -> None:

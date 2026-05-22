@@ -238,3 +238,77 @@ def test_pending_finalization_to_completed_allowed(execution_db: Path) -> None:
         db_path=execution_db,
     )
     assert result.allowed is True
+
+
+def test_legacy_status_to_state_map_exists() -> None:
+    from oasis.execution.state_machine import LEGACY_STATUS_TO_STATE
+
+    assert LEGACY_STATUS_TO_STATE["pending"] == ExecutionNodeState.WAITING
+    assert LEGACY_STATUS_TO_STATE["approved"] == ExecutionNodeState.ELIGIBLE
+    assert LEGACY_STATUS_TO_STATE["committed"] == ExecutionNodeState.ELIGIBLE
+    assert LEGACY_STATUS_TO_STATE["executing"] == ExecutionNodeState.EXECUTING
+    assert LEGACY_STATUS_TO_STATE["completed"] == ExecutionNodeState.COMPLETED
+    assert LEGACY_STATUS_TO_STATE["failed"] == ExecutionNodeState.FAILED
+
+
+def test_state_to_legacy_status_map_exists() -> None:
+    from oasis.execution.state_machine import STATE_TO_LEGACY_STATUS
+
+    assert STATE_TO_LEGACY_STATUS[ExecutionNodeState.WAITING] == "pending"
+    assert STATE_TO_LEGACY_STATUS[ExecutionNodeState.ELIGIBLE] == "committed"
+    assert STATE_TO_LEGACY_STATUS[ExecutionNodeState.EXECUTING] == "executing"
+    assert (
+        STATE_TO_LEGACY_STATUS[ExecutionNodeState.PENDING_VERIFICATION]
+        == "executing"
+    )
+    assert STATE_TO_LEGACY_STATUS[ExecutionNodeState.PENDING_REVIEW] == "executing"
+    assert STATE_TO_LEGACY_STATUS[ExecutionNodeState.COMPLETED] == "completed"
+    assert (
+        STATE_TO_LEGACY_STATUS[ExecutionNodeState.PENDING_FINALIZATION]
+        == "completed"
+    )
+    assert STATE_TO_LEGACY_STATUS[ExecutionNodeState.FROZEN] == "failed"
+    assert STATE_TO_LEGACY_STATUS[ExecutionNodeState.FAILED] == "failed"
+
+
+def test_transition_syncs_legacy_status(execution_db: Path) -> None:
+    """transition() must keep the legacy status column in sync with state."""
+    _seed_task(execution_db, task_id="t1", state="WAITING")
+    transition(
+        task_id="t1",
+        to_state=ExecutionNodeState.ELIGIBLE,
+        reason="test",
+        db_path=execution_db,
+    )
+    conn = sqlite3.connect(str(execution_db))
+    row = conn.execute(
+        "SELECT state, status FROM task_assignment WHERE task_id = 't1'"
+    ).fetchone()
+    conn.close()
+    assert row[0] == "ELIGIBLE"
+    assert row[1] == "committed"
+
+
+def test_transition_all_states_sync_legacy_status(
+    execution_db: Path,
+) -> None:
+    """Every transition should write the correct legacy status."""
+    from oasis.execution.state_machine import STATE_TO_LEGACY_STATUS
+
+    for state in ExecutionNodeState:
+        _seed_task(execution_db, task_id=f"t-{state.value}", state="WAITING")
+        transition(
+            task_id=f"t-{state.value}",
+            to_state=state,
+            reason="test",
+            db_path=execution_db,
+        )
+        conn = sqlite3.connect(str(execution_db))
+        row = conn.execute(
+            "SELECT state, status FROM task_assignment WHERE task_id = ?",
+            (f"t-{state.value}",),
+        ).fetchone()
+        conn.close()
+        assert row[0] == state.value
+        expected_status = STATE_TO_LEGACY_STATUS.get(state, "")
+        assert row[1] == expected_status

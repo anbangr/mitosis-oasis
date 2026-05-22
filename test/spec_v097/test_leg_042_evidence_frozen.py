@@ -21,6 +21,7 @@ written to ``evidence_anchor``. A second call for the same session must
 be rejected (UNIQUE constraint on ``session_id`` + application-level
 ``ValueError``).
 """
+
 from __future__ import annotations
 
 import sqlite3
@@ -92,10 +93,14 @@ def test_t3_different_sessions_can_each_freeze_independently(gov_db: str) -> Non
     _seed_session(gov_db, "s-3")
     _seed_session(gov_db, "s-4")
     _maybe_freeze_evidence(
-        session_id="s-3", snapshot={"a": 1}, db_path=gov_db,
+        session_id="s-3",
+        snapshot={"a": 1},
+        db_path=gov_db,
     )
     _maybe_freeze_evidence(
-        session_id="s-4", snapshot={"a": 1}, db_path=gov_db,
+        session_id="s-4",
+        snapshot={"a": 1},
+        db_path=gov_db,
     )
     conn = sqlite3.connect(gov_db)
     count = conn.execute(
@@ -111,10 +116,14 @@ def test_t4_merkle_root_is_deterministic_for_same_snapshot(gov_db: str) -> None:
     _seed_session(gov_db, "s-5b")
     snapshot = {"b": 2, "a": 1, "c": [3, 4]}
     _maybe_freeze_evidence(
-        session_id="s-5a", snapshot=snapshot, db_path=gov_db,
+        session_id="s-5a",
+        snapshot=snapshot,
+        db_path=gov_db,
     )
     _maybe_freeze_evidence(
-        session_id="s-5b", snapshot=snapshot, db_path=gov_db,
+        session_id="s-5b",
+        snapshot=snapshot,
+        db_path=gov_db,
     )
     conn = sqlite3.connect(gov_db)
     roots = conn.execute(

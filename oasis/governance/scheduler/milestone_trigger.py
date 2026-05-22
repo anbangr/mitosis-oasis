@@ -20,6 +20,7 @@ Fires every ``milestone_round_interval`` (default 20) execution rounds.
 A round is one settled task. The scheduler queries the ``settlement``
 table (execution branch) to count rounds.
 """
+
 from __future__ import annotations
 
 import sqlite3

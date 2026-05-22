@@ -15,6 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 """Unit tests for milestone_trigger (Bundle 5 Phase 4.1)."""
+
 from __future__ import annotations
 
 import sqlite3
@@ -24,7 +25,6 @@ import pytest
 
 from oasis.governance.scheduler.milestone_trigger import (
     fire_milestone_session,
-    get_current_round,
     get_last_milestone_round,
     should_fire,
 )

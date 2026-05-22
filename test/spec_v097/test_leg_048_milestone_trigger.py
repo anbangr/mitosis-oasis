@@ -15,6 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 """Spec leg §2.2 — milestone trigger fires every milestone_round_interval rounds."""
+
 from __future__ import annotations
 
 import sqlite3
@@ -69,14 +70,18 @@ def test_t1_fires_at_round_20(exec_db: str, gov_db: str) -> None:
     last = get_last_milestone_round(gov_db_path=gov_db)
     assert current == 20
     assert last == 0
-    assert should_fire(current_round=current, last_session_round=last, interval=20) is True
+    assert (
+        should_fire(current_round=current, last_session_round=last, interval=20) is True
+    )
 
 
 def test_t2_does_not_fire_before_interval(exec_db: str, gov_db: str) -> None:
     """At round 15 with interval 20, the trigger does NOT fire."""
     _seed_settlement(exec_db, 15)
     current = get_current_round(exec_db_path=exec_db)
-    assert should_fire(current_round=current, last_session_round=0, interval=20) is False
+    assert (
+        should_fire(current_round=current, last_session_round=0, interval=20) is False
+    )
 
 
 def test_t3_fires_at_subsequent_multiples(gov_db: str) -> None:

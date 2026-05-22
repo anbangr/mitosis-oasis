@@ -219,6 +219,17 @@ class ConstitutionAmendmentBody(BaseModel):
     nonce: int = Field(..., ge=0)
 
 
+class PetitionCreateBody(BaseModel):
+    title: str = Field(..., min_length=1)
+    rationale: str = Field(..., min_length=1)
+    proposed_mission: str = Field(..., min_length=1)
+
+
+class PetitionSignBody(BaseModel):
+    signer_did: str = Field(..., min_length=1)
+    signature_hex: str = Field(..., min_length=1)
+
+
 # ---------------------------------------------------------------------------
 # Shared route definitions
 # ---------------------------------------------------------------------------
@@ -1043,6 +1054,79 @@ async def amend_constitution(body: ConstitutionAmendmentBody) -> dict[str, Any]:
         "param_name": body.param_name,
         "param_value": body.param_value,
     }
+
+
+# ========================= Petitions (Bundle 5, spec §2.2) ==================
+
+
+@_routes.post("/petitions", status_code=201, response_model=dict[str, Any])
+async def create_petition(body: PetitionCreateBody) -> dict[str, Any]:
+    """Create a new petition. Returns the assigned petition_id."""
+    petition_id = f"petition-{uuid.uuid4().hex[:12]}"
+    conn = sqlite3.connect(_get_db())
+    try:
+        conn.execute(
+            "INSERT INTO petition "
+            "(petition_id, title, rationale, proposed_mission) "
+            "VALUES (?, ?, ?, ?)",
+            (petition_id, body.title, body.rationale, body.proposed_mission),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return {"petition_id": petition_id}
+
+
+@_routes.post(
+    "/petitions/{petition_id}/sign",
+    status_code=200,
+    response_model=dict[str, Any],
+)
+async def sign_petition(petition_id: str, body: PetitionSignBody) -> dict[str, Any]:
+    """Accumulate a signature; fire a legislative session if threshold met.
+
+    Returns ``{"fired": bool, "session_id": str | None}``.
+    """
+    from oasis.governance.scheduler.petition_trigger import (
+        accumulate_signature,
+        check_threshold,
+        fire_petition,
+    )
+
+    db_path = _get_db()
+
+    # Verify petition exists.
+    conn = sqlite3.connect(db_path)
+    try:
+        row = conn.execute(
+            "SELECT fired_session_id FROM petition WHERE petition_id = ?",
+            (petition_id,),
+        ).fetchone()
+    finally:
+        conn.close()
+    if row is None:
+        raise HTTPException(status_code=404, detail=f"petition {petition_id} not found")
+    if row[0] is not None:
+        # Already fired — return existing session_id without re-firing.
+        return {"fired": True, "session_id": row[0], "already_fired": True}
+
+    try:
+        accumulate_signature(
+            petition_id=petition_id,
+            signer_did=body.signer_did,
+            signature_hex=body.signature_hex,
+            db_path=db_path,
+        )
+    except sqlite3.IntegrityError:
+        raise HTTPException(
+            status_code=409,
+            detail=f"{body.signer_did} already signed petition {petition_id}",
+        )
+
+    if check_threshold(petition_id=petition_id, db_path=db_path):
+        session_id = fire_petition(petition_id=petition_id, db_path=db_path)
+        return {"fired": True, "session_id": session_id}
+    return {"fired": False, "session_id": None}
 
 
 def _maybe_freeze_evidence(

@@ -100,7 +100,7 @@ def populated_service(tmp_path: Path) -> ObservatoryService:
     )
     conn.execute(
         "INSERT INTO event_log VALUES "
-        "('ev-1', 'session.open', CURRENT_TIMESTAMP, 'sess-1', NULL, '{}', 1)"
+        "('ev-1', 'session.open', CURRENT_TIMESTAMP, 'sess-1', NULL, '{}', 1, NULL)"
     )
     conn.execute(
         "INSERT INTO task_assignment VALUES ('node-1', 'did:mock:agent-1', 'settled')"

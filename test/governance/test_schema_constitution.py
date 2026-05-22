@@ -29,6 +29,10 @@ EXPECTED_PARAMS = {
     "watchdog_anomaly_threshold": 2.0,
     "max_freeze_duration_ms": 259_200_000.0,
     "rotation_max_consecutive": 2.0,
+    "tau_anchor_small_seconds": 10.0,
+    "tau_anchor_large_seconds": 60.0,
+    "anchor_batch_max_size": 1000.0,
+    "anchor_large_dag_threshold": 100.0,
 }
 
 
@@ -40,13 +44,13 @@ def _connect(db_path: Path) -> sqlite3.Connection:
 
 
 def test_default_params_seeded(db_path: Path):
-    """seed_constitution inserts all 13 default parameters."""
+    """seed_constitution inserts all default parameters."""
     create_governance_tables(db_path)
     seed_constitution(db_path)
     conn = _connect(db_path)
     rows = conn.execute("SELECT param_name FROM constitution").fetchall()
     conn.close()
-    assert len(rows) == 20
+    assert len(rows) == 24
 
 
 def test_all_params_present(db_path: Path):
@@ -102,4 +106,4 @@ def test_seed_idempotent(db_path: Path):
     conn = _connect(db_path)
     rows = conn.execute("SELECT COUNT(*) AS cnt FROM constitution").fetchone()
     conn.close()
-    assert rows["cnt"] == 20
+    assert rows["cnt"] == 24

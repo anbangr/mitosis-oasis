@@ -137,7 +137,9 @@ async def lifespan(app: FastAPI):
     # Also initialize the EventBus singleton with the observatory DB
     EventBus.get_instance(_obs_db)
 
-    start_scheduler(adj_db_path=_adj_db, gov_db_path=_gov_db, config=_cfg)
+    start_scheduler(
+        adj_db_path=_adj_db, gov_db_path=_gov_db, obs_db_path=_obs_db, config=_cfg
+    )
 
     logger.info("Mitosis-OASIS platform started")
 

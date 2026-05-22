@@ -287,6 +287,43 @@ _DEFAULT_CONSTITUTION = [
         "Maximum DAG depth (recursive decomposition limit)",
     ),
     ("max_dag_nodes", 50.0, "integer", "Maximum nodes per proposal DAG"),
+    (
+        "adjudicator_quorum",
+        7.0,
+        "integer",
+        "Minimum number of adjudicators required for quorum",
+    ),
+    (
+        "adjudicator_stake",
+        5000.0,
+        "float",
+        "Stake amount required for adjudicator registration",
+    ),
+    (
+        "watchdog_zscore_threshold",
+        2.0,
+        "float",
+        "Z-score threshold for Watchdog anomaly detection",
+    ),
+    ("watchdog_window_days", 30.0, "integer", "Window size in days for Watchdog scan"),
+    (
+        "watchdog_anomaly_threshold",
+        2.0,
+        "integer",
+        "Number of anomalies before system freeze",
+    ),
+    (
+        "max_freeze_duration_ms",
+        259_200_000.0,
+        "integer",
+        "Maximum freeze duration in milliseconds (72h)",
+    ),
+    (
+        "rotation_max_consecutive",
+        2.0,
+        "integer",
+        "Maximum consecutive same-type decisions per adjudicator",
+    ),
 ]
 
 # ---------------------------------------------------------------------------
@@ -360,6 +397,11 @@ def create_governance_tables(db_path: Union[str, Path]) -> None:
             "ALTER TABLE message_log ADD COLUMN payload_json TEXT",
         ]:
             add_column_idempotent(column_sql)
+
+        # Idempotent column addition for Bundle-2 adjudicator accountability
+        add_column_idempotent(
+            "ALTER TABLE agent_registry ADD COLUMN banned BOOLEAN NOT NULL DEFAULT 0"
+        )
     finally:
         conn.close()
 

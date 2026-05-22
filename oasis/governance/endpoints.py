@@ -1021,6 +1021,9 @@ async def amend_constitution(body: ConstitutionAmendmentBody) -> dict[str, Any]:
             (body.param_value, body.param_name),
         )
         conn.commit()
+        from oasis.adjudication._constitution import invalidate_constitution_param
+
+        invalidate_constitution_param(_get_db(), body.param_name)
     finally:
         conn.close()
 

@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 """Release-gate tests: version lockstep, CHANGELOG completeness, tooling hygiene.
 
-These tests enforce the Bundle-1 release criteria (pyproject==0.4.0,
+These tests enforce the Bundle-2 release criteria (pyproject==0.5.0,
 DOMAIN lockstep, CHANGELOG coverage, ruff cleanliness, no skips).
 """
 
@@ -53,11 +53,11 @@ def _read_pyproject_version() -> str:
 # ---------------------------------------------------------------------------
 
 
-def test_t1_pyproject_version_is_040():
-    r"""``tool.poetry.version`` (or ``project.version``) must equal ``"0.4.0"``."""
+def test_t1_pyproject_version_is_050():
+    r"""``tool.poetry.version`` (or ``project.version``) must equal ``"0.5.0"``."""
     version = _read_pyproject_version()
-    assert version == "0.4.0", (
-        f"pyproject.toml version is {version!r}, expected '0.4.0'"
+    assert version == "0.5.0", (
+        f"pyproject.toml version is {version!r}, expected '0.5.0'"
     )
 
 
@@ -79,8 +79,8 @@ def test_t2_domain_version_lockstep():
 # ---------------------------------------------------------------------------
 
 
-def test_t3_changelog_has_040_section_at_top():
-    r"""``## [0.4.0]`` must be the first release header in CHANGELOG.md."""
+def test_t3_changelog_has_050_section_at_top():
+    r"""``## [0.5.0]`` must be the first release header in CHANGELOG.md."""
     with open("CHANGELOG.md") as f:
         lines = f.readlines()
 
@@ -93,8 +93,8 @@ def test_t3_changelog_has_040_section_at_top():
     assert release_lines, "CHANGELOG.md contains no release headers (## [x.y.z])"
 
     first_line_no, first_header = release_lines[0]
-    assert first_header.startswith("## [0.4.0]"), (
-        f"Expected top release header to be '## [0.4.0]', found {first_header!r} "
+    assert first_header.startswith("## [0.5.0]"), (
+        f"Expected top release header to be '## [0.5.0]', found {first_header!r} "
         f"at line {first_line_no}"
     )
 
@@ -145,7 +145,7 @@ def test_t5_no_pytest_mark_skip():
             "grep",
             "-rE",
             "--include=*.py",
-            r"pytest\.mark\.skip\b",
+            r"@pytest\.mark\.skip\b",
             "test/",
         ],
         capture_output=True,

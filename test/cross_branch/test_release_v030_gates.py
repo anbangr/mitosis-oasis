@@ -42,7 +42,7 @@ def test_t1_version_lockstep():
     }
 
     stale_pattern = re.compile(r'"(0\.2\.[56]|0\.3\.0)"')
-    target_pattern = re.compile(r'"0\.4\.0"')
+    target_pattern = re.compile(r'"0\.5\.0"')
 
     for name, path in files.items():
         content = path.read_text()
@@ -52,7 +52,7 @@ def test_t1_version_lockstep():
         )
         target_count = len(target_pattern.findall(content))
         assert target_count == 1, (
-            f"{name} should contain exactly one '0.3.0', found {target_count}"
+            f"{name} should contain exactly one '0.5.0', found {target_count}"
         )
 
 
@@ -203,8 +203,8 @@ def test_t4_acceptance_gates():
 
     # Gate 3 — pyproject.toml version
     pyproject = (project_root / "pyproject.toml").read_text()
-    assert 'version = "0.4.0"' in pyproject, (
-        "pyproject.toml does not declare version 0.4.0"
+    assert 'version = "0.5.0"' in pyproject, (
+        "pyproject.toml does not declare version 0.5.0"
     )
 
     # Gate 4 — CHANGELOG [0.3.0] entry

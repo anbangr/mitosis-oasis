@@ -22,6 +22,13 @@ EXPECTED_PARAMS = {
     "voting_method": 1.0,
     "max_dag_depth": 10.0,
     "max_dag_nodes": 50.0,
+    "adjudicator_quorum": 7.0,
+    "adjudicator_stake": 5000.0,
+    "watchdog_zscore_threshold": 2.0,
+    "watchdog_window_days": 30.0,
+    "watchdog_anomaly_threshold": 2.0,
+    "max_freeze_duration_ms": 259_200_000.0,
+    "rotation_max_consecutive": 2.0,
 }
 
 
@@ -39,7 +46,7 @@ def test_default_params_seeded(db_path: Path):
     conn = _connect(db_path)
     rows = conn.execute("SELECT param_name FROM constitution").fetchall()
     conn.close()
-    assert len(rows) == 13
+    assert len(rows) == 20
 
 
 def test_all_params_present(db_path: Path):
@@ -95,4 +102,4 @@ def test_seed_idempotent(db_path: Path):
     conn = _connect(db_path)
     rows = conn.execute("SELECT COUNT(*) AS cnt FROM constitution").fetchone()
     conn.close()
-    assert rows["cnt"] == 13
+    assert rows["cnt"] == 20

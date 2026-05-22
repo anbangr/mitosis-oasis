@@ -2,6 +2,41 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0] — 2026-05-21 — Bundle 2 (Adjudicator Accountability)
+
+### Added
+
+- **Impeachment** (spec §2.1-2.2): `POST /api/adjudication/impeach`
+  endpoint, EIP-712-gated, requires ceil(2q/3) supermajority of valid
+  signatures. Accept → ban target (both registries) + 100% stake slash
+  to treasury + on-chain evidence CID.
+- **Watchdog** (spec §2.4): hourly apscheduler job; z-score ≥ 2.0
+  anomaly detection on adjudicator approval-rate and freeze-lift-rate
+  in a 30-day rolling window. Calibration mode below 10 decisions.
+- **Rotation policy** (spec §1.2): `enforce_rotation()` blocks
+  > `rotation_max_consecutive` (default 2) consecutive same-adjudicator
+  > decisions of the same type.
+- **COI recusal** (spec §1.2): `is_conflicted()` rejects adjudicators
+  who own any agent in the current mission.
+- **72-hour freeze auto-lift** (spec §2.4): 5-minute apscheduler sweep
+  auto-unfreezes any freeze older than `max_freeze_duration_ms` without
+  `manual_extension=true`.
+- New tables: `adjudicator_registry`, `impeachment`, `watchdog_anomaly`.
+- New columns: `agent_registry.banned`, `adjudication_decision.frozen_at`,
+  `adjudication_decision.manual_extension`, `adjudication_decision.issued_by_did`.
+- New constitution params: `adjudicator_quorum`, `adjudicator_stake`,
+  `watchdog_zscore_threshold`, `watchdog_window_days`,
+  `watchdog_anomaly_threshold`, `max_freeze_duration_ms`,
+  `rotation_max_consecutive`.
+- ≥5 new spec_v097 tests (ADJ-097, 098, 099, 110, 111).
+
+### Breaking
+
+- `sanctions._record_decision()` now requires `issued_by_did`
+  (the adjudicator, not just the target).
+- `POST /api/adjudication/impeach` is EIP-712-gated. Caller must send
+  `X-EIP712-Signature` + `X-EIP712-Signer` headers.
+
 ## [0.4.0] - 2026-05-20
 
 **Bundle 1 — Cryptographic Foundation release.** Replaces v0.2.x mock crypto

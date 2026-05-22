@@ -46,6 +46,7 @@ from oasis.adjudication.endpoints import (
     v1_router as adjudication_v1_router,
 )
 from oasis.adjudication.schema import create_adjudication_tables
+from oasis.adjudication.scheduler import start_scheduler, stop_scheduler
 from oasis.observatory.endpoints import (
     init_observatory_db,
     router as observatory_router,
@@ -113,6 +114,7 @@ async def lifespan(app: FastAPI):
     # Initialise governance database (in-memory, colocated with platform DB)
     _gov_db = os.path.join(tempfile.gettempdir(), f"oasis_gov_{os.getpid()}.db")
     init_governance_db(_gov_db)
+    app.state.gov_db_path = _gov_db
     set_admin_db(_gov_db)
 
     _exec_db = os.path.join(tempfile.gettempdir(), f"oasis_exec_{os.getpid()}.db")
@@ -122,6 +124,7 @@ async def lifespan(app: FastAPI):
     _adj_db = os.path.join(tempfile.gettempdir(), f"oasis_adj_{os.getpid()}.db")
     create_adjudication_tables(_adj_db)
     init_adjudication_db(_adj_db)
+    app.state.adj_db_path = _adj_db
 
     _obs_db = os.path.join(tempfile.gettempdir(), f"oasis_obs_{os.getpid()}.db")
     init_observatory_db(
@@ -134,9 +137,13 @@ async def lifespan(app: FastAPI):
     # Also initialize the EventBus singleton with the observatory DB
     EventBus.get_instance(_obs_db)
 
+    start_scheduler(adj_db_path=_adj_db, gov_db_path=_gov_db, config=_cfg)
+
     logger.info("Mitosis-OASIS platform started")
 
     yield  # Server is now running
+
+    stop_scheduler()
 
     # Graceful shutdown: send EXIT action
     if channel is not None:
@@ -158,7 +165,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Mitosis-OASIS API",
     description="REST API for OASIS social simulation platform",
-    version="0.4.0",
+    version="0.5.0",
     lifespan=lifespan,
 )
 

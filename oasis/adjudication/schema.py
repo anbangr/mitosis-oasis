@@ -13,11 +13,34 @@ from typing import Union
 
 _DDL = """
 -- Cross-branch tables adjudication reads directly in the standalone HTTP path.
+CREATE TABLE IF NOT EXISTS agent_registry (
+    agent_did         TEXT PRIMARY KEY,
+    agent_type        TEXT NOT NULL CHECK(agent_type IN ('producer', 'clerk')),
+    capability_tier   TEXT NOT NULL DEFAULT 't1' CHECK(capability_tier IN ('t1', 't3', 't5')),
+    display_name      TEXT NOT NULL,
+    human_principal   TEXT,
+    reputation_score  REAL NOT NULL DEFAULT 0.5,
+    strategy          TEXT,
+    registered_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    active            BOOLEAN NOT NULL DEFAULT 1,
+    public_key        TEXT,
+    banned            BOOLEAN NOT NULL DEFAULT 0
+);
+
 CREATE TABLE IF NOT EXISTS agent_balance (
     agent_did          TEXT PRIMARY KEY,
     total_balance      REAL NOT NULL DEFAULT 100.0,
     locked_stake       REAL NOT NULL DEFAULT 0.0,
     available_balance  REAL NOT NULL DEFAULT 100.0
+);
+
+CREATE TABLE IF NOT EXISTS guardian_alert (
+    alert_id    TEXT PRIMARY KEY,
+    task_id     TEXT NOT NULL,
+    alert_type  TEXT NOT NULL,
+    severity    TEXT NOT NULL,
+    details     TEXT,
+    created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- 1. Coordination flags (detected collusion / coordination patterns)
@@ -74,6 +97,45 @@ CREATE TABLE IF NOT EXISTS insurance_pool (
     decision_id TEXT REFERENCES adjudication_decision(decision_id),
     created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+-- 5. Adjudicator registry (MONITOR-type agents)
+CREATE TABLE IF NOT EXISTS adjudicator_registry (
+    adjudicator_did   TEXT PRIMARY KEY,
+    eth_address       TEXT NOT NULL UNIQUE,
+    stake_amount      REAL NOT NULL DEFAULT 5000.0,
+    is_active         BOOLEAN NOT NULL DEFAULT 1,
+    is_banned         BOOLEAN NOT NULL DEFAULT 0,
+    registered_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 6. Impeachment motions (spec §2.1-2.2)
+CREATE TABLE IF NOT EXISTS impeachment (
+    motion_id         TEXT PRIMARY KEY,
+    target_did        TEXT NOT NULL,
+    evidence_cid      TEXT NOT NULL,
+    signatures_json   TEXT NOT NULL,             -- list of {signer, sig_hex}
+    signatures_count  INTEGER NOT NULL,
+    required_threshold INTEGER NOT NULL,         -- ceil(2q/3) at motion creation
+    status            TEXT NOT NULL CHECK(status IN ('pending', 'accepted', 'rejected')),
+    slashed_amount    REAL,
+    executed_at       TIMESTAMP,
+    created_at        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (target_did) REFERENCES adjudicator_registry(adjudicator_did)
+);
+
+-- 7. Watchdog anomalies (spec §2.4)
+CREATE TABLE IF NOT EXISTS watchdog_anomaly (
+    anomaly_id        INTEGER PRIMARY KEY AUTOINCREMENT,
+    adjudicator_did   TEXT NOT NULL,
+    anomaly_type      TEXT NOT NULL CHECK(anomaly_type IN (
+                          'approval_rate_deviation',
+                          'freeze_lift_rate_deviation'
+                      )),
+    zscore            REAL NOT NULL,
+    window_decisions  INTEGER NOT NULL,
+    detected_at       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (adjudicator_did) REFERENCES adjudicator_registry(adjudicator_did)
+);
 """
 
 
@@ -91,6 +153,19 @@ def create_adjudication_tables(db_path: Union[str, Path]) -> None:
                     f"ALTER TABLE {table} ADD COLUMN decision_id TEXT "
                     f"REFERENCES adjudication_decision(decision_id)"
                 )
+                conn.commit()
+            except sqlite3.OperationalError:
+                # Column already exists; second invocation is a no-op.
+                pass
+
+        # Idempotent ALTER TABLE for Bundle-2 adjudication decision columns.
+        for column_sql in (
+            "ALTER TABLE adjudication_decision ADD COLUMN frozen_at TIMESTAMP",
+            "ALTER TABLE adjudication_decision ADD COLUMN manual_extension BOOLEAN NOT NULL DEFAULT 0",
+            "ALTER TABLE adjudication_decision ADD COLUMN issued_by_did TEXT",
+        ):
+            try:
+                conn.execute(column_sql)
                 conn.commit()
             except sqlite3.OperationalError:
                 # Column already exists; second invocation is a no-op.

@@ -21,6 +21,25 @@ from oasis.crypto.eip712 import verify
 from oasis.crypto.typed_data import DOMAIN
 
 
+def _extract_eip712_message(
+    primary_type: str, body: dict[str, object]
+) -> dict[str, object]:
+    r"""Project the EIP-712 message out of the request body.
+
+    For Sanction / ConstitutionAmendment, the message is the body verbatim
+    (legacy contract). For Impeachment, the body contains an additional
+    `signatures` envelope field that is NOT part of the typed-data
+    message; project only the three typed fields.
+    """
+    if primary_type == "Impeachment":
+        return {
+            "target_did": body["target_did"],
+            "evidence_cid": body["evidence_cid"],
+            "motion_id": body["motion_id"],
+        }
+    return body
+
+
 def _route_to_primary_type(method: str, path: str) -> str | None:
     r"""Map an HTTP route to its EIP-712 primary_type.
 
@@ -32,6 +51,10 @@ def _route_to_primary_type(method: str, path: str) -> str | None:
         ("POST", "/api/v1/adjudication/slash"): "Sanction",
         ("POST", "/api/adjudication/freeze"): "Sanction",
         ("POST", "/api/v1/adjudication/freeze"): "Sanction",
+        ("POST", "/api/adjudication/override"): "Sanction",
+        ("POST", "/api/v1/adjudication/override"): "Sanction",
+        ("POST", "/api/adjudication/impeach"): "Impeachment",
+        ("POST", "/api/v1/adjudication/impeach"): "Impeachment",
         ("PUT", "/api/governance/constitution"): "ConstitutionAmendment",
         ("PUT", "/api/v1/governance/constitution"): "ConstitutionAmendment",
     }
@@ -80,11 +103,12 @@ async def require_eip712_sig(request: Request) -> str:
         )
 
     body = await request.json()
+    typed_message = _extract_eip712_message(primary_type, body)
 
     if not verify(
         domain=DOMAIN,
         primary_type=primary_type,
-        message=body,
+        message=typed_message,
         signature=signature,
         expected_signer=signer,
     ):

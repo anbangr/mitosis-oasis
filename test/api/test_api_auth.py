@@ -12,6 +12,8 @@ from pathlib import Path
 
 import pytest
 from eth_account import Account
+from eth_account.messages import encode_typed_data
+from fastapi import Depends, FastAPI
 from fastapi.testclient import TestClient
 
 from oasis.api import app
@@ -68,6 +70,31 @@ def auth_client(tmp_path: Path) -> TestClient:
     return TestClient(app, raise_server_exceptions=False)
 
 
+def _seed_acct_as_adjudicator(acct) -> None:
+    r"""Register *acct* in the active adjudication DB's adjudicator_registry.
+
+    Bundle-2 wires ``/slash``, ``/freeze``, and ``/override`` behind
+    ``_resolve_adjudicator_did_from_signer``; the Bundle-1 EIP-712 tests
+    therefore need to plant the signer's eth address before they can prove
+    valid signatures are accepted (the resolver returns ``None`` otherwise
+    and the endpoint short-circuits to HTTP 401).
+    """
+    import sqlite3
+
+    from oasis.adjudication import endpoints as adj_ep
+
+    conn = sqlite3.connect(adj_ep._get_db())
+    try:
+        conn.execute(
+            "INSERT OR IGNORE INTO adjudicator_registry "
+            "(adjudicator_did, eth_address) VALUES (?, ?)",
+            (f"did:adj:{acct.address.lower()}", acct.address),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
 # ---------------------------------------------------------------------------
 # T1 — slash without headers → 401
 # ---------------------------------------------------------------------------
@@ -95,6 +122,7 @@ def test_t1_slash_without_headers(auth_client):
 
 def test_t2_slash_with_valid_eip712(auth_client, acct):
     r"""POST /api/adjudication/slash with valid EIP-712 headers is accepted."""
+    _seed_acct_as_adjudicator(acct)
     body = {
         "target_did": "did:key:zVictim",
         "amount_wei": 100,
@@ -239,6 +267,7 @@ def test_t9_unmapped_route_returns_none(_route_to_primary_type):
 
 def test_edge_signature_with_0x_prefix(auth_client, acct):
     r"""X-EIP712-Signature may include an optional 0x prefix."""
+    _seed_acct_as_adjudicator(acct)
     body = {
         "target_did": "did:key:zVictim",
         "amount_wei": 100,
@@ -261,6 +290,7 @@ def test_edge_signature_with_0x_prefix(auth_client, acct):
 
 def test_edge_signer_case_insensitive(auth_client, acct):
     r"""Recovered signer is compared case-insensitively to X-EIP712-Signer."""
+    _seed_acct_as_adjudicator(acct)
     body = {
         "target_did": "did:key:zVictim",
         "amount_wei": 100,
@@ -340,3 +370,167 @@ def test_edge_v1_slash_without_headers_401(auth_client):
         },
     )
     assert resp.status_code == 401
+
+
+# ---------------------------------------------------------------------------
+# Fixtures for Bundle-2 impeachment tests
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture(scope="module")
+def _extract_eip712_message():
+    from oasis.api_auth import _extract_eip712_message as fn
+
+    return fn
+
+
+@pytest.fixture
+def impeach_client():
+    r"""TestClient with a mock impeach endpoint wired to require_eip712_sig."""
+    from oasis.api_auth import require_eip712_sig as dep
+
+    test_app = FastAPI()
+
+    @test_app.post("/api/adjudication/impeach")
+    async def mock_impeach(signer: str = Depends(dep)):
+        return {"status": "ok", "signer": signer}
+
+    return TestClient(test_app, raise_server_exceptions=False)
+
+
+# ---------------------------------------------------------------------------
+# C3 — _route_to_primary_type resolves Impeachment routes
+# ---------------------------------------------------------------------------
+
+
+def test_c3_route_to_primary_type_resolves_impeachment_routes(_route_to_primary_type):
+    r"""Both impeachment routes map to primary_type 'Impeachment'."""
+    assert _route_to_primary_type("POST", "/api/adjudication/impeach") == "Impeachment"
+    assert (
+        _route_to_primary_type("POST", "/api/v1/adjudication/impeach") == "Impeachment"
+    )
+
+
+# ---------------------------------------------------------------------------
+# C4 — _extract_eip712_message drops signatures for Impeachment
+# ---------------------------------------------------------------------------
+
+
+def test_c4_extract_eip712_message_drops_signatures_for_impeachment(
+    _extract_eip712_message,
+):
+    r"""For primary_type Impeachment, the signatures envelope field is stripped."""
+    body = {
+        "target_did": "did:key:zVictim",
+        "evidence_cid": "QmEvidence",
+        "motion_id": "motion-123",
+        "signatures": [{"signer": "0xabc", "signature": "0xdef"}],
+    }
+    result = _extract_eip712_message("Impeachment", body)
+    assert set(result.keys()) == {"target_did", "evidence_cid", "motion_id"}
+    assert "signatures" not in result
+
+
+# ---------------------------------------------------------------------------
+# C5 — _extract_eip712_message is verbatim for Sanction
+# ---------------------------------------------------------------------------
+
+
+def test_c5_extract_eip712_message_is_verbatim_for_sanction(_extract_eip712_message):
+    r"""For primary_type Sanction, the body is returned verbatim (including extra fields)."""
+    body = {
+        "target_did": "did:key:zVictim",
+        "amount_wei": 100,
+        "reason": "test",
+        "nonce": 1,
+        "extra_field": "should_remain",
+    }
+    result = _extract_eip712_message("Sanction", body)
+    assert result == body
+
+
+# ---------------------------------------------------------------------------
+# C6 — FastAPI dependency accepts a valid impeach POST
+# ---------------------------------------------------------------------------
+
+
+def test_c6_fastapi_dependency_accepts_valid_impeach_post(impeach_client, acct):
+    r"""A valid EIP-712 signature over the Bundle-2 Impeachment message is accepted."""
+    body = {
+        "target_did": "did:key:zVictim",
+        "evidence_cid": "QmEvidence",
+        "motion_id": "motion-123",
+        "signatures": [{"signer": acct.address, "signature": "0x" + "00" * 65}],
+    }
+    # Sign the Bundle-2 typed message directly (bypass our sign() which uses the old schema)
+    message = {
+        "target_did": body["target_did"],
+        "evidence_cid": body["evidence_cid"],
+        "motion_id": body["motion_id"],
+    }
+    bundle2_schema = [
+        {"name": "target_did", "type": "string"},
+        {"name": "evidence_cid", "type": "string"},
+        {"name": "motion_id", "type": "string"},
+    ]
+    signable = encode_typed_data(
+        domain_data=DOMAIN,
+        message_types={"Impeachment": bundle2_schema},
+        message_data=message,
+    )
+    signed = Account.sign_message(signable, private_key=acct.key)
+
+    resp = impeach_client.post(
+        "/api/adjudication/impeach",
+        json=body,
+        headers={
+            "X-EIP712-Signature": signed.signature.hex(),
+            "X-EIP712-Signer": acct.address,
+        },
+    )
+    assert resp.status_code != 401
+    assert resp.status_code != 400
+    assert resp.status_code == 200
+
+
+# ---------------------------------------------------------------------------
+# C7 — FastAPI dependency 401s when header signs wrong message
+# ---------------------------------------------------------------------------
+
+
+def test_c7_fastapi_dependency_401_when_header_signs_wrong_message(
+    impeach_client, acct
+):
+    r"""Signature over a wrong message (missing evidence_cid) returns 401."""
+    body = {
+        "target_did": "did:key:zVictim",
+        "evidence_cid": "QmEvidence",
+        "motion_id": "motion-123",
+        "signatures": [{"signer": acct.address, "signature": "0x" + "00" * 65}],
+    }
+    # Sign a WRONG message that omits evidence_cid
+    wrong_message = {
+        "target_did": body["target_did"],
+        "motion_id": body["motion_id"],
+    }
+    wrong_schema = [
+        {"name": "target_did", "type": "string"},
+        {"name": "motion_id", "type": "string"},
+    ]
+    signable = encode_typed_data(
+        domain_data=DOMAIN,
+        message_types={"Impeachment": wrong_schema},
+        message_data=wrong_message,
+    )
+    signed = Account.sign_message(signable, private_key=acct.key)
+
+    resp = impeach_client.post(
+        "/api/adjudication/impeach",
+        json=body,
+        headers={
+            "X-EIP712-Signature": signed.signature.hex(),
+            "X-EIP712-Signer": acct.address,
+        },
+    )
+    assert resp.status_code == 401
+    assert "EIP-712 signature verification failed" in resp.text

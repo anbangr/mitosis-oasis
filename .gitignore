@@ -115,3 +115,5 @@ BLOCKED-feature-*.md
 .gstack/
 inbox/
 uv.lock
+# gstack-build convergence-failure reports — see /docs or run `gstack-build` for context
+BLOCKED*.md

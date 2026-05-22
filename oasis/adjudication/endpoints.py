@@ -13,10 +13,15 @@ from __future__ import annotations
 import sqlite3
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel
 
 from oasis.api_auth import require_eip712_sig
+from oasis.adjudication.coi import (
+    ConflictedAdjudicatorError,
+    _resolve_adjudicator_did_from_signer,
+)
+from oasis.adjudication.rotation import RotationViolationError
 from oasis.adjudication.sanctions import SanctionEngine
 from oasis.config import PlatformConfig
 
@@ -40,6 +45,32 @@ def _get_db() -> str:
     if _db_path is None:
         raise HTTPException(503, "Adjudication database not initialised")
     return _db_path
+
+
+def _resolve_db_paths(request: Request) -> tuple[str, str]:
+    """Return (adj_db_path, gov_db_path) for the current request.
+
+    The adjudication path is taken from the module-level ``_get_db()``.
+    The governance path is read from ``request.app.state.gov_db_path``
+    if present; otherwise it is derived by substituting ``_adj_`` → ``_gov_``
+    in the adjudication path basename (Bundle 1 convention).  When the
+    basename does not contain ``_adj_`` the path is returned verbatim
+    (single-DB test fixtures).
+    """
+    adj_db_path = _get_db()
+    gov_db_path: str | None = None
+    if hasattr(request.app.state, "gov_db_path"):
+        gov_db_path = request.app.state.gov_db_path
+    if gov_db_path is None:
+        from pathlib import Path
+
+        p = Path(adj_db_path)
+        if "_adj_" in p.name:
+            gov_name = p.name.replace("_adj_", "_gov_")
+            gov_db_path = str(p.with_name(gov_name))
+        else:
+            gov_db_path = str(adj_db_path)
+    return adj_db_path, gov_db_path
 
 
 def _connect() -> sqlite3.Connection:
@@ -281,15 +312,47 @@ class SanctionRequest(BaseModel):
     amount_wei: int
     reason: str
     nonce: int
+    mission_id: str | None = None
 
 
-@_routes.post("/slash", dependencies=[Depends(require_eip712_sig)])
-async def slash(body: SanctionRequest) -> dict[str, Any]:
+@_routes.post("/slash")
+async def slash(
+    body: SanctionRequest,
+    request: Request,
+    signer: str = Depends(require_eip712_sig),
+) -> dict[str, Any]:
     """Slash an agent's locked stake."""
-    engine = SanctionEngine(_config)
-    decision = engine.slash_stake(
-        body.target_did, float(body.amount_wei), body.reason, _get_db()
+    adj_db_path, gov_db_path = _resolve_db_paths(request)
+    issued_by_did = _resolve_adjudicator_did_from_signer(
+        signer_address=signer,
+        adj_db_path=adj_db_path,
+        gov_db_path=gov_db_path,
     )
+    if issued_by_did is None:
+        raise HTTPException(401, detail="signer is not a registered adjudicator")
+
+    engine = SanctionEngine(_config)
+    try:
+        decision = engine.slash_stake(
+            body.target_did,
+            float(body.amount_wei),
+            body.reason,
+            _get_db(),
+            issued_by_did=issued_by_did,
+            mission_id=body.mission_id,
+            adj_db_path=adj_db_path,
+            gov_db_path=gov_db_path,
+        )
+    except ConflictedAdjudicatorError:
+        raise HTTPException(
+            403, detail="adjudicator recused: owns agent in mission"
+        ) from None
+    except RotationViolationError as exc:
+        raise HTTPException(
+            409,
+            detail="rotation policy: adjudicator has issued max_consecutive same-type decisions; rotate to another adjudicator",
+        ) from exc
+
     return {
         "decision_id": decision.decision_id,
         "decision_type": decision.decision_type,
@@ -298,11 +361,91 @@ async def slash(body: SanctionRequest) -> dict[str, Any]:
     }
 
 
-@_routes.post("/freeze", dependencies=[Depends(require_eip712_sig)])
-async def freeze(body: SanctionRequest) -> dict[str, Any]:
+@_routes.post("/freeze")
+async def freeze(
+    body: SanctionRequest,
+    request: Request,
+    signer: str = Depends(require_eip712_sig),
+) -> dict[str, Any]:
     """Freeze an agent, blocking them from new tasks."""
+    adj_db_path, gov_db_path = _resolve_db_paths(request)
+    issued_by_did = _resolve_adjudicator_did_from_signer(
+        signer_address=signer,
+        adj_db_path=adj_db_path,
+        gov_db_path=gov_db_path,
+    )
+    if issued_by_did is None:
+        raise HTTPException(401, detail="signer is not a registered adjudicator")
+
     engine = SanctionEngine(_config)
-    decision = engine.freeze_agent(body.target_did, body.reason, _get_db())
+    try:
+        decision = engine.freeze_agent(
+            body.target_did,
+            body.reason,
+            _get_db(),
+            issued_by_did=issued_by_did,
+            mission_id=body.mission_id,
+            adj_db_path=adj_db_path,
+            gov_db_path=gov_db_path,
+        )
+    except ConflictedAdjudicatorError:
+        raise HTTPException(
+            403, detail="adjudicator recused: owns agent in mission"
+        ) from None
+    except RotationViolationError as exc:
+        raise HTTPException(
+            409,
+            detail="rotation policy: adjudicator has issued max_consecutive same-type decisions; rotate to another adjudicator",
+        ) from exc
+
+    return {
+        "decision_id": decision.decision_id,
+        "decision_type": decision.decision_type,
+        "agent_did": decision.agent_did,
+        "reason": decision.reason,
+    }
+
+
+# ========================= Override ========================================
+
+
+@_routes.post("/override")
+async def override(
+    body: SanctionRequest,
+    request: Request,
+    signer: str = Depends(require_eip712_sig),
+) -> dict[str, Any]:
+    """Record an override-panel binding decision."""
+    adj_db_path, gov_db_path = _resolve_db_paths(request)
+    issued_by_did = _resolve_adjudicator_did_from_signer(
+        signer_address=signer,
+        adj_db_path=adj_db_path,
+        gov_db_path=gov_db_path,
+    )
+    if issued_by_did is None:
+        raise HTTPException(401, detail="signer is not a registered adjudicator")
+
+    engine = SanctionEngine(_config)
+    try:
+        decision = engine.record_override(
+            body.target_did,
+            body.reason,
+            _get_db(),
+            issued_by_did=issued_by_did,
+            mission_id=body.mission_id,
+            adj_db_path=adj_db_path,
+            gov_db_path=gov_db_path,
+        )
+    except ConflictedAdjudicatorError:
+        raise HTTPException(
+            403, detail="adjudicator recused: owns agent in mission"
+        ) from None
+    except RotationViolationError as exc:
+        raise HTTPException(
+            409,
+            detail="rotation policy: adjudicator has issued max_consecutive same-type decisions; rotate to another adjudicator",
+        ) from exc
+
     return {
         "decision_id": decision.decision_id,
         "decision_type": decision.decision_type,

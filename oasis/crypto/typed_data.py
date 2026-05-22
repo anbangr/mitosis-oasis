@@ -19,7 +19,7 @@ from pydantic import BaseModel
 
 DOMAIN = {
     "name": "MitosisOasis",
-    "version": "0.4.0",
+    "version": "0.5.0",
     "chainId": 0,
     "verifyingContract": "0x" + "0" * 40,
 }
@@ -80,15 +80,15 @@ class ConstitutionAmendmentTypedData(TypedDataMessage):
 
 
 class ImpeachmentTypedData(TypedDataMessage):
-    r"""EIP-712 typed data for an impeachment action (reserved for Bundle 2)."""
+    r"""EIP-712 typed data for an impeachment action (Bundle 2)."""
 
     target_did: str
-    grounds: str
-    nonce: int
+    evidence_cid: str
+    motion_id: str
 
     TYPE_SCHEMA: ClassVar[list[dict[str, str]]] = [
         {"name": "target_did", "type": "string"},
-        {"name": "grounds", "type": "string"},
-        {"name": "nonce", "type": "uint256"},
+        {"name": "evidence_cid", "type": "string"},
+        {"name": "motion_id", "type": "string"},
     ]
     PRIMARY_TYPE: ClassVar[str] = "Impeachment"

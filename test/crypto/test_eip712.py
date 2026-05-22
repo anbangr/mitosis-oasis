@@ -293,3 +293,43 @@ def test_edge_impeachment_has_required_class_vars():
     assert hasattr(ImpeachmentTypedData, "PRIMARY_TYPE")
     assert isinstance(ImpeachmentTypedData.TYPE_SCHEMA, list)
     assert ImpeachmentTypedData.PRIMARY_TYPE == "Impeachment"
+
+
+# ---------------------------------------------------------------------------
+# C1 — ImpeachmentTypedData schema matches Bundle-2 shape
+# ---------------------------------------------------------------------------
+
+
+def test_c1_impeachment_typed_data_schema_matches_bundle2_shape():
+    r"""ImpeachmentTypedData.TYPE_SCHEMA has exactly target_did, evidence_cid, motion_id."""
+    schema_names = [field["name"] for field in ImpeachmentTypedData.TYPE_SCHEMA]
+    assert schema_names == ["target_did", "evidence_cid", "motion_id"]
+    assert ImpeachmentTypedData.PRIMARY_TYPE == "Impeachment"
+
+
+# ---------------------------------------------------------------------------
+# C2 — Real eth_account signature over Bundle-2 message verifies
+# ---------------------------------------------------------------------------
+
+
+def test_c2_raw_ethaccount_sig_over_bundle2_message_verifies(acct):
+    r"""A raw Account.sign_message over {target_did, evidence_cid, motion_id} verifies via eip712.verify."""
+    message = {
+        "target_did": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doY",
+        "evidence_cid": "QmTestEvidenceCid1234567890abcdef",
+        "motion_id": "motion-001",
+    }
+    bundle2_schema = [
+        {"name": "target_did", "type": "string"},
+        {"name": "evidence_cid", "type": "string"},
+        {"name": "motion_id", "type": "string"},
+    ]
+    signable = encode_typed_data(
+        domain_data=DOMAIN,
+        message_types={"Impeachment": bundle2_schema},
+        message_data=message,
+    )
+    signed = Account.sign_message(signable, private_key=acct.key)
+    assert (
+        verify(DOMAIN, "Impeachment", message, signed.signature, acct.address) is True
+    )

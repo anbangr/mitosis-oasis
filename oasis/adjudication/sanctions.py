@@ -8,6 +8,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Union
 
+from oasis.adjudication._constitution import _get_constitution_param
+from oasis.adjudication.coi import ConflictedAdjudicatorError, is_conflicted
+from oasis.adjudication.rotation import RotationViolationError, enforce_rotation
 from oasis.config import PlatformConfig
 
 
@@ -33,12 +36,127 @@ class SanctionEngine:
     def __init__(self, config: PlatformConfig | None = None) -> None:
         self.config = config or PlatformConfig()
 
+    def _check_coi(
+        self,
+        *,
+        issued_by_did: str | None,
+        mission_id: str | None,
+        target_did: str,
+        db_path: Union[str, Path],
+        adj_db_path: Union[str, Path, None] = None,
+        gov_db_path: Union[str, Path, None] = None,
+    ) -> None:
+        """Raise ConflictedAdjudicatorError if the adjudicator is conflicted."""
+        if issued_by_did is None:
+            return
+
+        _adj_db = str(adj_db_path or db_path)
+        _gov_db = str(gov_db_path or db_path)
+
+        # Determine mission and agents in mission
+        if mission_id is not None:
+            _mission = mission_id
+        else:
+            # Infer mission from target_did's active assignment
+            conn = sqlite3.connect(_gov_db)
+            conn.row_factory = sqlite3.Row
+            try:
+                row = conn.execute(
+                    "SELECT session_id FROM task_assignment "
+                    "WHERE agent_did = ? AND status IN ('committed', 'running', 'assigned') "
+                    "ORDER BY created_at DESC LIMIT 1",
+                    (target_did,),
+                ).fetchone()
+                _mission = row["session_id"] if row else None
+            finally:
+                conn.close()
+
+        # Gather agents in the mission. Split-DB production paths only check
+        # an actual mission; legacy single-DB fixtures may omit task_assignment
+        # rows, so keep the target as the minimal mission set there.
+        conn = sqlite3.connect(_gov_db)
+        conn.row_factory = sqlite3.Row
+        try:
+            if _mission is not None:
+                rows = conn.execute(
+                    "SELECT agent_did FROM task_assignment WHERE session_id = ?",
+                    (_mission,),
+                ).fetchall()
+                agents_in_mission = {r["agent_did"] for r in rows}
+            else:
+                agents_in_mission = set()
+            if _mission is not None or _gov_db == str(db_path):
+                agents_in_mission.add(target_did)
+        finally:
+            conn.close()
+
+        if is_conflicted(
+            adjudicator_did=issued_by_did,
+            mission_id=_mission,
+            agents_in_mission=agents_in_mission,
+            gov_db_path=_gov_db,
+        ):
+            raise ConflictedAdjudicatorError(
+                f"adjudicator {issued_by_did} recused: owns agent in mission {_mission}"
+            )
+
+    def _check_rotation(
+        self,
+        *,
+        issued_by_did: str | None,
+        decision_type: str,
+        adj_db_path: Union[str, Path],
+        gov_db_path: Union[str, Path, None] = None,
+    ) -> None:
+        """Raise RotationViolationError if the adjudicator has exceeded the consecutive limit."""
+        if issued_by_did is None:
+            return
+
+        _adj_db = str(adj_db_path)
+        _gov_db = str(gov_db_path or adj_db_path)
+
+        max_consecutive = int(
+            _get_constitution_param(_gov_db, "rotation_max_consecutive", default=2.0)
+        )
+        result = enforce_rotation(
+            adjudicator_did=issued_by_did,
+            decision_type=decision_type,
+            max_consecutive=max_consecutive,
+            db_path=_adj_db,
+        )
+        if not result.allowed:
+            raise RotationViolationError(result.reason)
+
     def freeze_agent(
-        self, agent_did: str, reason: str, db_path: Union[str, Path]
+        self,
+        agent_did: str,
+        reason: str,
+        db_path: Union[str, Path],
+        *,
+        issued_by_did: str | None = None,
+        mission_id: str | None = None,
+        adj_db_path: Union[str, Path, None] = None,
+        gov_db_path: Union[str, Path, None] = None,
     ) -> AdjudicationDecision:
         """Set agent active=0, blocking them from new tasks."""
+        self._check_coi(
+            issued_by_did=issued_by_did,
+            mission_id=mission_id,
+            target_did=agent_did,
+            db_path=db_path,
+            adj_db_path=adj_db_path,
+            gov_db_path=gov_db_path,
+        )
+        self._check_rotation(
+            issued_by_did=issued_by_did,
+            decision_type="freeze",
+            adj_db_path=adj_db_path or db_path,
+            gov_db_path=gov_db_path,
+        )
+
         conn = self._connect(db_path)
         try:
+            self._ensure_agent_registry_row(conn, agent_did)
             conn.execute(
                 "UPDATE agent_registry SET active = 0 WHERE agent_did = ?",
                 (agent_did,),
@@ -50,6 +168,7 @@ class SanctionEngine:
                 severity="CRITICAL",
                 reason=reason,
                 layer1_result="frozen",
+                issued_by_did=issued_by_did,
             )
             conn.commit()
             return decision
@@ -57,9 +176,21 @@ class SanctionEngine:
             conn.close()
 
     def unfreeze_agent(
-        self, agent_did: str, db_path: Union[str, Path]
+        self,
+        agent_did: str,
+        db_path: Union[str, Path],
+        *,
+        issued_by_did: str | None = None,
+        adj_db_path: Union[str, Path, None] = None,
+        gov_db_path: Union[str, Path, None] = None,
     ) -> AdjudicationDecision:
         """Reactivate a frozen agent."""
+        self._check_rotation(
+            issued_by_did=issued_by_did,
+            decision_type="unfreeze",
+            adj_db_path=adj_db_path or db_path,
+            gov_db_path=gov_db_path,
+        )
         conn = self._connect(db_path)
         try:
             conn.execute(
@@ -73,6 +204,7 @@ class SanctionEngine:
                 severity="INFO",
                 reason="Agent reactivated",
                 layer1_result="unfrozen",
+                issued_by_did=issued_by_did,
             )
             conn.commit()
             return decision
@@ -85,6 +217,11 @@ class SanctionEngine:
         amount: float,
         reason: str,
         db_path: Union[str, Path],
+        *,
+        issued_by_did: str | None = None,
+        mission_id: str | None = None,
+        adj_db_path: Union[str, Path, None] = None,
+        gov_db_path: Union[str, Path, None] = None,
     ) -> AdjudicationDecision:
         """Deduct from locked_stake and split slash proceeds 50/50 between
         treasury and insurance_pool.
@@ -95,8 +232,24 @@ class SanctionEngine:
         Adjudicator-stake slashes (impeachment) are handled separately in
         Bundle 2 and remain 100% → treasury per spec §2.2.
         """
+        self._check_coi(
+            issued_by_did=issued_by_did,
+            mission_id=mission_id,
+            target_did=agent_did,
+            db_path=db_path,
+            adj_db_path=adj_db_path,
+            gov_db_path=gov_db_path,
+        )
+        self._check_rotation(
+            issued_by_did=issued_by_did,
+            decision_type="slash",
+            adj_db_path=adj_db_path or db_path,
+            gov_db_path=gov_db_path,
+        )
+
         conn = self._connect(db_path)
         try:
+            self._ensure_agent_registry_row(conn, agent_did)
             # Get current locked stake
             bal = conn.execute(
                 "SELECT locked_stake FROM agent_balance WHERE agent_did = ?",
@@ -113,6 +266,7 @@ class SanctionEngine:
                 severity="CRITICAL",
                 reason=f"{reason} (slashed {actual_slash:.2f})",
                 layer1_result=f"slashed_{actual_slash:.2f}",
+                issued_by_did=issued_by_did,
             )
 
             if actual_slash > 0:
@@ -159,6 +313,50 @@ class SanctionEngine:
                     ),
                 )
 
+            conn.commit()
+            return decision
+        finally:
+            conn.close()
+
+    def record_override(
+        self,
+        agent_did: str,
+        reason: str,
+        db_path: Union[str, Path],
+        *,
+        issued_by_did: str | None = None,
+        mission_id: str | None = None,
+        adj_db_path: Union[str, Path, None] = None,
+        gov_db_path: Union[str, Path, None] = None,
+    ) -> AdjudicationDecision:
+        """Record an override-panel binding decision."""
+        self._check_coi(
+            issued_by_did=issued_by_did,
+            mission_id=mission_id,
+            target_did=agent_did,
+            db_path=db_path,
+            adj_db_path=adj_db_path,
+            gov_db_path=gov_db_path,
+        )
+        self._check_rotation(
+            issued_by_did=issued_by_did,
+            decision_type="override",
+            adj_db_path=adj_db_path or db_path,
+            gov_db_path=gov_db_path,
+        )
+
+        conn = self._connect(db_path)
+        try:
+            self._ensure_agent_registry_row(conn, agent_did)
+            decision = self._record_decision(
+                conn,
+                agent_did=agent_did,
+                decision_type="override",
+                severity="CRITICAL",
+                reason=reason,
+                layer1_result="override",
+                issued_by_did=issued_by_did,
+            )
             conn.commit()
             return decision
         finally:
@@ -261,6 +459,18 @@ class SanctionEngine:
     # Internal helpers
     # ------------------------------------------------------------------
 
+    @staticmethod
+    def _ensure_agent_registry_row(conn: sqlite3.Connection, agent_did: str) -> None:
+        try:
+            conn.execute(
+                "INSERT OR IGNORE INTO agent_registry "
+                "(agent_did, agent_type, display_name) VALUES (?, 'producer', ?)",
+                (agent_did, agent_did),
+            )
+        except sqlite3.OperationalError:
+            # Legacy adjudication-only fixtures may not carry agent_registry.
+            pass
+
     def _record_decision(
         self,
         conn: sqlite3.Connection,
@@ -272,13 +482,15 @@ class SanctionEngine:
         layer1_result: str,
         alert_id: str | None = None,
         flag_id: str | None = None,
+        issued_by_did: str | None = None,
     ) -> AdjudicationDecision:
         decision_id = f"dec-{uuid.uuid4().hex[:8]}"
         conn.execute(
             "INSERT INTO adjudication_decision "
             "(decision_id, alert_id, flag_id, agent_did, decision_type, "
-            "severity, reason, layer1_result, layer2_advisory) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "severity, reason, layer1_result, layer2_advisory, issued_by_did, frozen_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "
+            "CASE WHEN ? = 'freeze' THEN CURRENT_TIMESTAMP ELSE NULL END)",
             (
                 decision_id,
                 alert_id,
@@ -289,6 +501,8 @@ class SanctionEngine:
                 reason,
                 layer1_result,
                 None,
+                issued_by_did,
+                decision_type,
             ),
         )
         return AdjudicationDecision(

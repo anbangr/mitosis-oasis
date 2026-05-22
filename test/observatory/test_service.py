@@ -99,8 +99,8 @@ def populated_service(tmp_path: Path) -> ObservatoryService:
         "(NULL, 'did:mock:agent-1', 0.7, 0.8, 0.9, 'good work', CURRENT_TIMESTAMP)"
     )
     conn.execute(
-        "INSERT INTO event_log VALUES "
-        "('ev-1', 'session.open', CURRENT_TIMESTAMP, 'sess-1', NULL, '{}', 1, NULL)"
+        "INSERT INTO event_log (event_id, event_type, timestamp, session_id, agent_did, payload, sequence_number) "
+        "VALUES ('ev-1', 'session.open', CURRENT_TIMESTAMP, 'sess-1', NULL, '{}', 1)"
     )
     conn.execute(
         "INSERT INTO task_assignment VALUES ('node-1', 'did:mock:agent-1', 'settled')"

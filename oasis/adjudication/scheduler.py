@@ -26,6 +26,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from oasis.adjudication import freeze_sweeper
 from oasis.adjudication import watchdog
+from oasis.adjudication import anchor_publisher
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +34,7 @@ _scheduler: Optional[AsyncIOScheduler] = None
 
 
 def start_scheduler(
-    *, adj_db_path: str, gov_db_path: str, config=None
+    *, adj_db_path: str, gov_db_path: str, obs_db_path: str | None = None, config=None
 ) -> AsyncIOScheduler:
     """Start the background scheduler with freeze-sweeper and watchdog jobs.
 
@@ -52,11 +53,13 @@ def start_scheduler(
         try:
             rows = conn.execute(
                 "SELECT param_name, param_value FROM constitution "
-                "WHERE param_name IN (?, ?, ?)",
+                "WHERE param_name IN (?, ?, ?, ?, ?)",
                 (
                     "max_freeze_duration_ms",
                     "watchdog_window_days",
                     "watchdog_zscore_threshold",
+                    "tau_anchor_small_seconds",
+                    "anchor_batch_max_size",
                 ),
             ).fetchall()
             params = {row["param_name"]: row["param_value"] for row in rows}
@@ -68,6 +71,8 @@ def start_scheduler(
     max_freeze_duration_ms = int(params.get("max_freeze_duration_ms", 259_200_000))
     watchdog_window_days = int(params.get("watchdog_window_days", 30))
     watchdog_zscore_threshold = float(params.get("watchdog_zscore_threshold", 2.0))
+    tau_anchor_small = int(params.get("tau_anchor_small_seconds", 10))
+    batch_max = int(params.get("anchor_batch_max_size", 1000))
 
     # Determine event loop — use the running loop if available, otherwise spin
     # up a background thread with its own loop so sync tests also work.
@@ -110,6 +115,29 @@ def start_scheduler(
         "interval",
         hours=1,
         id="watchdog_scan",
+        replace_existing=True,
+    )
+
+    def _anchor_job():
+        try:
+            result = anchor_publisher.publish_anchor(
+                db_path=obs_db_path,
+                batch_max_size=batch_max,
+            )
+            if result:
+                logger.info(
+                    "anchor_publisher committed %d events as %s",
+                    result["event_count"],
+                    result["anchor_id"],
+                )
+        except Exception:
+            logger.exception("anchor_publisher job failed")
+
+    _scheduler.add_job(
+        _anchor_job,
+        "interval",
+        seconds=tau_anchor_small,
+        id="anchor_publisher",
         replace_existing=True,
     )
 

@@ -324,6 +324,30 @@ _DEFAULT_CONSTITUTION = [
         "integer",
         "Maximum consecutive same-type decisions per adjudicator",
     ),
+    (
+        "tau_anchor_small_seconds",
+        10.0,
+        "integer",
+        "Checkpoint interval for small DAGs (spec exec §7)",
+    ),
+    (
+        "tau_anchor_large_seconds",
+        60.0,
+        "integer",
+        "Checkpoint interval for large DAGs (spec exec §7)",
+    ),
+    (
+        "anchor_batch_max_size",
+        1000.0,
+        "integer",
+        "Max events per anchor batch",
+    ),
+    (
+        "anchor_large_dag_threshold",
+        100.0,
+        "integer",
+        "Node count above which tau_anchor_large applies",
+    ),
 ]
 
 # ---------------------------------------------------------------------------

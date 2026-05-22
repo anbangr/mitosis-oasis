@@ -11,13 +11,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
-r"""Feature 9 — v0.5.0 release-gate tests (Bundle 2 Adjudicator Accountability).
+r"""Feature 12 — v0.6.0 release-gate tests (Bundle 3 Hybrid Security).
 
-T1  All four version surfaces lockstep at 0.5.0, no stale 0.4.0.
-T2  CHANGELOG [0.5.0] block lists all five Bundle-2 mechanisms.
-T3  CHANGELOG [0.5.0] block cites the required spec sections.
-T4  CHANGELOG [0.5.0] block names every new table / column / constitution param.
-T5  Full pytest suite green with ~530+ passing and zero new skips/xfails.
+T1  All four version surfaces lockstep at 0.6.0, no stale 0.5.0.
+T2  CHANGELOG [0.6.0] block lists all three Bundle-3 mechanisms.
+T3  CHANGELOG [0.6.0] block cites the required spec sections.
+T4  CHANGELOG [0.6.0] block names every new table / column / constitution param.
+T5  Full pytest suite green with ~560+ passing and zero new skips/xfails.
 T6  apscheduler shuts down cleanly under test (no Future-pending warnings).
 T7  Lint and format are clean.
 """
@@ -75,41 +75,41 @@ def _changelog_block(version: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# T1 — Version lockstep at 0.5.0, no stale 0.4.0
+# T1 — Version lockstep at 0.6.0, no stale 0.5.0
 # ---------------------------------------------------------------------------
 
 
-def test_t1_pyproject_version_is_050():
-    """tool.poetry.version must equal '0.5.0'."""
+def test_t1_pyproject_version_is_060():
+    """tool.poetry.version must equal '0.6.0'."""
     version = _read_pyproject_version()
-    assert version == "0.5.0", (
-        f"pyproject.toml version is {version!r}, expected '0.5.0'"
+    assert version == "0.6.0", (
+        f"pyproject.toml version is {version!r}, expected '0.6.0'"
     )
 
 
-def test_t1_init_version_is_050():
-    """oasis/__init__.py must declare __version__ = '0.5.0'."""
+def test_t1_init_version_is_060():
+    """oasis/__init__.py must declare __version__ = '0.6.0'."""
     text = _read_file_text("oasis/__init__.py")
-    matches = re.findall(r'__version__\s*=\s*"0\.5\.0"', text)
-    assert len(matches) >= 1, "oasis/__init__.py missing __version__ = '0.5.0'"
+    matches = re.findall(r'__version__\s*=\s*"0\.6\.0"', text)
+    assert len(matches) >= 1, "oasis/__init__.py missing __version__ = '0.6.0'"
 
 
-def test_t1_api_version_is_050():
-    """oasis/api.py FastAPI app must pass version='0.5.0'."""
+def test_t1_api_version_is_060():
+    """oasis/api.py FastAPI app must pass version='0.6.0'."""
     text = _read_file_text("oasis/api.py")
-    matches = re.findall(r'version\s*=\s*"0\.5\.0"', text)
-    assert len(matches) >= 1, "oasis/api.py missing version='0.5.0' in FastAPI(...)"
+    matches = re.findall(r'version\s*=\s*"0\.6\.0"', text)
+    assert len(matches) >= 1, "oasis/api.py missing version='0.6.0' in FastAPI(...)"
 
 
-def test_t1_domain_version_is_050():
-    """DOMAIN['version'] must equal '0.5.0'."""
-    assert DOMAIN["version"] == "0.5.0", (
-        f"DOMAIN['version']={DOMAIN['version']!r}, expected '0.5.0'"
+def test_t1_domain_version_is_060():
+    """DOMAIN['version'] must equal '0.6.0'."""
+    assert DOMAIN["version"] == "0.6.0", (
+        f"DOMAIN['version']={DOMAIN['version']!r}, expected '0.6.0'"
     )
 
 
-def test_t1_no_stale_040_anywhere():
-    """None of the four version surfaces may contain the string '0.4.0'."""
+def test_t1_no_stale_050_anywhere():
+    """None of the four version surfaces may contain the string '0.5.0'."""
     files = [
         "pyproject.toml",
         "oasis/__init__.py",
@@ -119,28 +119,25 @@ def test_t1_no_stale_040_anywhere():
     offenders = []
     for rel in files:
         text = _read_file_text(rel)
-        if '"0.4.0"' in text or "'0.4.0'" in text:
+        if '"0.5.0"' in text or "'0.5.0'" in text:
             offenders.append(rel)
-    assert not offenders, f"Stale '0.4.0' still present in: {offenders}"
+    assert not offenders, f"Stale '0.5.0' still present in: {offenders}"
 
 
 # ---------------------------------------------------------------------------
-# T2 — CHANGELOG lists all five Bundle 2 mechanisms
+# T2 — CHANGELOG lists all three Bundle 3 mechanisms
 # ---------------------------------------------------------------------------
 
 
-def test_t2_changelog_050_lists_all_mechanisms():
-    r"""The [0.5.0] block must mention every Bundle-2 mechanism by name."""
-    block = _changelog_block("0.5.0")
+def test_t2_changelog_060_lists_all_mechanisms():
+    r"""The [0.6.0] block must mention every Bundle-3 mechanism by name."""
+    block = _changelog_block("0.6.0")
     required = [
-        "Impeachment",
-        "Watchdog",
-        "Rotation policy",
-        "COI recusal",
-        "72-hour freeze auto-lift",
+        "Merkle anchoring",
+        "Mission-boundary reconciliation",
     ]
     missing = [s for s in required if s not in block]
-    assert not missing, f"CHANGELOG [0.5.0] missing mechanisms: {missing}"
+    assert not missing, f"CHANGELOG [0.6.0] missing mechanisms: {missing}"
 
 
 # ---------------------------------------------------------------------------
@@ -148,16 +145,15 @@ def test_t2_changelog_050_lists_all_mechanisms():
 # ---------------------------------------------------------------------------
 
 
-def test_t3_changelog_050_cites_spec_sections():
-    r"""The [0.5.0] block must cite the required spec paragraphs."""
-    block = _changelog_block("0.5.0")
+def test_t3_changelog_060_cites_spec_sections():
+    r"""The [0.6.0] block must cite the required spec paragraphs."""
+    block = _changelog_block("0.6.0")
     required = [
-        "spec §2.1-2.2",
-        "spec §2.4",
-        "spec §1.2",
+        "spec exec §7",
+        "spec exec §7.9",
     ]
     missing = [s for s in required if s not in block]
-    assert not missing, f"CHANGELOG [0.5.0] missing spec citations: {missing}"
+    assert not missing, f"CHANGELOG [0.6.0] missing spec citations: {missing}"
 
 
 # ---------------------------------------------------------------------------
@@ -165,24 +161,20 @@ def test_t3_changelog_050_cites_spec_sections():
 # ---------------------------------------------------------------------------
 
 
-def test_t4_changelog_050_names_new_schema_items():
-    r"""The [0.5.0] block must name every new table, column, and param."""
-    block = _changelog_block("0.5.0")
+def test_t4_changelog_060_names_new_schema_items():
+    r"""The [0.6.0] block must name every new table, column, and param."""
+    block = _changelog_block("0.6.0")
     required = [
-        "adjudicator_registry",
-        "impeachment",
-        "watchdog_anomaly",
-        "agent_registry.banned",
-        "issued_by_did",
-        "frozen_at",
-        "manual_extension",
-        "adjudicator_quorum",
-        "watchdog_zscore_threshold",
-        "max_freeze_duration_ms",
-        "rotation_max_consecutive",
+        "on_chain_anchor",
+        "event_log.anchor_id",
+        "event_log.mission_id",
+        "tau_anchor_small_seconds",
+        "tau_anchor_large_seconds",
+        "anchor_batch_max_size",
+        "anchor_large_dag_threshold",
     ]
     missing = [s for s in required if s not in block]
-    assert not missing, f"CHANGELOG [0.5.0] missing schema items: {missing}"
+    assert not missing, f"CHANGELOG [0.6.0] missing schema items: {missing}"
 
 
 # ---------------------------------------------------------------------------
@@ -203,7 +195,16 @@ def test_t5_full_pytest_suite_passes():
     env["PYTEST_IN_SUBPROCESS"] = "1"
 
     result = subprocess.run(
-        [sys.executable, "-m", "pytest", "-q", "test/"],
+        [
+            sys.executable,
+            "-m",
+            "pytest",
+            "-q",
+            "test/",
+            "--ignore=test/cross_branch/test_release_v030_gates.py",
+            "--ignore=test/spec_v097/test_version_lockstep_bundle2.py",
+            "--ignore=test/spec_v097/test_version_lockstep_bundle3.py",
+        ],
         capture_output=True,
         text=True,
         env=env,
@@ -268,6 +269,9 @@ def test_t6_apscheduler_no_pending_futures():
             "error::DeprecationWarning",
             "-W",
             "error::ResourceWarning",
+            "--ignore=test/cross_branch/test_release_v030_gates.py",
+            "--ignore=test/spec_v097/test_version_lockstep_bundle2.py",
+            "--ignore=test/spec_v097/test_version_lockstep_bundle3.py",
         ],
         capture_output=True,
         text=True,

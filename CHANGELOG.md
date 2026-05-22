@@ -2,6 +2,33 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.7.0] — TBD — Bundle 4 (Execution State Machine)
+
+### Added
+
+- **9-state execution machine** (spec exec §0.4):
+  WAITING, ELIGIBLE, EXECUTING, PENDING_VERIFICATION, PENDING_REVIEW,
+  COMPLETED, FROZEN, FAILED, PENDING_FINALIZATION. Explicit TRANSITIONS
+  table + guards mirror `governance/state_machine.py`.
+- **7-stage pipeline** (spec exec §0.4): Orchestrate → Invoke → Commit
+  → Guard → Verify → Gate → Record. SP-2 non-bypassing invariant
+  enforced (`is_legal_advance` rejects skips).
+- New columns: `task_assignment.state`, `task_assignment.stage`.
+- New table: `task_state_transition` (audit trail).
+- New endpoint: `GET /api/execution/tasks/{task_id}/transitions`.
+- New spec_v097 tests: EXE-050, EXE-055, INV-137.
+
+### Breaking
+
+- `task_assignment.status` still written for one minor version (legacy
+  alias map in `state_machine.py`), but new code should read `state`.
+  Bundle 5 drops `status`.
+- Output submission no longer transitions directly to `completed`;
+  task moves through `PENDING_VERIFICATION` (Tier 1/2) or
+  `PENDING_REVIEW` (Tier 3) first.
+- SP-2 enforced: any caller attempting to skip a pipeline stage now
+  returns `GuardResult(allowed=False)`.
+
 ## [0.6.0] — 2026-05-22 — Bundle 3 (Hybrid Security)
 
 ### Added

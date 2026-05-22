@@ -168,6 +168,8 @@ class ProposalBody(BaseModel):
     token_budget_total: float = Field(..., gt=0)
     deadline_ms: int = Field(..., gt=0)
     signature: str = Field("", min_length=0)
+    sponsor_signatures: list[dict] = Field(default_factory=list)
+    payload_hex: str = Field("", min_length=0)
 
 
 class StrawPollBody(BaseModel):
@@ -407,6 +409,15 @@ async def submit_proposal(session_id: str, body: ProposalBody):
     _require_state(session_id, LegislativeState.PROPOSAL_OPEN)
     speaker = _speaker()
 
+    if body.sponsor_signatures:
+        sponsorship = speaker.validate_sponsorship(
+            session_id=session_id,
+            payload_hex=body.payload_hex,
+            sponsor_signatures=body.sponsor_signatures,
+        )
+        if not sponsorship["valid"]:
+            raise HTTPException(status_code=400, detail=sponsorship["reason"])
+
     proposal = DAGProposal(
         session_id=session_id,
         proposer_did=body.proposer_did,
@@ -415,6 +426,7 @@ async def submit_proposal(session_id: str, body: ProposalBody):
         token_budget_total=body.token_budget_total,
         deadline_ms=body.deadline_ms,
         signature=body.signature or None,
+        sponsor_signatures=body.sponsor_signatures,
     )
     result = speaker.receive_proposal(session_id, proposal)
     if not result["passed"]:

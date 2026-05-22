@@ -33,8 +33,6 @@ import hashlib
 import sqlite3
 from pathlib import Path
 
-import pytest
-
 from oasis.crypto import ed25519
 from oasis.crypto.did import did_from_pubkey
 from oasis.governance.clerks.speaker import Speaker

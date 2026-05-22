@@ -144,6 +144,10 @@ class DAGProposal(BaseModel):
         pattern=r"^[0-9a-f]{128}$",
     )
     timestamp: datetime = Field(default_factory=_utcnow)
+    sponsor_signatures: list[dict] = Field(
+        default_factory=list,
+        description="≥5 Ed25519 sponsor sigs: [{signer_did, signature_hex}, ...]",
+    )
 
     @field_validator("dag_spec")
     @classmethod

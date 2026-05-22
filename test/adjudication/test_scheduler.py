@@ -32,6 +32,7 @@ import pytest
 
 from oasis.adjudication.schema import create_adjudication_tables
 from oasis.governance.schema import create_governance_tables, seed_constitution
+from oasis.observatory.schema import create_observatory_tables
 
 
 # ---------------------------------------------------------------------------
@@ -228,6 +229,325 @@ def test_start_scheduler_fallback_when_constitution_params_missing(
 
 
 # ---------------------------------------------------------------------------
+# Bundle-3 anchor_publisher wiring tests
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture()
+def obs_db(tmp_path: Path) -> Path:
+    """Fresh observatory DB with tables."""
+    db_path = tmp_path / "obs.db"
+    create_observatory_tables(db_path)
+    return db_path
+
+
+# T1 — Anchor job registered with correct interval
+def test_anchor_publisher_job_registered(
+    adj_db: Path, gov_db: Path, obs_db: Path
+) -> None:
+    """T1: anchor_publisher job exists with interval tau_anchor_small_seconds."""
+    from oasis.adjudication.scheduler import start_scheduler, stop_scheduler
+
+    s = start_scheduler(
+        adj_db_path=str(adj_db),
+        gov_db_path=str(gov_db),
+        obs_db_path=str(obs_db),
+    )
+    try:
+        job = s.get_job("anchor_publisher")
+        assert job is not None
+        assert job.trigger.interval.total_seconds() == 10.0
+    finally:
+        stop_scheduler()
+
+
+# T2 — DB path forwarded to publish_anchor
+@pytest.mark.asyncio
+async def test_anchor_publisher_forwards_db_path(
+    adj_db: Path,
+    gov_db: Path,
+    obs_db: Path,
+    monkeypatch,
+) -> None:
+    """T2: publish_anchor receives the correct obs_db_path and batch_max_size."""
+    from oasis.adjudication import anchor_publisher
+    from oasis.adjudication.scheduler import start_scheduler, stop_scheduler
+
+    mock_publish = MagicMock(
+        return_value={
+            "event_count": 0,
+            "anchor_id": "anchor-test-001",
+        }
+    )
+    monkeypatch.setattr(anchor_publisher, "publish_anchor", mock_publish)
+
+    s = start_scheduler(
+        adj_db_path=str(adj_db),
+        gov_db_path=str(gov_db),
+        obs_db_path=str(obs_db),
+    )
+    try:
+        job = s.get_job("anchor_publisher")
+        job.modify(next_run_time=datetime.now(timezone.utc))
+        await asyncio.sleep(0.3)
+
+        mock_publish.assert_called_once()
+        _, kwargs = mock_publish.call_args
+        assert kwargs["db_path"] == str(obs_db)
+        assert kwargs["batch_max_size"] == 1000
+    finally:
+        stop_scheduler()
+
+
+# T3 — Exception resilience
+@pytest.mark.asyncio
+async def test_anchor_publisher_exception_resilience(
+    adj_db: Path,
+    gov_db: Path,
+    obs_db: Path,
+    monkeypatch,
+    caplog,
+) -> None:
+    """T3: A failing anchor_publisher job does not crash the scheduler."""
+    from oasis.adjudication import anchor_publisher
+    from oasis.adjudication.scheduler import start_scheduler, stop_scheduler
+
+    def _failing_publish(*, db_path, batch_max_size=1000, mission_id=None):
+        raise RuntimeError("forced anchor failure")
+
+    monkeypatch.setattr(anchor_publisher, "publish_anchor", _failing_publish)
+    caplog.set_level(logging.ERROR, logger="oasis.adjudication.scheduler")
+
+    s = start_scheduler(
+        adj_db_path=str(adj_db),
+        gov_db_path=str(gov_db),
+        obs_db_path=str(obs_db),
+    )
+    try:
+        job = s.get_job("anchor_publisher")
+        job.modify(next_run_time=datetime.now(timezone.utc))
+        await asyncio.sleep(0.3)
+
+        assert s.running is True
+        error_records = [
+            r
+            for r in caplog.records
+            if "anchor_publisher job failed" in str(r.message)
+        ]
+        assert len(error_records) >= 1
+    finally:
+        stop_scheduler()
+
+
+# Edge — Scheduler restart replaces existing anchor_publisher job
+def test_anchor_publisher_replace_existing_on_restart(
+    adj_db: Path, gov_db: Path, obs_db: Path
+) -> None:
+    """Stopping and restarting the scheduler leaves exactly one anchor_publisher job."""
+    from oasis.adjudication.scheduler import start_scheduler, stop_scheduler
+
+    s1 = start_scheduler(
+        adj_db_path=str(adj_db),
+        gov_db_path=str(gov_db),
+        obs_db_path=str(obs_db),
+    )
+    stop_scheduler()
+
+    s2 = start_scheduler(
+        adj_db_path=str(adj_db),
+        gov_db_path=str(gov_db),
+        obs_db_path=str(obs_db),
+    )
+    try:
+        jobs = [j for j in s2.get_jobs() if j.id == "anchor_publisher"]
+        assert len(jobs) == 1
+    finally:
+        stop_scheduler()
+
+
+# Edge — Missing tau_anchor_small_seconds falls back to 10 seconds
+def test_anchor_publisher_fallback_interval(
+    adj_db: Path,
+    gov_db_pre_bundle2: Path,
+    obs_db: Path,
+) -> None:
+    """anchor_publisher interval falls back to 10 s when param is absent."""
+    from oasis.adjudication.scheduler import start_scheduler, stop_scheduler
+
+    s = start_scheduler(
+        adj_db_path=str(adj_db),
+        gov_db_path=str(gov_db_pre_bundle2),
+        obs_db_path=str(obs_db),
+    )
+    try:
+        job = s.get_job("anchor_publisher")
+        assert job is not None
+        assert job.trigger.interval.total_seconds() == 10.0
+    finally:
+        stop_scheduler()
+
+
+# Edge — obs_db_path is None → exception logged, scheduler survives
+@pytest.mark.asyncio
+async def test_anchor_publisher_none_db_path_survives(
+    adj_db: Path,
+    gov_db: Path,
+    monkeypatch,
+    caplog,
+) -> None:
+    """anchor_publisher survives when obs_db_path is None."""
+    from oasis.adjudication import anchor_publisher
+    from oasis.adjudication.scheduler import start_scheduler, stop_scheduler
+
+    original_publish = anchor_publisher.publish_anchor
+
+    def _publish_with_none_check(*, db_path, batch_max_size=1000, mission_id=None):
+        if db_path is None:
+            raise ValueError("db_path cannot be None")
+        return original_publish(
+            db_path=db_path,
+            batch_max_size=batch_max_size,
+            mission_id=mission_id,
+        )
+
+    monkeypatch.setattr(anchor_publisher, "publish_anchor", _publish_with_none_check)
+    caplog.set_level(logging.ERROR, logger="oasis.adjudication.scheduler")
+
+    s = start_scheduler(
+        adj_db_path=str(adj_db),
+        gov_db_path=str(gov_db),
+        obs_db_path=None,
+    )
+    try:
+        job = s.get_job("anchor_publisher")
+        job.modify(next_run_time=datetime.now(timezone.utc))
+        await asyncio.sleep(0.3)
+
+        assert s.running is True
+        error_records = [
+            r
+            for r in caplog.records
+            if "anchor_publisher job failed" in str(r.message)
+        ]
+        assert len(error_records) >= 1
+    finally:
+        stop_scheduler()
+
+
+# Edge — obs_db_path is invalid → exception logged, scheduler survives
+@pytest.mark.asyncio
+async def test_anchor_publisher_invalid_db_path_survives(
+    adj_db: Path,
+    gov_db: Path,
+    caplog,
+) -> None:
+    """anchor_publisher survives when obs_db_path points to an invalid DB."""
+    from oasis.adjudication.scheduler import start_scheduler, stop_scheduler
+
+    caplog.set_level(logging.ERROR, logger="oasis.adjudication.scheduler")
+
+    s = start_scheduler(
+        adj_db_path=str(adj_db),
+        gov_db_path=str(gov_db),
+        obs_db_path="/nonexistent/path/to/obs.db",
+    )
+    try:
+        job = s.get_job("anchor_publisher")
+        job.modify(next_run_time=datetime.now(timezone.utc))
+        await asyncio.sleep(0.3)
+
+        assert s.running is True
+        error_records = [
+            r
+            for r in caplog.records
+            if "anchor_publisher job failed" in str(r.message)
+        ]
+        assert len(error_records) >= 1
+    finally:
+        stop_scheduler()
+
+
+# Extra — Successful anchor commit is logged
+@pytest.mark.asyncio
+async def test_anchor_publisher_logs_success(
+    adj_db: Path,
+    gov_db: Path,
+    obs_db: Path,
+    monkeypatch,
+    caplog,
+) -> None:
+    """A successful anchor_publisher run logs the event count and anchor_id."""
+    from oasis.adjudication import anchor_publisher
+    from oasis.adjudication.scheduler import start_scheduler, stop_scheduler
+
+    mock_publish = MagicMock(
+        return_value={
+            "event_count": 42,
+            "anchor_id": "anchor-test-001",
+        }
+    )
+    monkeypatch.setattr(anchor_publisher, "publish_anchor", mock_publish)
+    caplog.set_level(logging.INFO, logger="oasis.adjudication.scheduler")
+
+    s = start_scheduler(
+        adj_db_path=str(adj_db),
+        gov_db_path=str(gov_db),
+        obs_db_path=str(obs_db),
+    )
+    try:
+        job = s.get_job("anchor_publisher")
+        job.modify(next_run_time=datetime.now(timezone.utc))
+        await asyncio.sleep(0.3)
+
+        info_records = [
+            r
+            for r in caplog.records
+            if "anchor_publisher committed 42 events as anchor-test-001"
+            in str(r.message)
+        ]
+        assert len(info_records) >= 1
+    finally:
+        stop_scheduler()
+
+
+# Extra — No log when publish_anchor returns None (no pending events)
+@pytest.mark.asyncio
+async def test_anchor_publisher_no_log_when_no_events(
+    adj_db: Path,
+    gov_db: Path,
+    obs_db: Path,
+    monkeypatch,
+    caplog,
+) -> None:
+    """No info log is emitted when publish_anchor returns None."""
+    from oasis.adjudication import anchor_publisher
+    from oasis.adjudication.scheduler import start_scheduler, stop_scheduler
+
+    mock_publish = MagicMock(return_value=None)
+    monkeypatch.setattr(anchor_publisher, "publish_anchor", mock_publish)
+    caplog.set_level(logging.INFO, logger="oasis.adjudication.scheduler")
+
+    s = start_scheduler(
+        adj_db_path=str(adj_db),
+        gov_db_path=str(gov_db),
+        obs_db_path=str(obs_db),
+    )
+    try:
+        job = s.get_job("anchor_publisher")
+        job.modify(next_run_time=datetime.now(timezone.utc))
+        await asyncio.sleep(0.3)
+
+        info_records = [
+            r
+            for r in caplog.records
+            if "anchor_publisher committed" in str(r.message)
+        ]
+        assert len(info_records) == 0
+    finally:
+        stop_scheduler()
+
+
+# ---------------------------------------------------------------------------
 # Edge case — Lifespan wiring
 # ---------------------------------------------------------------------------
 
@@ -262,6 +582,44 @@ async def test_lifespan_calls_scheduler_start_and_stop(monkeypatch) -> None:
 
         mock_start.assert_called_once()
         mock_stop.assert_called_once()
+    finally:
+        api_module.channel = saved["channel"]
+        api_module.platform = saved["platform"]
+        api_module._platform_task = saved["_platform_task"]
+
+
+@pytest.mark.asyncio
+async def test_lifespan_passes_obs_db_path_to_scheduler(monkeypatch) -> None:
+    """The FastAPI lifespan forwards obs_db_path to start_scheduler."""
+    from oasis import api as api_module
+    from oasis.api import lifespan
+    from fastapi import FastAPI
+
+    saved = {
+        "channel": api_module.channel,
+        "platform": api_module.platform,
+        "_platform_task": api_module._platform_task,
+    }
+
+    fake_platform = MagicMock()
+    fake_platform.running = AsyncMock()
+    monkeypatch.setattr("oasis.api.Channel", MagicMock)
+    monkeypatch.setattr("oasis.api.Platform", lambda **kwargs: fake_platform)
+
+    mock_start = MagicMock()
+    mock_stop = MagicMock()
+    monkeypatch.setattr("oasis.api.start_scheduler", mock_start)
+    monkeypatch.setattr("oasis.api.stop_scheduler", mock_stop)
+
+    app = FastAPI(lifespan=lifespan)
+    try:
+        async with lifespan(app):
+            pass
+
+        mock_start.assert_called_once()
+        _, kwargs = mock_start.call_args
+        assert "obs_db_path" in kwargs
+        assert kwargs["obs_db_path"] is not None
     finally:
         api_module.channel = saved["channel"]
         api_module.platform = saved["platform"]

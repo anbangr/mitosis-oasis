@@ -1045,5 +1045,43 @@ async def amend_constitution(body: ConstitutionAmendmentBody) -> dict[str, Any]:
     }
 
 
+def _maybe_freeze_evidence(
+    *,
+    session_id: str,
+    snapshot: dict,
+    db_path: str,
+) -> None:
+    """Insert the evidence_anchor row for `session_id` if not present.
+
+    Hashes `snapshot` with SHA-256 over a canonical JSON encoding
+    (``sort_keys=True``) and inserts into ``evidence_anchor`` keyed by
+    ``session_id``. Raises ``ValueError`` if the session already has a
+    frozen evidence row (spec leg §5 — frozen-evidence rule).
+    """
+    import hashlib
+
+    payload = json.dumps(snapshot, sort_keys=True)
+    merkle_root_hex = hashlib.sha256(payload.encode()).hexdigest()
+    conn = sqlite3.connect(db_path)
+    try:
+        existing = conn.execute(
+            "SELECT 1 FROM evidence_anchor WHERE session_id = ?",
+            (session_id,),
+        ).fetchone()
+        if existing:
+            raise ValueError(
+                f"evidence already frozen for session {session_id} (spec §5)"
+            )
+        conn.execute(
+            "INSERT INTO evidence_anchor "
+            "(session_id, merkle_root_hex, snapshot_payload) "
+            "VALUES (?, ?, ?)",
+            (session_id, merkle_root_hex, payload),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
 router.include_router(_routes)
 v1_router.include_router(_routes)

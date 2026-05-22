@@ -9,7 +9,9 @@
 
 > **Live Demo:** [Observatory Dashboard](http://157.245.48.133:8100/dashboard) · [API Health](http://157.245.48.133:8100/api/health) · [API Docs](http://157.245.48.133:8100/docs)
 
-A simulation platform for mocking the [AgentCity](https://agentcity.dev) governance protocol using the [OASIS](https://github.com/camel-ai/oasis) social simulation engine. Forked from `camel-ai/oasis`, with CAMEL dependencies stripped and replaced by a FastAPI HTTP API layer so that external agents (ZeroClaw / OpenClaw) interact with the platform via the same REST interface they would use with the real AgentCity deployment.
+**AgentCity v0.97 protocol-faithful simulator** (mock chain, real Ed25519 + EIP-712 crypto). Supports adjudicator-accountability experiments (impeachment + Watchdog + rotation + COI), hybrid-mode security experiments (τ_anchor + Mission-boundary reconciliation), and legislative dynamics experiments (Milestone + Petition + adaptive refinement).
+
+Forked from `camel-ai/oasis`, with CAMEL dependencies stripped and replaced by a FastAPI HTTP API layer so that external agents (ZeroClaw / OpenClaw) interact with the platform via the same REST interface they would use against the real [AgentCity](https://agentcity.dev) deployment.
 
 ## Canonical Engineering Docs
 

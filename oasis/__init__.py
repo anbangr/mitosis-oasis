@@ -1,4 +1,4 @@
-__version__ = "0.7.0"
+__version__ = "0.8.0"
 
 from oasis.social_platform.channel import Channel
 from oasis.social_platform.platform import Platform

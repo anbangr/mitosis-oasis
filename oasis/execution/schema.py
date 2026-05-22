@@ -103,12 +103,39 @@ CREATE TABLE IF NOT EXISTS guardian_alert (
 """
 
 
+_BUNDLE4_DDL = (
+    "ALTER TABLE task_assignment ADD COLUMN state TEXT "
+    "CHECK(state IN ('WAITING', 'ELIGIBLE', 'EXECUTING', "
+    "'PENDING_VERIFICATION', 'PENDING_REVIEW', 'COMPLETED', "
+    "'FROZEN', 'FAILED', 'PENDING_FINALIZATION'))",
+    "ALTER TABLE task_assignment ADD COLUMN stage TEXT "
+    "CHECK(stage IN ('ORCHESTRATE', 'INVOKE', 'COMMIT', 'GUARD', "
+    "'VERIFY', 'GATE', 'RECORD'))",
+    "CREATE TABLE IF NOT EXISTS task_state_transition ("
+    "  transition_id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    "  task_id TEXT NOT NULL,"
+    "  from_state TEXT,"
+    "  to_state TEXT NOT NULL,"
+    "  from_stage TEXT,"
+    "  to_stage TEXT,"
+    "  reason TEXT,"
+    "  transitioned_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,"
+    "  FOREIGN KEY (task_id) REFERENCES task_assignment(task_id)"
+    ")",
+)
+
+
 def create_execution_tables(db_path: Union[str, Path]) -> None:
-    """Create all 6 execution tables.  Idempotent (IF NOT EXISTS)."""
+    """Create all execution tables.  Idempotent (IF NOT EXISTS)."""
     conn = sqlite3.connect(str(db_path))
     try:
         conn.execute("PRAGMA foreign_keys = ON")
         conn.executescript(_DDL)
+        for stmt in _BUNDLE4_DDL:
+            try:
+                conn.execute(stmt)
+            except sqlite3.OperationalError:
+                pass  # column/table already exists
         conn.commit()
     finally:
         conn.close()

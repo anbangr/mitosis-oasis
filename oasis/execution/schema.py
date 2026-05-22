@@ -115,7 +115,7 @@ _BUNDLE4_DDL = (
     "  transition_id INTEGER PRIMARY KEY AUTOINCREMENT,"
     "  task_id TEXT NOT NULL,"
     "  from_state TEXT,"
-    "  to_state TEXT NOT NULL,"
+    "  to_state TEXT,"
     "  from_stage TEXT,"
     "  to_stage TEXT,"
     "  reason TEXT,"

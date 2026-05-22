@@ -111,9 +111,7 @@ class TestRunnerMigration:
                 "metrics": {"accuracy": 0.9, "completeness": 0.95},
             }
         )
-        dispatcher.receive_output(
-            task["task_id"], output_data, task["agent_did"]
-        )
+        dispatcher.receive_output(task["task_id"], output_data, task["agent_did"])
 
         conn = sqlite3.connect(str(execution_db))
         conn.row_factory = sqlite3.Row
@@ -156,9 +154,7 @@ class TestRunnerMigration:
                 "metrics": {"accuracy": 0.9, "completeness": 0.95},
             }
         )
-        dispatcher.receive_output(
-            task["task_id"], output_data, task["agent_did"]
-        )
+        dispatcher.receive_output(task["task_id"], output_data, task["agent_did"])
 
         conn = sqlite3.connect(str(execution_db))
         conn.row_factory = sqlite3.Row
@@ -174,9 +170,7 @@ class TestRunnerMigration:
 
 
 class TestValidatorMigration:
-    def test_validator_pass_transitions_to_completed(
-        self, execution_db: Path
-    ) -> None:
+    def test_validator_pass_transitions_to_completed(self, execution_db: Path) -> None:
         """Validator transitions task state to COMPLETED on passing validation."""
         conn = sqlite3.connect(str(execution_db))
         conn.execute("PRAGMA foreign_keys = OFF")
@@ -225,9 +219,7 @@ class TestValidatorMigration:
         assert audit["from_state"] == "PENDING_VERIFICATION"
         assert "PoP validation passed" in audit["reason"]
 
-    def test_validator_fail_transitions_to_failed(
-        self, execution_db: Path
-    ) -> None:
+    def test_validator_fail_transitions_to_failed(self, execution_db: Path) -> None:
         """Validator transitions task state to FAILED on failing validation."""
         conn = sqlite3.connect(str(execution_db))
         conn.execute("PRAGMA foreign_keys = OFF")

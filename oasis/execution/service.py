@@ -176,9 +176,7 @@ class ExecutionService:
                 "SELECT task_id FROM task_assignment WHERE task_id = ?", (task_id,)
             ).fetchone()
             if task is None:
-                raise ExecutionServiceError(
-                    f"Task not found: {task_id}", 404
-                )
+                raise ExecutionServiceError(f"Task not found: {task_id}", 404)
 
             rows = conn.execute(
                 "SELECT * FROM task_state_transition WHERE task_id = ? "

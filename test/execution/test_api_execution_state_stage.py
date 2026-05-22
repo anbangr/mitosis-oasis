@@ -178,9 +178,30 @@ class TestTaskTransitions:
             "(task_id, from_state, to_state, from_stage, to_stage, transitioned_at) "
             "VALUES (?, ?, ?, ?, ?, ?)",
             [
-                (task_id, "WAITING", "ELIGIBLE", "ORCHESTRATE", "INVOKE", "2024-01-01 10:00:00"),
-                (task_id, "ELIGIBLE", "EXECUTING", "INVOKE", "COMMIT", "2024-01-01 10:05:00"),
-                (task_id, "EXECUTING", "COMPLETED", "COMMIT", "RECORD", "2024-01-01 10:10:00"),
+                (
+                    task_id,
+                    "WAITING",
+                    "ELIGIBLE",
+                    "ORCHESTRATE",
+                    "INVOKE",
+                    "2024-01-01 10:00:00",
+                ),
+                (
+                    task_id,
+                    "ELIGIBLE",
+                    "EXECUTING",
+                    "INVOKE",
+                    "COMMIT",
+                    "2024-01-01 10:05:00",
+                ),
+                (
+                    task_id,
+                    "EXECUTING",
+                    "COMPLETED",
+                    "COMMIT",
+                    "RECORD",
+                    "2024-01-01 10:10:00",
+                ),
             ],
         )
         conn.commit()
@@ -206,9 +227,30 @@ class TestTaskTransitions:
             "(task_id, from_state, to_state, from_stage, to_stage, transitioned_at) "
             "VALUES (?, ?, ?, ?, ?, ?)",
             [
-                (task_id, "WAITING", "ELIGIBLE", "ORCHESTRATE", "INVOKE", "2024-01-01 10:00:00"),
-                (task_id, "ELIGIBLE", "EXECUTING", "INVOKE", "COMMIT", "2024-01-01 10:05:00"),
-                (task_id, "EXECUTING", "COMPLETED", "COMMIT", "RECORD", "2024-01-01 10:10:00"),
+                (
+                    task_id,
+                    "WAITING",
+                    "ELIGIBLE",
+                    "ORCHESTRATE",
+                    "INVOKE",
+                    "2024-01-01 10:00:00",
+                ),
+                (
+                    task_id,
+                    "ELIGIBLE",
+                    "EXECUTING",
+                    "INVOKE",
+                    "COMMIT",
+                    "2024-01-01 10:05:00",
+                ),
+                (
+                    task_id,
+                    "EXECUTING",
+                    "COMPLETED",
+                    "COMMIT",
+                    "RECORD",
+                    "2024-01-01 10:10:00",
+                ),
             ],
         )
         conn.commit()

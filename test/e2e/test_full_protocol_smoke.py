@@ -409,3 +409,52 @@ def test_bundle2_impeachment_path(tmp_path: Path) -> None:
     finally:
         conn_adj.close()
         conn_gov.close()
+
+
+# ---------------------------------------------------------------------------
+# Bundle-3 — Anchoring and Reconciliation E2E waypoint
+# ---------------------------------------------------------------------------
+
+
+def test_bundle3_anchoring_and_reconciliation(tmp_path):
+    """End-to-end: emit 100 events into a mission, anchor them, run
+    reconciliation. Then tamper one event and re-run; expect DIVERGED."""
+    from oasis.adjudication.anchor_publisher import publish_anchor
+    from oasis.adjudication.reconciliation import reconcile_mission
+    from oasis.observatory.schema import create_observatory_tables
+    import sqlite3, json
+
+    obs_db = tmp_path / "obs.db"
+    create_observatory_tables(str(obs_db))
+
+    # Emit 100 mission events
+    conn = sqlite3.connect(str(obs_db))
+    for i in range(100):
+        conn.execute(
+            "INSERT INTO event_log "
+            "(event_id, event_type, timestamp, payload, sequence_number, mission_id) "
+            "VALUES (?, 'TASK', ?, ?, ?, 'mission-smoke')",
+            (f"e{i}", float(i),
+             json.dumps({"i": i}, sort_keys=True), i + 1),
+        )
+    conn.commit()
+    conn.close()
+
+    anchor = publish_anchor(db_path=str(obs_db), batch_max_size=1000,
+                             mission_id="mission-smoke")
+    assert anchor["event_count"] == 100
+
+    result = reconcile_mission(mission_id="mission-smoke", db_path=str(obs_db))
+    assert result.status == "PASS"
+
+    # Tamper
+    conn = sqlite3.connect(str(obs_db))
+    conn.execute(
+        "UPDATE event_log SET payload = '{\"tampered\": 1}' "
+        "WHERE event_id = 'e42'"
+    )
+    conn.commit()
+    conn.close()
+
+    result2 = reconcile_mission(mission_id="mission-smoke", db_path=str(obs_db))
+    assert result2.status == "DIVERGED"

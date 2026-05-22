@@ -458,3 +458,311 @@ def test_bundle3_anchoring_and_reconciliation(tmp_path):
 
     result2 = reconcile_mission(mission_id="mission-smoke", db_path=str(obs_db))
     assert result2.status == "DIVERGED"
+
+
+# ---------------------------------------------------------------------------
+# Bundle-4 — Execution State Machine E2E waypoint
+# ---------------------------------------------------------------------------
+
+
+def test_bundle4_full_state_machine_traversal(tmp_path):
+    """Drive a single task from WAITING through every state to
+    COMPLETED via PENDING_VERIFICATION. Assert task_state_transition
+    audit row exists for each step."""
+    from oasis.execution.schema import create_execution_tables
+    from oasis.execution.state_machine import (
+        ExecutionNodeState,
+        transition,
+    )
+    import sqlite3
+
+    db = tmp_path / "exec.db"
+    create_execution_tables(str(db))
+
+    # Seed task in WAITING
+    conn = sqlite3.connect(str(db))
+    conn.execute(
+        "INSERT INTO task_assignment "
+        "(task_id, session_id, node_id, agent_did, state) "
+        "VALUES ('smoke-t1', 's1', 'n1', 'a1', 'WAITING')"
+    )
+    conn.commit()
+    conn.close()
+
+    # WAITING → ELIGIBLE (no predecessors)
+    transition(
+        task_id="smoke-t1",
+        to_state=ExecutionNodeState.ELIGIBLE,
+        reason="root node",
+        db_path=str(db),
+    )
+
+    # ELIGIBLE → EXECUTING
+    transition(
+        task_id="smoke-t1",
+        to_state=ExecutionNodeState.EXECUTING,
+        reason="routeTask",
+        db_path=str(db),
+    )
+
+    # EXECUTING → PENDING_VERIFICATION (Tier 1)
+    transition(
+        task_id="smoke-t1",
+        to_state=ExecutionNodeState.PENDING_VERIFICATION,
+        reason="Tier 1 output submitted",
+        db_path=str(db),
+    )
+
+    # PENDING_VERIFICATION → COMPLETED
+    transition(
+        task_id="smoke-t1",
+        to_state=ExecutionNodeState.COMPLETED,
+        reason="PoP passed",
+        db_path=str(db),
+    )
+
+    # Verify audit trail
+    conn = sqlite3.connect(str(db))
+    rows = conn.execute(
+        "SELECT from_state, to_state FROM task_state_transition "
+        "WHERE task_id = 'smoke-t1' ORDER BY transitioned_at ASC"
+    ).fetchall()
+    conn.close()
+    assert rows == [
+        ("WAITING", "ELIGIBLE"),
+        ("ELIGIBLE", "EXECUTING"),
+        ("EXECUTING", "PENDING_VERIFICATION"),
+        ("PENDING_VERIFICATION", "COMPLETED"),
+    ]
+
+
+def test_bundle4_illegal_skip_rejected(tmp_path):
+    """Try to skip from EXECUTING straight to COMPLETED. Must be rejected."""
+    from oasis.execution.schema import create_execution_tables
+    from oasis.execution.state_machine import (
+        ExecutionNodeState,
+        can_transition,
+    )
+    import sqlite3
+
+    db = tmp_path / "exec.db"
+    create_execution_tables(str(db))
+    conn = sqlite3.connect(str(db))
+    conn.execute(
+        "INSERT INTO task_assignment "
+        "(task_id, session_id, node_id, agent_did, state) "
+        "VALUES ('t-skip', 's1', 'n1', 'a1', 'EXECUTING')"
+    )
+    conn.commit()
+    conn.close()
+
+    result = can_transition(
+        task_id="t-skip",
+        from_state=ExecutionNodeState.EXECUTING,
+        to_state=ExecutionNodeState.COMPLETED,
+        db_path=str(db),
+    )
+    assert result.allowed is False, "SP-2 violation must be rejected"
+
+
+def test_bundle4_audit_trail_timestamps(tmp_path):
+    """Every transition writes a row with a non-null timestamp."""
+    from oasis.execution.schema import create_execution_tables
+    from oasis.execution.state_machine import (
+        ExecutionNodeState,
+        transition,
+    )
+    import sqlite3
+
+    db = tmp_path / "exec.db"
+    create_execution_tables(str(db))
+    conn = sqlite3.connect(str(db))
+    conn.execute(
+        "INSERT INTO task_assignment "
+        "(task_id, session_id, node_id, agent_did, state) "
+        "VALUES ('t-time', 's1', 'n1', 'a1', 'WAITING')"
+    )
+    conn.commit()
+    conn.close()
+
+    transition(
+        task_id="t-time",
+        to_state=ExecutionNodeState.ELIGIBLE,
+        reason="root node",
+        db_path=str(db),
+    )
+    transition(
+        task_id="t-time",
+        to_state=ExecutionNodeState.EXECUTING,
+        reason="routeTask",
+        db_path=str(db),
+    )
+
+    conn = sqlite3.connect(str(db))
+    rows = conn.execute(
+        "SELECT transitioned_at FROM task_state_transition "
+        "WHERE task_id = 't-time' ORDER BY transitioned_at ASC"
+    ).fetchall()
+    conn.close()
+    assert len(rows) == 2
+    for row in rows:
+        assert row[0] is not None, "transitioned_at must not be NULL"
+
+
+def test_bundle4_task_assignment_state_updated(tmp_path):
+    """transition() must update the state column in task_assignment."""
+    from oasis.execution.schema import create_execution_tables
+    from oasis.execution.state_machine import (
+        ExecutionNodeState,
+        transition,
+    )
+    import sqlite3
+
+    db = tmp_path / "exec.db"
+    create_execution_tables(str(db))
+    conn = sqlite3.connect(str(db))
+    conn.execute(
+        "INSERT INTO task_assignment "
+        "(task_id, session_id, node_id, agent_did, state) "
+        "VALUES ('t-update', 's1', 'n1', 'a1', 'WAITING')"
+    )
+    conn.commit()
+    conn.close()
+
+    transition(
+        task_id="t-update",
+        to_state=ExecutionNodeState.ELIGIBLE,
+        reason="root node",
+        db_path=str(db),
+    )
+
+    conn = sqlite3.connect(str(db))
+    row = conn.execute(
+        "SELECT state FROM task_assignment WHERE task_id = 't-update'"
+    ).fetchone()
+    conn.close()
+    assert row[0] == "ELIGIBLE"
+
+
+def test_bundle4_state_check_constraint_enforced(tmp_path):
+    """Invalid state values must be rejected by the CHECK constraint."""
+    from oasis.execution.schema import create_execution_tables
+    import sqlite3
+
+    db = tmp_path / "exec.db"
+    create_execution_tables(str(db))
+    conn = sqlite3.connect(str(db))
+    with pytest.raises(sqlite3.IntegrityError):
+        conn.execute(
+            "INSERT INTO task_assignment "
+            "(task_id, session_id, node_id, agent_did, state) "
+            "VALUES ('t-bad', 's1', 'n1', 'a1', 'INVALID_STATE')"
+        )
+    conn.close()
+
+
+def test_bundle4_legacy_status_synced_during_traversal(tmp_path):
+    """Legacy status column stays in sync with state through the E2E traversal."""
+    from oasis.execution.schema import create_execution_tables
+    from oasis.execution.state_machine import (
+        ExecutionNodeState,
+        transition,
+        STATE_TO_LEGACY_STATUS,
+    )
+    import sqlite3
+
+    db = tmp_path / "exec.db"
+    create_execution_tables(str(db))
+    conn = sqlite3.connect(str(db))
+    conn.execute(
+        "INSERT INTO task_assignment "
+        "(task_id, session_id, node_id, agent_did, state) "
+        "VALUES ('t-legacy', 's1', 'n1', 'a1', 'WAITING')"
+    )
+    conn.commit()
+    conn.close()
+
+    for state in (
+        ExecutionNodeState.ELIGIBLE,
+        ExecutionNodeState.EXECUTING,
+        ExecutionNodeState.PENDING_VERIFICATION,
+        ExecutionNodeState.COMPLETED,
+    ):
+        transition(
+            task_id="t-legacy",
+            to_state=state,
+            reason="test",
+            db_path=str(db),
+        )
+        conn = sqlite3.connect(str(db))
+        row = conn.execute(
+            "SELECT state, status FROM task_assignment WHERE task_id = 't-legacy'"
+        ).fetchone()
+        conn.close()
+        assert row[0] == state.value
+        assert row[1] == STATE_TO_LEGACY_STATUS.get(state, "")
+
+
+def test_bundle4_pending_review_to_completed_allowed(tmp_path):
+    """Tier 3 tasks traverse PENDING_REVIEW before COMPLETED."""
+    from oasis.execution.schema import create_execution_tables
+    from oasis.execution.state_machine import (
+        ExecutionNodeState,
+        can_transition,
+        transition,
+    )
+    import sqlite3
+
+    db = tmp_path / "exec.db"
+    create_execution_tables(str(db))
+    conn = sqlite3.connect(str(db))
+    conn.execute(
+        "INSERT INTO task_assignment "
+        "(task_id, session_id, node_id, agent_did, state) "
+        "VALUES ('t-review', 's1', 'n1', 'a1', 'EXECUTING')"
+    )
+    conn.commit()
+    conn.close()
+
+    # EXECUTING → PENDING_REVIEW is legal
+    result = can_transition(
+        task_id="t-review",
+        from_state=ExecutionNodeState.EXECUTING,
+        to_state=ExecutionNodeState.PENDING_REVIEW,
+        db_path=str(db),
+    )
+    assert result.allowed is True
+
+    transition(
+        task_id="t-review",
+        to_state=ExecutionNodeState.PENDING_REVIEW,
+        reason="Tier 3 output submitted",
+        db_path=str(db),
+    )
+
+    # PENDING_REVIEW → COMPLETED is legal
+    result2 = can_transition(
+        task_id="t-review",
+        from_state=ExecutionNodeState.PENDING_REVIEW,
+        to_state=ExecutionNodeState.COMPLETED,
+        db_path=str(db),
+    )
+    assert result2.allowed is True
+
+    transition(
+        task_id="t-review",
+        to_state=ExecutionNodeState.COMPLETED,
+        reason="PoP passed",
+        db_path=str(db),
+    )
+
+    conn = sqlite3.connect(str(db))
+    rows = conn.execute(
+        "SELECT from_state, to_state FROM task_state_transition "
+        "WHERE task_id = 't-review' ORDER BY transitioned_at ASC"
+    ).fetchall()
+    conn.close()
+    assert rows == [
+        ("EXECUTING", "PENDING_REVIEW"),
+        ("PENDING_REVIEW", "COMPLETED"),
+    ]

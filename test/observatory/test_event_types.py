@@ -14,7 +14,7 @@ from oasis.observatory.event_bus import EventBus
 
 
 def test_all_event_types_defined():
-    """All 22 expected event types are defined in the enum."""
+    """All 23 expected event types are defined in the enum (Bundle 5 added TASK_FAILED)."""
     expected = {
         "SESSION_CREATED",
         "SESSION_STATE_CHANGED",
@@ -31,6 +31,7 @@ def test_all_event_types_defined():
         "TASK_EXECUTED",
         "TASK_VALIDATED",
         "TASK_SETTLED",
+        "TASK_FAILED",
         "GUARDIAN_ALERT_RAISED",
         "AGENT_FROZEN",
         "AGENT_UNFROZEN",

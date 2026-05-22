@@ -9,6 +9,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Union
 
+from oasis.execution.state_machine import ExecutionNodeState, transition
+
 
 @dataclass
 class ValidationResult:
@@ -120,7 +122,7 @@ class OutputValidator:
             )
             conn.commit()
 
-            return ValidationResult(
+            result = ValidationResult(
                 task_id=task_id,
                 schema_valid=schema_valid,
                 timeout_valid=timeout_valid,
@@ -129,6 +131,24 @@ class OutputValidator:
             )
         finally:
             conn.close()
+
+        # Transition task state based on validation outcome
+        if result.schema_valid and result.timeout_valid:
+            transition(
+                task_id=task_id,
+                to_state=ExecutionNodeState.COMPLETED,
+                reason="PoP validation passed",
+                db_path=db_path,
+            )
+        else:
+            transition(
+                task_id=task_id,
+                to_state=ExecutionNodeState.FAILED,
+                reason="PoP validation failed",
+                db_path=db_path,
+            )
+
+        return result
 
     def _check_schema(self, output_data: dict) -> bool:
         """Check that the output contains expected fields."""

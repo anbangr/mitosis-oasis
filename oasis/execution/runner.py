@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Union
 
 from oasis.config import PlatformConfig
+from oasis.execution.state_machine import ExecutionNodeState, transition
 from oasis.execution.synthetic import SyntheticGenerator, SyntheticOutput
 from oasis.execution.validator import OutputValidator
 
@@ -50,7 +51,7 @@ class ExecutionDispatcher:
         In LLM mode: transitions status to 'executing' (agent submits later).
         In synthetic mode: generates output, stores it, runs validation.
 
-        Raises ValueError if task is not in 'committed' state.
+        Raises ValueError if task is not in ELIGIBLE state.
         Returns a dict with dispatch result.
         """
         conn = self._connect()
@@ -61,20 +62,34 @@ class ExecutionDispatcher:
             ).fetchone()
             if task is None:
                 raise ValueError(f"Task not found: {task_id}")
+            current_state = None
+            try:
+                current_state = task["state"]
+            except IndexError:
+                pass
+            if (
+                current_state is not None
+                and current_state != ExecutionNodeState.ELIGIBLE.value
+            ):
+                raise ValueError(
+                    f"Task {task_id} is in state '{current_state}'; "
+                    f"expected 'committed' (state=ELIGIBLE)"
+                )
             if task["status"] != "committed":
                 raise ValueError(
                     f"Task {task_id} is in state '{task['status']}'; "
-                    "expected 'committed'"
+                    f"expected 'committed' (state=ELIGIBLE)"
                 )
-
-            # Transition to executing
-            conn.execute(
-                "UPDATE task_assignment SET status = 'executing' WHERE task_id = ?",
-                (task_id,),
-            )
-            conn.commit()
         finally:
             conn.close()
+
+        # Transition to executing
+        transition(
+            task_id=task_id,
+            to_state=ExecutionNodeState.EXECUTING,
+            reason="task dispatched",
+            db_path=self.db_path,
+        )
 
         if self.config.execution_mode == "synthetic":
             task_dict = dict(task)
@@ -102,7 +117,7 @@ class ExecutionDispatcher:
     ) -> dict:
         """Receive output from an agent (LLM mode), store it, trigger validation.
 
-        Raises ValueError if task is not in 'executing' state or agent mismatch.
+        Raises ValueError if task is not in EXECUTING state or agent mismatch.
         """
         conn = self._connect()
         try:
@@ -112,6 +127,19 @@ class ExecutionDispatcher:
             ).fetchone()
             if task is None:
                 raise ValueError(f"Task not found: {task_id}")
+            current_state = None
+            try:
+                current_state = task["state"]
+            except IndexError:
+                pass
+            if (
+                current_state is not None
+                and current_state != ExecutionNodeState.EXECUTING.value
+            ):
+                raise ValueError(
+                    f"Task {task_id} is in state '{current_state}'; "
+                    "expected 'executing'"
+                )
             if task["status"] != "executing":
                 raise ValueError(
                     f"Task {task_id} is in state '{task['status']}'; "
@@ -193,29 +221,35 @@ class ExecutionDispatcher:
         finally:
             conn.close()
 
-        # Run validation
+        # Transition to PENDING_VERIFICATION or PENDING_REVIEW based on PoP tier
+        pop_tier = _get_pop_tier(task_id, self.db_path)
+        if pop_tier == 3:
+            transition(
+                task_id=task_id,
+                to_state=ExecutionNodeState.PENDING_REVIEW,
+                reason="Tier 3 output submitted",
+                db_path=self.db_path,
+            )
+        else:
+            transition(
+                task_id=task_id,
+                to_state=ExecutionNodeState.PENDING_VERIFICATION,
+                reason=f"Tier {pop_tier} output submitted",
+                db_path=self.db_path,
+            )
+
+        # Run validation (validator transitions to COMPLETED or FAILED)
         validation = self.validator.validate(
             task_id,
             {"output_data": output.output_data, "latency_ms": output.latency_ms},
             self.db_path,
         )
 
-        # Update task status based on validation
         final_status = (
             "completed"
             if (validation.schema_valid and validation.timeout_valid)
             else "failed"
         )
-
-        conn = self._connect()
-        try:
-            conn.execute(
-                "UPDATE task_assignment SET status = ? WHERE task_id = ?",
-                (final_status, task_id),
-            )
-            conn.commit()
-        finally:
-            conn.close()
 
         return {
             "task_id": task_id,
@@ -234,3 +268,24 @@ class ExecutionDispatcher:
         conn.execute("PRAGMA foreign_keys = ON")
         conn.row_factory = sqlite3.Row
         return conn
+
+
+def _get_pop_tier(task_id: str, db_path: Union[str, Path]) -> int:
+    """Read the DAG node's pop_tier for a given task."""
+    conn = sqlite3.connect(str(db_path))
+    conn.execute("PRAGMA foreign_keys = ON")
+    conn.row_factory = sqlite3.Row
+    try:
+        task = conn.execute(
+            "SELECT node_id FROM task_assignment WHERE task_id = ?",
+            (task_id,),
+        ).fetchone()
+        if task is None:
+            return 1
+        node = conn.execute(
+            "SELECT pop_tier FROM dag_node WHERE node_id = ?",
+            (task["node_id"],),
+        ).fetchone()
+        return node["pop_tier"] if node else 1
+    finally:
+        conn.close()

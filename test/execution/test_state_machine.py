@@ -258,14 +258,12 @@ def test_state_to_legacy_status_map_exists() -> None:
     assert STATE_TO_LEGACY_STATUS[ExecutionNodeState.ELIGIBLE] == "committed"
     assert STATE_TO_LEGACY_STATUS[ExecutionNodeState.EXECUTING] == "executing"
     assert (
-        STATE_TO_LEGACY_STATUS[ExecutionNodeState.PENDING_VERIFICATION]
-        == "executing"
+        STATE_TO_LEGACY_STATUS[ExecutionNodeState.PENDING_VERIFICATION] == "executing"
     )
     assert STATE_TO_LEGACY_STATUS[ExecutionNodeState.PENDING_REVIEW] == "executing"
     assert STATE_TO_LEGACY_STATUS[ExecutionNodeState.COMPLETED] == "completed"
     assert (
-        STATE_TO_LEGACY_STATUS[ExecutionNodeState.PENDING_FINALIZATION]
-        == "completed"
+        STATE_TO_LEGACY_STATUS[ExecutionNodeState.PENDING_FINALIZATION] == "completed"
     )
     assert STATE_TO_LEGACY_STATUS[ExecutionNodeState.FROZEN] == "failed"
     assert STATE_TO_LEGACY_STATUS[ExecutionNodeState.FAILED] == "failed"

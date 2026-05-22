@@ -7,6 +7,8 @@ import uuid
 from pathlib import Path
 from typing import Union
 
+from oasis.execution.state_machine import ExecutionNodeState, transition
+
 
 def _connect(db_path: Union[str, Path]) -> sqlite3.Connection:
     conn = sqlite3.connect(str(db_path))
@@ -47,6 +49,18 @@ def commit_to_task(
         ).fetchone()
         if task is None:
             raise ValueError(f"Task not found: {task_id}")
+        current_state = None
+        try:
+            current_state = task["state"]
+        except IndexError:
+            pass
+        if (
+            current_state is not None
+            and current_state != ExecutionNodeState.WAITING.value
+        ):
+            raise ValueError(
+                f"Task {task_id} is in state '{current_state}'; expected 'pending'"
+            )
         if task["status"] != "pending":
             raise ValueError(
                 f"Task {task_id} is in state '{task['status']}'; expected 'pending'"
@@ -105,22 +119,25 @@ def commit_to_task(
             (commitment_id, task_id, agent_did, stake_amount),
         )
 
-        # 8. Transition task status
-        conn.execute(
-            "UPDATE task_assignment SET status = 'committed' WHERE task_id = ?",
-            (task_id,),
-        )
-
+        # 8. Transition task state (legacy status synced automatically)
         conn.commit()
-        return {
-            "commitment_id": commitment_id,
-            "task_id": task_id,
-            "agent_did": agent_did,
-            "stake_amount": stake_amount,
-            "status": "committed",
-        }
     finally:
         conn.close()
+
+    transition(
+        task_id=task_id,
+        to_state=ExecutionNodeState.ELIGIBLE,
+        reason="stake committed",
+        db_path=db_path,
+    )
+
+    return {
+        "commitment_id": commitment_id,
+        "task_id": task_id,
+        "agent_did": agent_did,
+        "stake_amount": stake_amount,
+        "status": "committed",
+    }
 
 
 def validate_commitment(task_id: str, db_path: Union[str, Path]) -> dict:

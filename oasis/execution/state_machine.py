@@ -33,6 +33,29 @@ class ExecutionNodeState(str, Enum):
     PENDING_FINALIZATION = "PENDING_FINALIZATION"
 
 
+# Legacy alias: maps the old `status` string to the new state enum.
+LEGACY_STATUS_TO_STATE: dict[str, ExecutionNodeState] = {
+    "pending": ExecutionNodeState.WAITING,
+    "approved": ExecutionNodeState.ELIGIBLE,
+    "committed": ExecutionNodeState.ELIGIBLE,  # post-stake-lock
+    "executing": ExecutionNodeState.EXECUTING,
+    "completed": ExecutionNodeState.COMPLETED,
+    "failed": ExecutionNodeState.FAILED,
+}
+
+# Reverse — for keeping the legacy `status` column in sync.
+STATE_TO_LEGACY_STATUS: dict[ExecutionNodeState, str] = {
+    ExecutionNodeState.WAITING: "pending",
+    ExecutionNodeState.ELIGIBLE: "committed",
+    ExecutionNodeState.EXECUTING: "executing",
+    ExecutionNodeState.PENDING_VERIFICATION: "executing",
+    ExecutionNodeState.PENDING_REVIEW: "executing",
+    ExecutionNodeState.COMPLETED: "completed",
+    ExecutionNodeState.PENDING_FINALIZATION: "completed",
+    ExecutionNodeState.FROZEN: "failed",
+    ExecutionNodeState.FAILED: "failed",
+}
+
 TRANSITIONS: dict[ExecutionNodeState, set[ExecutionNodeState]] = {
     ExecutionNodeState.WAITING: {
         ExecutionNodeState.ELIGIBLE,
@@ -149,20 +172,41 @@ def transition(
     """Apply state change after can_transition has passed. Writes audit row."""
     conn = sqlite3.connect(str(db_path))
     try:
-        row = conn.execute(
-            "SELECT state FROM task_assignment WHERE task_id = ?",
-            (task_id,),
-        ).fetchone()
-        from_state = row[0] if row else None
-        conn.execute(
-            "UPDATE task_assignment SET state = ? WHERE task_id = ?",
-            (to_state.value, task_id),
-        )
-        conn.execute(
-            "INSERT INTO task_state_transition "
-            "(task_id, from_state, to_state, reason) VALUES (?, ?, ?, ?)",
-            (task_id, from_state, to_state.value, reason),
-        )
+        from_state = None
+        try:
+            row = conn.execute(
+                "SELECT state FROM task_assignment WHERE task_id = ?",
+                (task_id,),
+            ).fetchone()
+            from_state = row[0] if row else None
+        except sqlite3.OperationalError:
+            pass  # state column may not exist on legacy schemas
+
+        legacy = STATE_TO_LEGACY_STATUS.get(to_state, "")
+        try:
+            conn.execute(
+                "UPDATE task_assignment SET state = ?, status = ? WHERE task_id = ?",
+                (to_state.value, legacy, task_id),
+            )
+        except sqlite3.OperationalError:
+            # state column may not exist; try updating just status
+            try:
+                conn.execute(
+                    "UPDATE task_assignment SET status = ? WHERE task_id = ?",
+                    (legacy, task_id),
+                )
+            except sqlite3.OperationalError:
+                pass  # neither column exists
+
+        try:
+            conn.execute(
+                "INSERT INTO task_state_transition "
+                "(task_id, from_state, to_state, reason) VALUES (?, ?, ?, ?)",
+                (task_id, from_state, to_state.value, reason),
+            )
+        except sqlite3.OperationalError:
+            pass  # audit table may not exist on legacy schemas
+
         conn.commit()
     finally:
         conn.close()

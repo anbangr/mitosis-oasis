@@ -73,10 +73,7 @@ def test_task_state_transition_table_present(tmp_path: Path) -> None:
     create_execution_tables(str(p))
     conn = sqlite3.connect(str(p))
     tables = {
-        r[0]
-        for r in conn.execute(
-            "SELECT name FROM sqlite_master WHERE type='table'"
-        )
+        r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")
     }
     conn.close()
     assert "task_state_transition" in tables
@@ -88,8 +85,7 @@ def test_task_state_transition_schema(tmp_path: Path) -> None:
     create_execution_tables(str(p))
     conn = sqlite3.connect(str(p))
     cols = {
-        r[1]: r[2]
-        for r in conn.execute("PRAGMA table_info(task_state_transition)")
+        r[1]: r[2] for r in conn.execute("PRAGMA table_info(task_state_transition)")
     }
     conn.close()
     assert cols.get("transition_id") == "INTEGER"
@@ -107,9 +103,7 @@ def test_task_state_transition_has_fk_to_task_assignment(tmp_path: Path) -> None
     p = tmp_path / "exec.db"
     create_execution_tables(str(p))
     conn = sqlite3.connect(str(p))
-    fks = conn.execute(
-        "PRAGMA foreign_key_list(task_state_transition)"
-    ).fetchall()
+    fks = conn.execute("PRAGMA foreign_key_list(task_state_transition)").fetchall()
     conn.close()
     fk_targets = {(fk[2], fk[3]) for fk in fks}
     assert ("task_assignment", "task_id") in fk_targets
@@ -134,9 +128,7 @@ def test_state_check_constraint_accepts_all_valid_values(tmp_path: Path) -> None
 
 
 @pytest.mark.parametrize("bad_state", ["INVALID_STATE", "waiting", "DONE", ""])
-def test_state_check_constraint_rejects_invalid(
-    tmp_path: Path, bad_state: str
-) -> None:
+def test_state_check_constraint_rejects_invalid(tmp_path: Path, bad_state: str) -> None:
     """Invalid state values raise IntegrityError."""
     p = tmp_path / "exec.db"
     conn = _setup_conn_for_insert(p)
@@ -162,9 +154,7 @@ def test_stage_check_constraint_accepts_all_valid_values(tmp_path: Path) -> None
 
 
 @pytest.mark.parametrize("bad_stage", ["INVALID_STAGE", "orchestrate", "DONE", ""])
-def test_stage_check_constraint_rejects_invalid(
-    tmp_path: Path, bad_stage: str
-) -> None:
+def test_stage_check_constraint_rejects_invalid(tmp_path: Path, bad_stage: str) -> None:
     """Invalid stage values raise IntegrityError."""
     p = tmp_path / "exec.db"
     conn = _setup_conn_for_insert(p)
@@ -189,10 +179,7 @@ def test_idempotent_re_execution(tmp_path: Path) -> None:
     conn = sqlite3.connect(str(p))
     cols = {r[1] for r in conn.execute("PRAGMA table_info(task_assignment)")}
     tables = {
-        r[0]
-        for r in conn.execute(
-            "SELECT name FROM sqlite_master WHERE type='table'"
-        )
+        r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")
     }
     conn.close()
     assert "state" in cols

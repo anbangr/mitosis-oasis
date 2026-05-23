@@ -71,9 +71,6 @@ def _changelog_block(version: str) -> str:
 
 _BUNDLE_IGNORES = [
     "--ignore=test/cross_branch/test_release_v030_gates.py",
-    "--ignore=test/spec_v097/test_version_lockstep_bundle2.py",
-    "--ignore=test/spec_v097/test_version_lockstep_bundle3.py",
-    "--ignore=test/spec_v097/test_version_lockstep_bundle4.py",
     "--ignore=test/spec_v097/test_version_lockstep_bundle5.py",
 ]
 

@@ -63,6 +63,17 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e .
 
+      - name: Production-import smoke test
+        # Catches the class of bug that crashed v0.8.0 in prod (regulator.py
+        # importing from test.spec_v097.conftest, which is not in the prod
+        # image). Runs from /tmp to ensure ``test/`` is not implicitly on
+        # sys.path via the current working directory.
+        run: |
+          cd /tmp
+          python -c "import oasis.api" \
+            && echo "OK: oasis.api imports without test/ on path" \
+            || (echo "FAIL: prod-import smoke test failed — likely test/ leak"; exit 1)
+
       - name: Run pytest
         run: pytest --tb=short -v
 

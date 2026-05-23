@@ -29,6 +29,12 @@ import pytest
 from oasis.adjudication.schema import create_adjudication_tables
 from oasis.governance.schema import create_governance_tables, seed_constitution
 
+# Re-exported from oasis.governance.spec_constants so production code can
+# import these without depending on test/ (which is not in the prod image).
+# Explicit `as` re-export satisfies F401.
+from oasis.governance.spec_constants import SPEC_BID_WEIGHT_P as SPEC_BID_WEIGHT_P
+from oasis.governance.spec_constants import SPEC_BID_WEIGHT_Q as SPEC_BID_WEIGHT_Q
+
 # ---------------------------------------------------------------------------
 # Spec-exact Constitutional Parameters cited verbatim from v0.97 deepdives
 # ---------------------------------------------------------------------------
@@ -41,8 +47,8 @@ SPEC_REPUTATION_ALPHA_DEFAULT = 0.5  # exec §2.6, multiplier slope
 SPEC_REPUTATION_LAMBDA_DEFAULT = 0.5  # exec §2.2-2.3, EMA smoothing
 SPEC_TIER3_TIMEOUT_FLOOR_MS = 300_000  # leg §1.5, 5-minute human floor
 SPEC_GUARDIAN_DEVIATION_SIGMA = 2.0  # exec §0.3
-SPEC_BID_WEIGHT_Q = 0.6  # exec §1.2
-SPEC_BID_WEIGHT_P = 0.4  # exec §1.2
+# SPEC_BID_WEIGHT_P, SPEC_BID_WEIGHT_Q (exec §1.2): re-exported above from
+# oasis.governance.spec_constants.
 SPEC_SPONSORSHIP_MIN = 5  # leg §4
 SPEC_PROPOSAL_TIMEOUT_MS = 600_000  # leg §0.8, 10 min
 SPEC_BIDDING_WINDOW_MS = 900_000  # leg §0.8, 15 min

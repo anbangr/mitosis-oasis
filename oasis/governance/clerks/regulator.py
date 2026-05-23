@@ -30,7 +30,7 @@ from oasis.governance.messages import (
     canonical_signed_bytes,
     log_message,
 )
-from test.spec_v097.conftest import SPEC_BID_WEIGHT_P, SPEC_BID_WEIGHT_Q
+from oasis.governance.spec_constants import SPEC_BID_WEIGHT_P, SPEC_BID_WEIGHT_Q
 
 
 class Regulator(BaseClerk):

@@ -17,17 +17,17 @@ on:
   push:
     branches: [main]
     paths-ignore:
-      - '**.md'
-      - 'docs/**'
-      - 'LICENSE'
-      - '.gitignore'
+      - "**.md"
+      - "docs/**"
+      - "LICENSE"
+      - ".gitignore"
   pull_request:
     branches: [main]
     paths-ignore:
-      - '**.md'
-      - 'docs/**'
-      - 'LICENSE'
-      - '.gitignore'
+      - "**.md"
+      - "docs/**"
+      - "LICENSE"
+      - ".gitignore"
   workflow_dispatch:
 
 permissions:
@@ -102,69 +102,64 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # ── Deploy to droplet ──────────────────────────────────────────────────────
+  # ── Deploy to GKE ─────────────────────────────────────────────────────────
+  # OASIS runs as ClusterIP `mitosis-oasis-svc:8100` in `mitosis-prod` on the
+  # GKE floor node (default-pool, e2-standard-4). The deployment is defined in
+  # mitosis-prototype/k8s/prod/oasis-deployment.yaml; we only need to roll
+  # the image.
+  #
+  # Auth approach: relies on the kubeconfig already present on the shared CI
+  # droplet (159.223.44.216). The ci-control-plane runner has been deploying
+  # to GKE from this droplet for weeks; the same kubeconfig under the runner
+  # account works here. We deliberately do NOT add GKE_SA_KEY to this
+  # public repo's secrets — auth is implicit via the host environment.
+  #
+  # If the kubeconfig ever expires or rotates, this job will fail at
+  # `kubectl rollout status` with an auth error; refresh on the droplet
+  # then re-run.
   deploy:
-    name: Deploy to droplet
+    name: Deploy to GKE
     needs: [docker]
-    # Disabled: production droplet (do-droplet-1) was deleted 2026-04-12.
-    # OASIS has no active deploy target until migrated to GKE or a new host.
-    if: false
-    runs-on: [self-hosted, build]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: [self-hosted, build, test]
     timeout-minutes: 10
     concurrency:
-      # Production deploys must NEVER be cancelled mid-flight: a SIGTERM after
-      # `docker pull` but before `docker compose up` would leave the droplet in
-      # an inconsistent state. Queue instead.
+      # Production rollouts must NEVER be cancelled mid-flight.
       group: deploy-mitosis-oasis
       cancel-in-progress: false
     steps:
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1
-        env:
-          DEPLOY_IMAGE: ghcr.io/anbangr/mitosis-oasis
-        with:
-          host: ${{ secrets.DROPLET_IP }}
-          username: ${{ secrets.DROPLET_USER }}
-          key: ${{ secrets.DROPLET_SSH_KEY }}
-          envs: DEPLOY_IMAGE
-          script: |
-            set -euo pipefail
-
-            docker pull "${DEPLOY_IMAGE}:latest"
-
-            mkdir -p /root/mitosis-oasis
-            cd /root/mitosis-oasis
-            cat > docker-compose.yml << 'COMPOSE'
-            version: "3.8"
-            services:
-              mitosis-oasis:
-                image: ghcr.io/anbangr/mitosis-oasis:latest
-                container_name: mitosis-oasis
-                restart: unless-stopped
-                ports:
-                  - "8100:8000"
-                volumes:
-                  - mitosis-data:/app/data
-                environment:
-                  - OASIS_DB_PATH=/app/data/governance.db
-                healthcheck:
-                  test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
-                  interval: 30s
-                  timeout: 5s
-                  retries: 3
-                  start_period: 10s
-            volumes:
-              mitosis-data:
-            COMPOSE
-            # Remove legacy mis-named container if present (was "metosis-oasis" — typo)
-            docker rm -f metosis-oasis 2>/dev/null || true
-            docker compose up -d --force-recreate
-
+      - name: Install kubectl
+        run: |
+          if ! command -v kubectl &>/dev/null; then
+            KUBECTL_VERSION=$(curl -fsSL https://dl.k8s.io/release/stable.txt)
+            curl -fsSL "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl" -o /tmp/kubectl
+            sudo install -o root -g root -m 0755 /tmp/kubectl /usr/local/bin/kubectl
+          fi
+      - name: Verify kubeconfig + cluster reachability
+        run: |
+          # Confirm the runner has a usable kubeconfig before attempting the
+          # rollout. Surfaces auth errors clearly instead of letting them
+          # appear as opaque `kubectl set image` failures.
+          if ! kubectl --request-timeout=10s -n mitosis-prod get deployment/mitosis-oasis -o name; then
+            echo "::error::kubeconfig on this runner cannot reach the mitosis cluster."
+            echo "::error::Refresh kubeconfig on droplet 159.223.44.216 (same one ci-control-plane uses)."
+            exit 1
+          fi
+      - name: Deploy new image
+        run: |
+          kubectl set image deployment/mitosis-oasis \
+            oasis=ghcr.io/anbangr/mitosis-oasis:${{ github.sha }} \
+            -n mitosis-prod
+          kubectl rollout status deployment/mitosis-oasis -n mitosis-prod --timeout=180s
       - name: Health check
         run: |
-          echo "Waiting for health endpoint..."
+          # OASIS is ClusterIP — port-forward locally and probe /api/health.
+          kubectl -n mitosis-prod port-forward svc/mitosis-oasis-svc 18100:8100 &
+          PF_PID=$!
+          trap "kill $PF_PID 2>/dev/null || true" EXIT
+          echo "Waiting for /api/health via port-forward..."
           for i in $(seq 1 20); do
-            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "http://${{ secrets.DROPLET_IP }}:8100/api/health" 2>/dev/null || echo "000")
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:18100/api/health" 2>/dev/null || echo "000")
             if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 500 ]; then
               echo "App is up (HTTP $HTTP_CODE)"
               exit 0

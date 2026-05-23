@@ -17,8 +17,11 @@ EXPECTED_TABLES = sorted(
         "dag_edge",
         "dag_node",
         "deliberation_round",
+        "evidence_anchor",
         "legislative_session",
         "message_log",
+        "petition",
+        "petition_signature",
         "proposal",
         "regulatory_decision",
         "reputation_ledger",
@@ -38,12 +41,12 @@ def _get_tables(db_path: Path) -> list[str]:
     return [r[0] for r in rows]
 
 
-def test_all_15_tables_created(db_path: Path):
-    """create_governance_tables produces exactly 15 tables."""
+def test_all_18_tables_created(db_path: Path):
+    """create_governance_tables produces exactly 18 tables."""
     create_governance_tables(db_path)
     tables = _get_tables(db_path)
     assert tables == EXPECTED_TABLES
-    assert len(tables) == 15
+    assert len(tables) == 18
 
 
 def test_idempotent_recreation(db_path: Path):
@@ -51,7 +54,7 @@ def test_idempotent_recreation(db_path: Path):
     create_governance_tables(db_path)
     create_governance_tables(db_path)  # second call — should be no-op
     tables = _get_tables(db_path)
-    assert len(tables) == 15
+    assert len(tables) == 18
 
 
 def test_foreign_key_enforcement(db_path: Path):

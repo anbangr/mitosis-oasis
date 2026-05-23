@@ -210,3 +210,18 @@ def transition(
         conn.commit()
     finally:
         conn.close()
+
+    # Bundle 5: emit TASK_FAILED on FAILED transition for adaptive refinement.
+    if to_state == ExecutionNodeState.FAILED:
+        try:
+            from oasis.observatory.event_bus import EventBus
+            from oasis.observatory.events import Event, EventType
+
+            EventBus.get_instance().publish(
+                Event(
+                    event_type=EventType.TASK_FAILED,
+                    payload={"task_id": task_id, "reason": reason},
+                )
+            )
+        except Exception:
+            pass  # event bus not initialised (e.g. unit tests w/o api lifespan)

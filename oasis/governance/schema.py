@@ -232,6 +232,39 @@ CREATE TABLE IF NOT EXISTS message_log (
     created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (session_id) REFERENCES legislative_session(session_id)
 );
+
+-- 16. Petitions (Bundle 5, spec §2.2)
+CREATE TABLE IF NOT EXISTS petition (
+    petition_id        TEXT PRIMARY KEY,
+    title              TEXT NOT NULL,
+    rationale          TEXT NOT NULL,
+    proposed_mission   TEXT NOT NULL,
+    created_at         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    fired_at           TIMESTAMP,
+    fired_session_id   TEXT,
+    FOREIGN KEY (fired_session_id) REFERENCES legislative_session(session_id)
+);
+
+CREATE TABLE IF NOT EXISTS petition_signature (
+    signature_id     INTEGER PRIMARY KEY AUTOINCREMENT,
+    petition_id      TEXT NOT NULL,
+    signer_did       TEXT NOT NULL,
+    signature_hex    TEXT NOT NULL,
+    signed_at        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (petition_id, signer_did),
+    FOREIGN KEY (petition_id) REFERENCES petition(petition_id),
+    FOREIGN KEY (signer_did)  REFERENCES agent_registry(agent_did)
+);
+
+-- 17. Evidence anchor (Bundle 5, spec leg §5 — frozen during Discussion)
+CREATE TABLE IF NOT EXISTS evidence_anchor (
+    anchor_id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    session_id         TEXT NOT NULL UNIQUE,
+    merkle_root_hex    TEXT NOT NULL,
+    snapshot_payload   TEXT NOT NULL,            -- frozen data, JSON
+    frozen_at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (session_id) REFERENCES legislative_session(session_id)
+);
 """
 
 # ---------------------------------------------------------------------------
@@ -348,6 +381,30 @@ _DEFAULT_CONSTITUTION = [
         "integer",
         "Node count above which tau_anchor_large applies",
     ),
+    (
+        "sponsorship_min",
+        5.0,
+        "integer",
+        "Min co-sponsor signatures on MSG3 (spec §4)",
+    ),
+    (
+        "milestone_round_interval",
+        20.0,
+        "integer",
+        "Trigger legislative session every N execution rounds (spec §2.2)",
+    ),
+    (
+        "petition_threshold",
+        0.20,
+        "float",
+        "Fraction of active agents needed to fire a petition (spec §2.2)",
+    ),
+    (
+        "adaptive_iteration_budget",
+        3.0,
+        "integer",
+        "Max refinement iterations per task subtree (spec §1.10)",
+    ),
 ]
 
 # ---------------------------------------------------------------------------
@@ -426,6 +483,14 @@ def create_governance_tables(db_path: Union[str, Path]) -> None:
         add_column_idempotent(
             "ALTER TABLE agent_registry ADD COLUMN banned BOOLEAN NOT NULL DEFAULT 0"
         )
+
+        # Session-trigger metadata (Bundle 5).
+        for column_sql in [
+            "ALTER TABLE legislative_session ADD COLUMN trigger TEXT NOT NULL DEFAULT 'manual'",
+            "ALTER TABLE legislative_session ADD COLUMN parent_task_id TEXT",
+            "ALTER TABLE legislative_session ADD COLUMN iteration INTEGER NOT NULL DEFAULT 0",
+        ]:
+            add_column_idempotent(column_sql)
     finally:
         conn.close()
 

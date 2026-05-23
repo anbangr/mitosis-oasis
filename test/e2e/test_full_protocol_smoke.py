@@ -766,3 +766,128 @@ def test_bundle4_pending_review_to_completed_allowed(tmp_path):
         ("EXECUTING", "PENDING_REVIEW"),
         ("PENDING_REVIEW", "COMPLETED"),
     ]
+
+
+# ---------------------------------------------------------------------------
+# Bundle 5 — Legislative Dynamics waypoints
+# ---------------------------------------------------------------------------
+
+
+def test_bundle5_adaptive_refinement_chain(tmp_path: Path) -> None:
+    """Adaptive refinement: 3 successive task_failed events fire, 4th is
+    blocked by the iteration budget."""
+    from oasis.governance.adaptive_refinement import (
+        get_iteration_budget,
+        on_task_failed,
+    )
+    from oasis.governance.schema import create_governance_tables, seed_constitution
+
+    db = tmp_path / "g.db"
+    create_governance_tables(str(db))
+    seed_constitution(str(db))
+
+    for i in range(3):
+        result = on_task_failed(task_id="t-smoke", gov_db_path=str(db))
+        assert result is not None, f"refinement {i + 1} should fire"
+
+    # 4th must be blocked.
+    assert on_task_failed(task_id="t-smoke", gov_db_path=str(db)) is None
+    assert get_iteration_budget(parent_task_id="t-smoke", db_path=str(db)) == 3
+
+
+def test_bundle5_petition_to_session(tmp_path: Path) -> None:
+    """Petition flow: 10 producers, 2 sign → threshold met, session fires."""
+    import sqlite3
+
+    from oasis.governance.schema import create_governance_tables, seed_constitution
+    from oasis.governance.scheduler.petition_trigger import (
+        accumulate_signature,
+        check_threshold,
+        fire_petition,
+    )
+
+    db = tmp_path / "g.db"
+    create_governance_tables(str(db))
+    seed_constitution(str(db))
+
+    conn = sqlite3.connect(str(db))
+    for i in range(10):
+        conn.execute(
+            "INSERT INTO agent_registry "
+            "(agent_did, agent_type, capability_tier, display_name, active) "
+            "VALUES (?, 'producer', 't1', ?, 1)",
+            (f"did:key:zProd{i}", f"prod-{i}"),
+        )
+    conn.execute(
+        "INSERT INTO petition "
+        "(petition_id, title, rationale, proposed_mission) "
+        "VALUES ('pet-e2e', 't', 'r', 'study X')"
+    )
+    conn.commit()
+    conn.close()
+
+    for i in range(2):
+        accumulate_signature(
+            petition_id="pet-e2e",
+            signer_did=f"did:key:zProd{i}",
+            signature_hex="00" * 64,
+            db_path=str(db),
+        )
+
+    assert check_threshold(petition_id="pet-e2e", db_path=str(db)) is True
+
+    session_id = fire_petition(petition_id="pet-e2e", db_path=str(db))
+    conn = sqlite3.connect(str(db))
+    row = conn.execute(
+        "SELECT trigger, state FROM legislative_session WHERE session_id = ?",
+        (session_id,),
+    ).fetchone()
+    conn.close()
+    assert row == ("petition", "SESSION_INIT")
+
+
+def test_bundle5_milestone_trigger_end_to_end(tmp_path: Path) -> None:
+    """Milestone trigger: 20 settled tasks → milestone fires from scheduler."""
+    import sqlite3
+
+    from oasis.adjudication.schema import create_adjudication_tables
+    from oasis.adjudication.scheduler import start_scheduler, stop_scheduler
+    from oasis.execution.schema import create_execution_tables
+    from oasis.governance.schema import create_governance_tables, seed_constitution
+
+    gov_db = tmp_path / "gov.db"
+    adj_db = tmp_path / "adj.db"
+    exec_db = tmp_path / "exec.db"
+    create_governance_tables(str(gov_db))
+    seed_constitution(str(gov_db))
+    create_adjudication_tables(str(adj_db))
+    create_execution_tables(str(exec_db))
+
+    conn = sqlite3.connect(str(exec_db))
+    for i in range(20):
+        conn.execute(
+            "INSERT INTO settlement "
+            "(settlement_id, task_id, agent_did, base_reward, "
+            "reputation_multiplier, final_reward, protocol_fee, "
+            "insurance_fee) "
+            "VALUES (?, ?, 'did:key:zA', 10.0, 1.0, 10.0, 0.5, 0.5)",
+            (f"settle-{i}", f"task-{i}"),
+        )
+    conn.commit()
+    conn.close()
+
+    try:
+        sched = start_scheduler(
+            adj_db_path=str(adj_db),
+            gov_db_path=str(gov_db),
+            exec_db_path=str(exec_db),
+        )
+        sched.get_job("milestone_trigger").func()
+        conn = sqlite3.connect(str(gov_db))
+        rows = conn.execute(
+            "SELECT trigger FROM legislative_session WHERE trigger = 'milestone'"
+        ).fetchall()
+        conn.close()
+        assert len(rows) == 1
+    finally:
+        stop_scheduler()

@@ -2,6 +2,49 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.0] — 2026-05-22 — Bundle 5 (Legislative Dynamics) — v0.97 Protocol Parity
+
+This is the v0.97 protocol-faithful simulator milestone. All 21 audit items
+from the 2026-05-18 coverage audit are now closed.
+
+### Added
+
+- **Adaptive refinement** (spec leg §1.10): task `FAILED` transitions emit a
+  `TASK_FAILED` event; subscriber creates a child legislative session keyed
+  by `parent_task_id` with `trigger='adaptive_refinement'` and `iteration`
+  incremented. Budget of 3 per task subtree.
+- **Milestone trigger** (spec §2.2): apscheduler job (interval 1 min) checks
+  the settlement count; when `current - last >= milestone_round_interval`
+  (default 20), fires a session with `trigger='milestone'`.
+- **Petition trigger** (spec §2.2): `POST /api/governance/petitions` and
+  `POST /api/governance/petitions/{id}/sign`. When distinct signatures
+  reach `petition_threshold` (default 0.20) of active producers, fires a
+  session with `trigger='petition'`.
+- **Sponsorship threshold** (spec §4): MSG3 DAGProposal carries a
+  `sponsor_signatures` list of Ed25519 signatures. Speaker rejects any
+  proposal with fewer than `sponsorship_min` (default 5) distinct valid
+  signatures.
+- **Frozen evidence rule** (spec §5): the `evidence_anchor` table has a
+  UNIQUE constraint on `session_id`; second freeze attempts are rejected
+  to enforce the spec's information-symmetry invariant.
+- New tables: `petition`, `petition_signature`, `evidence_anchor`.
+- New `legislative_session` columns: `trigger`, `parent_task_id`, `iteration`.
+- New constitution params: `sponsorship_min`, `milestone_round_interval`,
+  `petition_threshold`, `adaptive_iteration_budget`.
+- New spec_v097 tests: LEG-042 (frozen evidence), LEG-048 (milestone),
+  LEG-049 (petition), EXE-084 (adaptive refinement).
+
+### Deprecated
+
+- Legacy `task_assignment.status` column. New code should read `state`.
+  Slated for removal in a future major.
+
+### Closes
+
+- All 21 audit items from `mitosis-paper/agentcity-ref/oasis-coverage-audit-2026-05-18.md`.
+- Headline framing: "AgentCity v0.97 protocol-faithful simulator
+  (mock chain, real crypto)".
+
 ## [0.7.0] — TBD — Bundle 4 (Execution State Machine)
 
 ### Added

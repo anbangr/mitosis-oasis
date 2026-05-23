@@ -137,8 +137,25 @@ async def lifespan(app: FastAPI):
     # Also initialize the EventBus singleton with the observatory DB
     EventBus.get_instance(_obs_db)
 
+    # Bundle 5: adaptive refinement — subscribe to TASK_FAILED events.
+    from oasis.governance.adaptive_refinement import on_task_failed
+    from oasis.observatory.events import EventType
+
+    def _refine_on_failure(event):
+        if event.event_type == EventType.TASK_FAILED:
+            payload = event.payload or {}
+            task_id = payload.get("task_id")
+            if task_id:
+                on_task_failed(task_id=task_id, gov_db_path=_gov_db)
+
+    EventBus.get_instance().subscribe(_refine_on_failure)
+
     start_scheduler(
-        adj_db_path=_adj_db, gov_db_path=_gov_db, obs_db_path=_obs_db, config=_cfg
+        adj_db_path=_adj_db,
+        gov_db_path=_gov_db,
+        obs_db_path=_obs_db,
+        exec_db_path=_exec_db,
+        config=_cfg,
     )
 
     logger.info("Mitosis-OASIS platform started")
@@ -167,7 +184,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Mitosis-OASIS API",
     description="REST API for OASIS social simulation platform",
-    version="0.7.0",
+    version="0.8.0",
     lifespan=lifespan,
 )
 

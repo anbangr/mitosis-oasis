@@ -168,6 +168,8 @@ class ProposalBody(BaseModel):
     token_budget_total: float = Field(..., gt=0)
     deadline_ms: int = Field(..., gt=0)
     signature: str = Field("", min_length=0)
+    sponsor_signatures: list[dict] = Field(default_factory=list)
+    payload_hex: str = Field("", min_length=0)
 
 
 class StrawPollBody(BaseModel):
@@ -215,6 +217,17 @@ class ConstitutionAmendmentBody(BaseModel):
     param_name: str = Field(..., min_length=1)
     param_value: str = Field(..., min_length=1)
     nonce: int = Field(..., ge=0)
+
+
+class PetitionCreateBody(BaseModel):
+    title: str = Field(..., min_length=1)
+    rationale: str = Field(..., min_length=1)
+    proposed_mission: str = Field(..., min_length=1)
+
+
+class PetitionSignBody(BaseModel):
+    signer_did: str = Field(..., min_length=1)
+    signature_hex: str = Field(..., min_length=1)
 
 
 # ---------------------------------------------------------------------------
@@ -407,6 +420,15 @@ async def submit_proposal(session_id: str, body: ProposalBody):
     _require_state(session_id, LegislativeState.PROPOSAL_OPEN)
     speaker = _speaker()
 
+    if body.sponsor_signatures:
+        sponsorship = speaker.validate_sponsorship(
+            session_id=session_id,
+            payload_hex=body.payload_hex,
+            sponsor_signatures=body.sponsor_signatures,
+        )
+        if not sponsorship["valid"]:
+            raise HTTPException(status_code=400, detail=sponsorship["reason"])
+
     proposal = DAGProposal(
         session_id=session_id,
         proposer_did=body.proposer_did,
@@ -415,6 +437,7 @@ async def submit_proposal(session_id: str, body: ProposalBody):
         token_budget_total=body.token_budget_total,
         deadline_ms=body.deadline_ms,
         signature=body.signature or None,
+        sponsor_signatures=body.sponsor_signatures,
     )
     result = speaker.receive_proposal(session_id, proposal)
     if not result["passed"]:
@@ -1031,6 +1054,117 @@ async def amend_constitution(body: ConstitutionAmendmentBody) -> dict[str, Any]:
         "param_name": body.param_name,
         "param_value": body.param_value,
     }
+
+
+# ========================= Petitions (Bundle 5, spec §2.2) ==================
+
+
+@_routes.post("/petitions", status_code=201, response_model=dict[str, Any])
+async def create_petition(body: PetitionCreateBody) -> dict[str, Any]:
+    """Create a new petition. Returns the assigned petition_id."""
+    petition_id = f"petition-{uuid.uuid4().hex[:12]}"
+    conn = sqlite3.connect(_get_db())
+    try:
+        conn.execute(
+            "INSERT INTO petition "
+            "(petition_id, title, rationale, proposed_mission) "
+            "VALUES (?, ?, ?, ?)",
+            (petition_id, body.title, body.rationale, body.proposed_mission),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return {"petition_id": petition_id}
+
+
+@_routes.post(
+    "/petitions/{petition_id}/sign",
+    status_code=200,
+    response_model=dict[str, Any],
+)
+async def sign_petition(petition_id: str, body: PetitionSignBody) -> dict[str, Any]:
+    """Accumulate a signature; fire a legislative session if threshold met.
+
+    Returns ``{"fired": bool, "session_id": str | None}``.
+    """
+    from oasis.governance.scheduler.petition_trigger import (
+        accumulate_signature,
+        check_threshold,
+        fire_petition,
+    )
+
+    db_path = _get_db()
+
+    # Verify petition exists.
+    conn = sqlite3.connect(db_path)
+    try:
+        row = conn.execute(
+            "SELECT fired_session_id FROM petition WHERE petition_id = ?",
+            (petition_id,),
+        ).fetchone()
+    finally:
+        conn.close()
+    if row is None:
+        raise HTTPException(status_code=404, detail=f"petition {petition_id} not found")
+    if row[0] is not None:
+        # Already fired — return existing session_id without re-firing.
+        return {"fired": True, "session_id": row[0], "already_fired": True}
+
+    try:
+        accumulate_signature(
+            petition_id=petition_id,
+            signer_did=body.signer_did,
+            signature_hex=body.signature_hex,
+            db_path=db_path,
+        )
+    except sqlite3.IntegrityError:
+        raise HTTPException(
+            status_code=409,
+            detail=f"{body.signer_did} already signed petition {petition_id}",
+        )
+
+    if check_threshold(petition_id=petition_id, db_path=db_path):
+        session_id = fire_petition(petition_id=petition_id, db_path=db_path)
+        return {"fired": True, "session_id": session_id}
+    return {"fired": False, "session_id": None}
+
+
+def _maybe_freeze_evidence(
+    *,
+    session_id: str,
+    snapshot: dict,
+    db_path: str,
+) -> None:
+    """Insert the evidence_anchor row for `session_id` if not present.
+
+    Hashes `snapshot` with SHA-256 over a canonical JSON encoding
+    (``sort_keys=True``) and inserts into ``evidence_anchor`` keyed by
+    ``session_id``. Raises ``ValueError`` if the session already has a
+    frozen evidence row (spec leg §5 — frozen-evidence rule).
+    """
+    import hashlib
+
+    payload = json.dumps(snapshot, sort_keys=True)
+    merkle_root_hex = hashlib.sha256(payload.encode()).hexdigest()
+    conn = sqlite3.connect(db_path)
+    try:
+        existing = conn.execute(
+            "SELECT 1 FROM evidence_anchor WHERE session_id = ?",
+            (session_id,),
+        ).fetchone()
+        if existing:
+            raise ValueError(
+                f"evidence already frozen for session {session_id} (spec §5)"
+            )
+        conn.execute(
+            "INSERT INTO evidence_anchor "
+            "(session_id, merkle_root_hex, snapshot_payload) "
+            "VALUES (?, ?, ?)",
+            (session_id, merkle_root_hex, payload),
+        )
+        conn.commit()
+    finally:
+        conn.close()
 
 
 router.include_router(_routes)

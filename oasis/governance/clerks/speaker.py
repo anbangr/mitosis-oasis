@@ -496,6 +496,65 @@ class Speaker(BaseClerk):
         }
 
     # ------------------------------------------------------------------
+    # Sponsorship validation
+    # ------------------------------------------------------------------
+
+    def validate_sponsorship(
+        self,
+        *,
+        session_id: str,
+        payload_hex: str,
+        sponsor_signatures: list[dict],
+    ) -> dict:
+        """Verify ≥5 distinct, valid Ed25519 sponsor signatures."""
+        import sqlite3
+
+        with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            # Read threshold from constitution
+            row = conn.execute(
+                "SELECT param_value FROM constitution "
+                "WHERE param_name = 'sponsorship_min'"
+            ).fetchone()
+            threshold = int(row[0]) if row else 5
+
+            distinct_valid: set[str] = set()
+            for s in sponsor_signatures:
+                did = s.get("signer_did")
+                sig_hex = s.get("signature_hex", "")
+                if did in distinct_valid:
+                    continue
+                # Lookup pubkey
+                pk_row = conn.execute(
+                    "SELECT public_key, reputation_score FROM agent_registry "
+                    "WHERE agent_did = ? AND active = 1",
+                    (did,),
+                ).fetchone()
+                if pk_row is None or not pk_row["public_key"]:
+                    continue
+                try:
+                    pubkey = bytes.fromhex(pk_row["public_key"])
+                    sig = bytes.fromhex(sig_hex)
+                    payload = bytes.fromhex(payload_hex)
+                except ValueError:
+                    continue
+                if pk_row["reputation_score"] <= 0:
+                    continue
+                if ed25519.verify(pubkey, payload, sig):
+                    distinct_valid.add(did)
+
+            if len(distinct_valid) < threshold:
+                return {
+                    "valid": False,
+                    "distinct_count": len(distinct_valid),
+                    "reason": (
+                        f"sponsorship below threshold: {len(distinct_valid)} "
+                        f"distinct valid signatures, need ≥{threshold} (spec §4)"
+                    ),
+                }
+            return {"valid": True, "distinct_count": len(distinct_valid)}
+
+    # ------------------------------------------------------------------
     # Approval
     # ------------------------------------------------------------------
 

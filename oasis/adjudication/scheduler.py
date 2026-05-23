@@ -34,11 +34,21 @@ _scheduler: Optional[AsyncIOScheduler] = None
 
 
 def start_scheduler(
-    *, adj_db_path: str, gov_db_path: str, obs_db_path: str | None = None, config=None
+    *,
+    adj_db_path: str,
+    gov_db_path: str,
+    obs_db_path: str | None = None,
+    exec_db_path: str | None = None,
+    config=None,
 ) -> AsyncIOScheduler:
     """Start the background scheduler with freeze-sweeper and watchdog jobs.
 
     Idempotent — returns the existing running scheduler if already started.
+
+    Bundle 5: registers a ``milestone_trigger`` job that fires a legislative
+    session every ``milestone_round_interval`` execution rounds. The job
+    is registered only when ``exec_db_path`` is provided (the execution
+    branch's settlement table is the round source).
     """
     global _scheduler
 
@@ -53,13 +63,14 @@ def start_scheduler(
         try:
             rows = conn.execute(
                 "SELECT param_name, param_value FROM constitution "
-                "WHERE param_name IN (?, ?, ?, ?, ?)",
+                "WHERE param_name IN (?, ?, ?, ?, ?, ?)",
                 (
                     "max_freeze_duration_ms",
                     "watchdog_window_days",
                     "watchdog_zscore_threshold",
                     "tau_anchor_small_seconds",
                     "anchor_batch_max_size",
+                    "milestone_round_interval",
                 ),
             ).fetchall()
             params = {row["param_name"]: row["param_value"] for row in rows}
@@ -140,6 +151,45 @@ def start_scheduler(
         id="anchor_publisher",
         replace_existing=True,
     )
+
+    # Bundle 5: milestone trigger — fires every milestone_round_interval rounds.
+    if exec_db_path is not None:
+        from oasis.governance.scheduler.milestone_trigger import (
+            fire_milestone_session,
+            get_current_round,
+            get_last_milestone_round,
+            should_fire,
+        )
+
+        milestone_interval = int(params.get("milestone_round_interval", 20))
+
+        def _milestone_job() -> None:
+            try:
+                current = get_current_round(exec_db_path=exec_db_path)
+                last = get_last_milestone_round(gov_db_path=gov_db_path)
+                if should_fire(
+                    current_round=current,
+                    last_session_round=last,
+                    interval=milestone_interval,
+                ):
+                    session_id = fire_milestone_session(
+                        round_number=current, db_path=gov_db_path
+                    )
+                    logger.info(
+                        "milestone trigger fired session %s at round %d",
+                        session_id,
+                        current,
+                    )
+            except Exception:
+                logger.exception("milestone_trigger job failed")
+
+        _scheduler.add_job(
+            _milestone_job,
+            "interval",
+            minutes=1,
+            id="milestone_trigger",
+            replace_existing=True,
+        )
 
     _scheduler.start()
     return _scheduler

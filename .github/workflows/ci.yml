@@ -161,17 +161,49 @@ jobs:
       - name: Health check
         run: |
           # OASIS is ClusterIP — port-forward locally and probe /api/health.
-          kubectl -n mitosis-prod port-forward svc/mitosis-oasis-svc 18100:8100 &
-          PF_PID=$!
-          trap "kill $PF_PID 2>/dev/null || true" EXIT
-          echo "Waiting for /api/health via port-forward..."
-          for i in $(seq 1 20); do
-            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:18100/api/health" 2>/dev/null || echo "000")
-            if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 500 ]; then
-              echo "App is up (HTTP $HTTP_CODE)"
-              exit 0
-            fi
-            sleep 3
+          #
+          # `kubectl rollout status` above gates on the Ready condition, but
+          # there is a brief race between "ReplicaSet reports Ready" and the
+          # new pod's container actually accepting connections on :8000.
+          # kubectl port-forward against the *service* will sometimes pick
+          # the new endpoint a fraction of a second before uvicorn is bound,
+          # producing a one-shot ECONNREFUSED that kills the forwarder.
+          #
+          # Mitigations:
+          #   1. Wait for the freshly-rolled pod to be Ready (belt + suspenders
+          #      on top of rollout status — also rules out the case where the
+          #      old pod is still terminating when we start probing).
+          #   2. Wrap port-forward + probe in an outer retry loop, so a lost
+          #      forwarder gets reopened against the now-live pod.
+          set -u
+          kubectl -n mitosis-prod wait --for=condition=Ready pod \
+            -l app=mitosis-oasis --timeout=60s
+
+          ok=0
+          for attempt in 1 2 3; do
+            echo "--- health probe attempt $attempt ---"
+            kubectl -n mitosis-prod port-forward svc/mitosis-oasis-svc 18100:8100 \
+              > /tmp/pf.log 2>&1 &
+            PF_PID=$!
+            sleep 2
+            for i in $(seq 1 15); do
+              HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+                "http://127.0.0.1:18100/api/health" 2>/dev/null || echo "000")
+              if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 500 ]; then
+                echo "App is up (HTTP $HTTP_CODE)"
+                ok=1
+                break
+              fi
+              sleep 2
+            done
+            kill "$PF_PID" 2>/dev/null || true
+            wait "$PF_PID" 2>/dev/null || true
+            [ "$ok" = 1 ] && break
+            echo "Attempt $attempt failed, retrying (port-forward log below):"
+            cat /tmp/pf.log | tail -3 || true
           done
-          echo "Health check failed after 60s"
-          exit 1
+
+          if [ "$ok" != 1 ]; then
+            echo "Health check failed after 3 attempts"
+            exit 1
+          fi

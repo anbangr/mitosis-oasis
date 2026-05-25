@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "by_contract": {
+    "ConstitutionalParameters": "legislation",
+    "ConstitutionalReview": "legislation",
+    "LegislativePipeline": "legislation",
+    "CodificationModule": "legislation",
+    "VotingVerifier": "legislation",
+    "GovernanceRegistry": "legislation",
+    "Mission": "execution",
+    "MissionFactory": "execution",
+    "CollaborationContract": "execution",
+    "ProducerContract": "execution",
+    "SettlementModule": "execution",
+    "VerificationModule": "execution",
+    "GateModule": "execution",
+    "StakingRegistry": "execution",
+    "AdjudicationCase": "adjudication",
+    "AdjudicatorRegistry": "adjudication",
+    "Guardian": "adjudication",
+    "SanctionRegistry": "adjudication",
+    "CollusionEvidence": "adjudication",
+    "ContagionEvidence": "adjudication",
+    "EvidenceAnchor": "adjudication",
+    "AgentRegistry": "support",
+    "ReputationRegistry": "support",
+    "Treasury": "support",
+    "DEXWhitelist": "support",
+    "InvestmentVault": "support",
+    "InvestmentVaultFactory": "support"
+  }
+}

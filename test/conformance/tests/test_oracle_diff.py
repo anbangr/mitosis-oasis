@@ -196,3 +196,34 @@ def test_revert_selector_match_passes():
         DiffOptions(),
     )
     assert v.verdict == "PASS"
+
+
+# --- state delta multiset tests (MED 6) ---
+
+def test_duplicate_state_delta_counts_must_match():
+    """Two identical expected increments vs one actual increment → FAIL.
+
+    The old dict-keyed implementation collapsed duplicates and incorrectly
+    reported PASS.  The Counter-based implementation counts correctly.
+    """
+    dup_delta = StateDelta(kind="counter_inc", contract="X", name="n", delta="1")
+    v = diff_call(
+        _fix(state=[dup_delta, dup_delta]),
+        _act(state=[dup_delta]),
+        DiffOptions(),
+    )
+    assert v.verdict == "FAIL"
+    assert v.diff is not None
+    assert "state" in v.diff
+    assert len(v.diff["state"]["missing"]) == 1
+
+
+def test_duplicate_state_delta_both_present_passes():
+    """Two identical expected increments and two matching actual ones → PASS."""
+    dup_delta = StateDelta(kind="counter_inc", contract="X", name="n", delta="1")
+    v = diff_call(
+        _fix(state=[dup_delta, dup_delta]),
+        _act(state=[dup_delta, dup_delta]),
+        DiffOptions(),
+    )
+    assert v.verdict == "PASS"

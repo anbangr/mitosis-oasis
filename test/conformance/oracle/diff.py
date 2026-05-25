@@ -7,6 +7,7 @@ Per spec §5  default: revert reason ignored; flippable.
 
 from __future__ import annotations
 
+from collections import Counter
 from dataclasses import dataclass
 
 from test.conformance.oracle.schema import (
@@ -68,11 +69,24 @@ def _diff_events(expected: list[EmittedEvent], actual: list[EmittedEvent],
 
 def _diff_state(expected: list[StateDelta], actual: list[StateDelta],
                 opts: DiffOptions) -> dict | None:
-    exp = {_norm_state(s): s.model_dump() for s in expected}
-    act = {_norm_state(s): s.model_dump() for s in actual}
+    # Use Counter (multiset) so that two identical expected deltas are counted
+    # separately — a single matching actual cannot satisfy both.
+    exp_counts = Counter(_norm_state(s) for s in expected)
+    act_counts = Counter(_norm_state(s) for s in actual)
 
-    missing = [v for k, v in exp.items() if k not in act]
-    extra   = [v for k, v in act.items() if k not in exp]
+    # Counter subtraction keeps only positive counts.
+    missing_counts = exp_counts - act_counts
+    extra_counts   = act_counts - exp_counts
+
+    # Reconstruct human-readable dicts by finding representative model_dump()
+    # values for each key (order may vary, so build a lookup once).
+    exp_by_key = {_norm_state(s): s.model_dump() for s in expected}
+    act_by_key = {_norm_state(s): s.model_dump() for s in actual}
+
+    missing = [exp_by_key[k] for k, cnt in missing_counts.items()
+               for _ in range(cnt)]
+    extra   = [act_by_key[k] for k, cnt in extra_counts.items()
+               for _ in range(cnt)]
 
     if missing:
         return {"missing": missing, "extra": extra, "reason": "state_missing"}

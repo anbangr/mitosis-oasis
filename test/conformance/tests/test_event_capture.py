@@ -1,6 +1,5 @@
 """Subscribe to oasis EventBus during a call and collect emitted events."""
 
-import tempfile
 from pathlib import Path
 
 import pytest
@@ -45,3 +44,12 @@ def test_collector_preserves_publish_order(fresh_bus):
         for t in types:
             fresh_bus.publish(Event(event_type=t))
     assert [e.event_type for e in collector.events] == types
+
+
+def test_collector_raises_clear_error_when_bus_not_initialised():
+    """EventCollector must raise RuntimeError with a seed-hint message when the
+    EventBus singleton has not yet been initialised (no db_path provided)."""
+    EventBus.reset()
+    with pytest.raises(RuntimeError, match="EventCollector requires"):
+        with EventCollector():
+            pass  # pragma: no cover

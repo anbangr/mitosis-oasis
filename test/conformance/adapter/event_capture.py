@@ -20,7 +20,15 @@ class EventCollector:
         self._sub_id: str | None = None
 
     def __enter__(self) -> "EventCollector":
-        bus = EventBus.get_instance()
+        try:
+            bus = EventBus.get_instance()
+        except RuntimeError as exc:
+            raise RuntimeError(
+                "EventCollector requires an initialised EventBus. "
+                "Seed it in a pytest fixture: "
+                "EventBus.get_instance(db_path=tmp_path / 'obs.db'). "
+                f"Original error: {exc}"
+            ) from exc
         self._sub_id = bus.subscribe(self._receive)
         return self
 

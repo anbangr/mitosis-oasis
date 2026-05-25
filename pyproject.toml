@@ -54,6 +54,9 @@ testpaths = ["test"]
 # Exclude legacy CAMEL-AI infra tests (need social_platform schema files removed in Mitosis fork)
 # and removed agent tests
 norecursedirs = ["test/infra", "test/agent"]
+markers = [
+    "conformance: AgentCity protocol conformance replay tests",
+]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

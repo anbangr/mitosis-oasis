@@ -162,23 +162,21 @@ jobs:
         run: |
           # OASIS is ClusterIP — port-forward locally and probe /api/health.
           #
-          # `kubectl rollout status` above gates on the Ready condition, but
-          # there is a brief race between "ReplicaSet reports Ready" and the
-          # new pod's container actually accepting connections on :8000.
-          # kubectl port-forward against the *service* will sometimes pick
-          # the new endpoint a fraction of a second before uvicorn is bound,
-          # producing a one-shot ECONNREFUSED that kills the forwarder.
+          # `kubectl rollout status` (previous step) already gates on the new
+          # ReplicaSet reporting Ready. The previous attempt to add an extra
+          # `kubectl wait --for=condition=Ready pod -l app=mitosis-oasis`
+          # turned out to be actively harmful: the label selector also
+          # matches the OLD pod during the rollout's "Terminating" window,
+          # and `kubectl wait` treats Terminating pods as never-Ready, so
+          # the wait timed out even on a perfectly healthy deploy.
           #
-          # Mitigations:
-          #   1. Wait for the freshly-rolled pod to be Ready (belt + suspenders
-          #      on top of rollout status — also rules out the case where the
-          #      old pod is still terminating when we start probing).
-          #   2. Wrap port-forward + probe in an outer retry loop, so a lost
-          #      forwarder gets reopened against the now-live pod.
-          set -u
-          kubectl -n mitosis-prod wait --for=condition=Ready pod \
-            -l app=mitosis-oasis --timeout=60s
-
+          # What we still need to guard against is a brief race between
+          # "deployment Ready" and "uvicorn actually listening on :8000".
+          # `kubectl port-forward svc/...` will occasionally pick an
+          # endpoint a fraction of a second before the container's socket
+          # is bound, hit ECONNREFUSED, and tear down the forwarder.
+          # The outer retry loop handles that — opens a fresh forwarder
+          # on each attempt with a 2s warm-up.
           ok=0
           for attempt in 1 2 3; do
             echo "--- health probe attempt $attempt ---"
@@ -199,8 +197,8 @@ jobs:
             kill "$PF_PID" 2>/dev/null || true
             wait "$PF_PID" 2>/dev/null || true
             [ "$ok" = 1 ] && break
-            echo "Attempt $attempt failed, retrying (port-forward log below):"
-            cat /tmp/pf.log | tail -3 || true
+            echo "Attempt $attempt failed, port-forward log tail:"
+            tail -3 /tmp/pf.log 2>/dev/null || true
           done
 
           if [ "$ok" != 1 ]; then

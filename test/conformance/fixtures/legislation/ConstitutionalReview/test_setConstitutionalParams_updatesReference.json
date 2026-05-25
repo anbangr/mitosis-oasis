@@ -1,0 +1,77 @@
+{
+  "fixture_version": 1,
+  "source": {
+    "foundry_test": "test/ConstitutionalReview.t.sol:ConstitutionalReviewTest::test_setConstitutionalParams_updatesReference()",
+    "contracts_sha": "0x19e8e5db7d2dce557ecf00eeff05c55c9c230293040f11c2f15719d0dbf9ec54",
+    "captured_at": "2026-05-25T22:48:54Z",
+    "solc_version": "0.8.28",
+    "forge_json_version": "1.5.1-stable"
+  },
+  "power": "legislation",
+  "primary_contract": "ConstitutionalReview",
+  "test_status": "Success",
+  "calls": [
+    {
+      "idx": 0,
+      "target_contract": "ConstitutionalReview",
+      "target_address": "0xf62849f9a0b5bf2913b396098f7c7019b51a820a",
+      "selector": "0xe0625bb1",
+      "function": "constitutionalParams()",
+      "args": [],
+      "raw_calldata": "0xe0625bb1",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x0000000000000000000000002e234dae75c793f67a35089c9d99245e1c58470b"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 1,
+      "target_contract": "ConstitutionalReview",
+      "target_address": "0xf62849f9a0b5bf2913b396098f7c7019b51a820a",
+      "selector": "0x6a0eb579",
+      "function": "setConstitutionalParams(address)",
+      "args": [],
+      "raw_calldata": "0x6a0eb5790000000000000000000000005991a2df15a8f6a256d3ec51e99254cd3fb576a9",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x"
+      },
+      "events": [
+        {
+          "name": "ConstitutionalParamsUpdated",
+          "args": {
+            "oldParams": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
+            "newParams": "0x5991a2df15a8f6a256d3ec51e99254cd3fb576a9"
+          }
+        }
+      ],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 2,
+      "target_contract": "ConstitutionalReview",
+      "target_address": "0xf62849f9a0b5bf2913b396098f7c7019b51a820a",
+      "selector": "0xe0625bb1",
+      "function": "constitutionalParams()",
+      "args": [],
+      "raw_calldata": "0xe0625bb1",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x0000000000000000000000005991a2df15a8f6a256d3ec51e99254cd3fb576a9"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    }
+  ]
+}

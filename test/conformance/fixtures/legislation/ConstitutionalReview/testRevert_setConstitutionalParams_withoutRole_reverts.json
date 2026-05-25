@@ -1,0 +1,33 @@
+{
+  "fixture_version": 1,
+  "source": {
+    "foundry_test": "test/ConstitutionalReview.t.sol:ConstitutionalReviewTest::testRevert_setConstitutionalParams_withoutRole_reverts()",
+    "contracts_sha": "0x19e8e5db7d2dce557ecf00eeff05c55c9c230293040f11c2f15719d0dbf9ec54",
+    "captured_at": "2026-05-25T22:48:54Z",
+    "solc_version": "0.8.28",
+    "forge_json_version": "1.5.1-stable"
+  },
+  "power": "legislation",
+  "primary_contract": "ConstitutionalReview",
+  "test_status": "Success",
+  "calls": [
+    {
+      "idx": 0,
+      "target_contract": "ConstitutionalReview",
+      "target_address": "0xf62849f9a0b5bf2913b396098f7c7019b51a820a",
+      "selector": "0x6a0eb579",
+      "function": "setConstitutionalParams(address)",
+      "args": [],
+      "raw_calldata": "0x6a0eb5790000000000000000000000005991a2df15a8f6a256d3ec51e99254cd3fb576a9",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "revert",
+        "return_data": "0xe2517d3f0000000000000000000000008e24d86be44ab9006bd1277bddc948ecebbfbf6c5dda70980ddbb3a1cf05111864b0d4024b385434a80f8e5b2d382538551e36fd"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    }
+  ]
+}

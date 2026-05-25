@@ -128,3 +128,6 @@ BLOCKED*.md
 # Ad-hoc debug scratch files (not collected anywhere)
 scratch_*.txt
 scratch_*.log
+
+# Conformance test reports (generated artefacts, not tracked)
+test/conformance/reports/

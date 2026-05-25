@@ -2,6 +2,57 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.1] — 2026-05-26 — AgentCity Conformance Harness (Phase 1, Tasks 1-10)
+
+First half of the AgentCity protocol conformance harness lands as test
+infrastructure under `test/conformance/`. No runtime behavior changes — the
+oasis API surface and existing branches are untouched.
+
+### Added
+
+- **Conformance harness scaffolding** at `test/conformance/{oracle,adapter,matrix,tests,fixtures}/`
+  with a new `conformance` pytest marker (run via `pytest -m conformance`).
+- **Pydantic oracle schema** (`oracle/schema.py`): `Fixture`, `FixtureCall`,
+  `CallResult`, `CallVerdict`, `StateDelta`, `EmittedEvent`, and four Literal
+  enums (`Power`, `StateDeltaKind`, `ResultKind`, `Verdict`). Every model
+  uses `extra="forbid"` for strict fixture validation.
+- **Pure-function oracle diff** (`oracle/diff.py`): compares expected
+  fixture vs. actual adapter `CallResult` across events (ordered), state
+  deltas (multiset), and result kind. Configurable strictness for event
+  supersets, state supersets, and revert reasons.
+- **Return-data comparison** for both `ok` and `revert` results — view-result
+  fixtures and custom-error selectors are now part of the conformance signal.
+- **EventCollector** (`adapter/event_capture.py`): context-managed
+  subscriber to `oasis.observatory.EventBus` that captures every `Event`
+  published during an adapter call. Raises a clear setup error if the
+  singleton is unseeded.
+- **StateView snapshot + diff** (`adapter/state_view.py`): per-contract
+  reader Protocol + snapshot/diff helpers that translate observable state
+  changes into `mapping_set`, `field_set`, `counter_inc`, `counter_dec`
+  deltas. Diff is now a multiset comparison via `collections.Counter` —
+  duplicate deltas no longer collapse.
+- **Adapter registry + `AdapterBase`** (`adapter/registry.py`,
+  `adapter/_base.py`): `(contract_name, function_signature)` → callable
+  table; missing entries surface as `GAP` at replay time.
+- **Calldata decoder stub** (`adapter/_calldata.py`): `decode_args(...)`
+  helper that activates when `eth-abi` is installed. Stub-only today;
+  unblocks Task 12+ adapters when args become needed.
+- **Fixture corpus + validation** (`fixtures/legislation/ConstitutionalReview/*.json`):
+  15 fixtures captured from the AgentCity `ConstitutionalReview.t.sol`
+  Foundry suite. Validation tests walk every fixture and verify the schema,
+  the power map, and target-contract addressability.
+- **Power map** (`test/conformance/power_map.json`): 27 AgentCity contracts
+  assigned to `legislation`, `execution`, `adjudication`, or `support`.
+- 99 new unit tests, 4 skipped (pending `eth-abi` install).
+
+### Notes
+
+This is Tasks 1-10 of a 20-task plan
+(`docs/superpowers/plans/2026-05-25-oasis-agentcity-conformance-phase-1.md`).
+Tasks 12-20 (six per-contract adapters + scoreboard + ADR-style memo) ship in
+a follow-up PR. Phase 1 design lives at
+`docs/superpowers/specs/2026-05-25-mitosis-oasis-agentcity-conformance-design.md`.
+
 ## [0.8.0] — 2026-05-23 — Bundle 5 (Legislative Dynamics) — v0.97 Protocol Parity
 
 This is the v0.97 protocol-faithful simulator milestone. All 21 audit items

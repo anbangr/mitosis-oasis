@@ -6,7 +6,7 @@ from test.conformance.oracle.schema import (
 )
 
 
-def _fix(events=None, state=None, kind="ok", revert=None):
+def _fix(events=None, state=None, kind="ok", revert=None, return_data=None):
     return FixtureCall(
         idx=0,
         target_contract="X",
@@ -15,17 +15,21 @@ def _fix(events=None, state=None, kind="ok", revert=None):
         args=[],
         msg_sender="0x0",
         value_wei="0",
-        result=CallResultPayload(kind=kind, return_data=[]),
+        result=CallResultPayload(
+            kind=kind,
+            return_data=return_data if return_data is not None else [],
+        ),
         events=events or [],
         state_delta=state or [],
         revert_reason=revert,
     )
 
 
-def _act(events=None, state=None, ok=True, revert=None):
+def _act(events=None, state=None, ok=True, revert=None, return_data=None):
     return CallResult(
         ok=ok, revert=revert,
         events=events or [], state_delta=state or [],
+        return_data=return_data,
     )
 
 
@@ -123,3 +127,72 @@ def test_strict_reverts_enforces_reason_match():
         DiffOptions(strict_reverts=True),
     )
     assert v.verdict == "FAIL"
+
+
+# --- return_data comparison tests (HIGH 1 + HIGH 2) ---
+
+def test_return_data_match_ok():
+    """Expected and actual both have the same return_data → PASS."""
+    v = diff_call(
+        _fix(return_data=["1"]),
+        _act(return_data=["1"]),
+        DiffOptions(),
+    )
+    assert v.verdict == "PASS"
+    assert v.diff is None
+
+
+def test_return_data_mismatch_ok_fails():
+    """Expected return_data=['1'] but actual=['0'] → FAIL with return_data_mismatch."""
+    v = diff_call(
+        _fix(return_data=["1"]),
+        _act(return_data=["0"]),
+        DiffOptions(),
+    )
+    assert v.verdict == "FAIL"
+    assert v.diff is not None
+    assert v.diff["result"]["return_data"]["reason"] == "return_data_mismatch"
+
+
+def test_return_data_missing_in_actual_fails():
+    """Expected return_data=['1'] but adapter returned None → FAIL with return_data_missing."""
+    v = diff_call(
+        _fix(return_data=["1"]),
+        _act(return_data=None),
+        DiffOptions(),
+    )
+    assert v.verdict == "FAIL"
+    assert v.diff["result"]["return_data"]["reason"] == "return_data_missing"
+
+
+def test_return_data_absent_in_expected_skipped():
+    """Fixture has no return_data assertion (None/[]); adapter returns data → PASS."""
+    # empty list default (fixture didn't assert)
+    v1 = diff_call(_fix(return_data=[]), _act(return_data=["1"]), DiffOptions())
+    assert v1.verdict == "PASS"
+
+    # None explicitly
+    v2 = diff_call(_fix(return_data=None), _act(return_data=["1"]), DiffOptions())
+    assert v2.verdict == "PASS"
+
+
+def test_revert_selector_mismatch_fails():
+    """Expected revert with custom error selector 0xabcd1234, actual revert returns
+    0xdead0000 → FAIL because selectors differ."""
+    v = diff_call(
+        _fix(kind="revert", return_data="0xabcd1234"),
+        _act(ok=False, return_data="0xdead0000"),
+        DiffOptions(),
+    )
+    assert v.verdict == "FAIL"
+    assert v.diff["result"]["return_data"]["reason"] == "return_data_mismatch"
+
+
+def test_revert_selector_match_passes():
+    """Same custom error selector on both sides → PASS."""
+    v = diff_call(
+        _fix(kind="revert", return_data="0xABCD1234"),
+        _act(ok=False, return_data="0xabcd1234"),
+        DiffOptions(),
+    )
+    assert v.verdict == "PASS"

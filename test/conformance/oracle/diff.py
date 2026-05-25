@@ -81,6 +81,48 @@ def _diff_state(expected: list[StateDelta], actual: list[StateDelta],
     return None
 
 
+def _norm_return_data(rd) -> list[str] | str | None:
+    """Normalise return_data to a comparable form (lowercase hex strings)."""
+    if rd is None:
+        return None
+    if isinstance(rd, list):
+        return [_norm_value(x) if not isinstance(x, str) else
+                (x.lower() if x.startswith(("0x", "0X")) else x)
+                for x in rd]
+    # str — raw ABI-encoded hex
+    if isinstance(rd, str):
+        return rd.lower() if rd.startswith(("0x", "0X")) else rd
+    return rd
+
+
+def _diff_return_data(expected_rd, actual_rd) -> dict | None:
+    """Compare return_data from expected fixture vs actual CallResult.
+
+    Rules:
+    - Both None  → no assertion needed (PASS).
+    - Expected None, actual present → fixture didn't capture; skip (PASS).
+    - Expected present, actual None → data missing from adapter (FAIL).
+    - Both present → normalise and compare; mismatch → FAIL.
+    """
+    if expected_rd is None:
+        return None  # fixture chose not to assert on return data
+    if actual_rd is None:
+        return {
+            "expected": expected_rd,
+            "actual": None,
+            "reason": "return_data_missing",
+        }
+    norm_exp = _norm_return_data(expected_rd)
+    norm_act = _norm_return_data(actual_rd)
+    if norm_exp != norm_act:
+        return {
+            "expected": expected_rd,
+            "actual": actual_rd,
+            "reason": "return_data_mismatch",
+        }
+    return None
+
+
 def _diff_result(expected_kind: str, expected_revert: str | None,
                  actual_ok: bool, actual_revert: str | None,
                  opts: DiffOptions) -> dict | None:
@@ -107,6 +149,19 @@ def diff_call(expected: FixtureCall, actual: CallResult,
                      actual.ok, actual.revert, opts)
     if r is not None:
         diff["result"] = r
+    else:
+        # kinds match — now compare return_data
+        # For ok results: compare decoded return values.
+        # For revert results: when revert_reason is None the fixture may store
+        # the custom-error ABI selector in return_data instead; compare that.
+        exp_rd = expected.result.return_data if expected.result.return_data != [] else None
+        # Treat empty list [] as "no assertion" (many fixtures use it as default).
+        # Treat "0x" (empty bytes) as "no assertion" for ok calls.
+        if isinstance(exp_rd, str) and exp_rd in ("0x", "0X", ""):
+            exp_rd = None
+        rd = _diff_return_data(exp_rd, actual.return_data)
+        if rd is not None:
+            diff.setdefault("result", {})["return_data"] = rd
 
     e = _diff_events(expected.events, actual.events, opts)
     if e is not None:

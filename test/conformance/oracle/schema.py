@@ -89,6 +89,10 @@ class CallResult(BaseModel):
     revert: Optional[str] = None
     events: list[EmittedEvent] = Field(default_factory=list)
     state_delta: list[StateDelta] = Field(default_factory=list)
+    # Decoded return values as a list of strings (ok calls) or the raw ABI-
+    # encoded revert selector+args hex (revert calls).  None means the adapter
+    # did not capture return data (not the same as "empty return").
+    return_data: Union[list[str], str, None] = None
 
 
 class CallVerdict(BaseModel):

@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.8.0] — 2026-05-22 — Bundle 5 (Legislative Dynamics) — v0.97 Protocol Parity
+## [0.8.0] — 2026-05-23 — Bundle 5 (Legislative Dynamics) — v0.97 Protocol Parity
 
 This is the v0.97 protocol-faithful simulator milestone. All 21 audit items
 from the 2026-05-18 coverage audit are now closed.
@@ -45,7 +45,7 @@ from the 2026-05-18 coverage audit are now closed.
 - Headline framing: "AgentCity v0.97 protocol-faithful simulator
   (mock chain, real crypto)".
 
-## [0.7.0] — TBD — Bundle 4 (Execution State Machine)
+## [0.7.0] — 2026-05-22 — Bundle 4 (Execution State Machine)
 
 ### Added
 
@@ -141,6 +141,7 @@ Ed25519 + secp256k1 + W3C `did:key` + EIP-712 typed-data binding across the
 entire OASIS protocol stack.
 
 ### Added
+
 - **Ed25519 signing primitives** (`oasis/crypto/ed25519.py`) via `pynacl ^1.5.0`:
   `generate_keypair()`, `keypair_from_seed()`, `sign()`, `verify()` — deterministic
   test fixtures derived from `sha256(test_node_name)`.
@@ -164,7 +165,7 @@ entire OASIS protocol stack.
   canonical signed bytes.
 - **`oasis.governance.messages.canonical_signed_bytes(msg)` helper** — single
   source of truth for what bytes are signed; uses `json.dumps(sort_keys=True,
-  separators=(",", ":"))` for deterministic cross-platform canonicalisation.
+separators=(",", ":"))` for deterministic cross-platform canonicalisation.
 - **Clerk `did:key` keypair persistence** (`oasis/governance/clerks/bootstrap.py`)
   via `ensure_clerk_keys(db_path, keys_dir)` — mints or reloads Ed25519 keypairs
   for Registrar, Speaker, Regulator, Codifier; deletes legacy
@@ -178,6 +179,7 @@ entire OASIS protocol stack.
   (session-auth observation).
 
 ### Breaking
+
 - **Clerk DIDs migrated** from `did:oasis:clerk-{role}` to `did:key:zXXX`
   derived from persisted Ed25519 pubkeys. Any caller hardcoding the old
   strings must look up the role via `ensure_clerk_keys` instead.
@@ -205,11 +207,12 @@ issues surfaced by the 2026-05-18 coverage audit (oasis-coverage-audit-2026-05-1
 and its codex addendum, landing nine PRs (#4–#11) and bringing all three version surfaces back into lockstep at 0.3.0.
 
 **Breaking change:** version surfaces previously drifted (pyproject.toml=0.2.6,
-oasis/__init__.py=0.2.5, oasis/api.py=0.4.0). This release brings them to a single
+oasis/**init**.py=0.2.5, oasis/api.py=0.4.0). This release brings them to a single
 canonical 0.3.0. Consumers pinning to the API version "0.4.0" must downgrade their
 pin string to "0.3.0"; the FastAPI surface itself is backwards compatible.
 
 ### Fixed
+
 - **spec §1.7** Raise `quorum_threshold` constitutional default from 0.51 → 0.60 (PR #7).
 - **spec §2.2-2.3** Split the conflated `reputation_alpha` knob: introduced `reputation_lambda` for EMA smoothing per spec §2.2-2.3 so adjudication no longer shares a coupling with settlement (PR #5).
 - **spec §2.6** Repurposed `reputation_alpha` as the settlement reputation-multiplier slope per spec §2.6; `SettlementCalculator` now reads it independently of the EMA path (PR #5).
@@ -219,11 +222,13 @@ pin string to "0.3.0"; the FastAPI surface itself is backwards compatible.
 - **spec §8.5** Identity-quorum guard `msg_type` string drift fixed; state-machine query now reads the canonical `IDENTITY_ATTESTATION` literal that the Registrar actually writes (was reading legacy `IdentityVerificationResponse` and silently failing) (PR #6).
 
 ### Added
+
 - Spec-v0.97 test package bootstrap (`test/spec_v097/`) with shared fixtures and constitutional-constant seeds (PR #4).
 - 50/50 slash split: slashed stake now divides between `treasury` and a new `insurance_pool` ledger (spec §1.4), each carrying a `decision_id` FK to the originating `adjudication_decision` row for audit-trail reconstruction (PR #10).
 - End-to-end legislative happy-path waypoint smoke test (`test/e2e/test_full_protocol_smoke.py`, 10 tests) covering quorum, reputation floor, edge cases, and inactive-attester attack vector (PR #11).
 
 ### Changed
+
 - `SanctionEngine.reduce_reputation` now uses `config.reputation_lambda` for EMA smoothing.
 - `SettlementCalculator` now uses `config.reputation_lambda` for EMA smoothing.
 - Extracted `_compute_ema` helper on `SanctionEngine` for testability.
@@ -238,14 +243,17 @@ pin string to "0.3.0"; the FastAPI surface itself is backwards compatible.
 ## [0.2.6] - 2026-05-18
 
 ### Fixed
+
 - Split `reputation_alpha` into separate `reputation_alpha` (settlement multiplier slope) and `reputation_lambda` (EMA smoothing) parameters to prevent unintended coupling between adjudication and settlement logic.
 
 ### Added
+
 - RED-gate tests verifying α/λ parameter independence (`test/adjudication/test_reputation_parameters.py`).
 - Spec-v0.97 test infrastructure with shared fixtures and constitutional constants (`test/spec_v097/`).
 - Additional constitutional parameters: `fairness_minimum`, `protocol_fee_bps`, `reputation_alpha`.
 
 ### Changed
+
 - `SanctionEngine.reduce_reputation` now uses `config.reputation_lambda` for EMA smoothing.
 - `SettlementCalculator` now uses `config.reputation_lambda` for EMA smoothing.
 - Extracted `_compute_ema` helper on `SanctionEngine` for testability.

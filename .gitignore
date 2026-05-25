@@ -117,3 +117,14 @@ inbox/
 uv.lock
 # gstack-build convergence-failure reports — see /docs or run `gstack-build` for context
 BLOCKED*.md
+
+# Conductor workspace collision-renames (filename-with-space-2.ext duplicates)
+# Created when multiple Conductor sessions write the same file in different
+# branches and the harness keeps both. These should never reach the repo.
+* 2.*
+*\ 2.md
+*\ 2.py
+
+# Ad-hoc debug scratch files (not collected anywhere)
+scratch_*.txt
+scratch_*.log

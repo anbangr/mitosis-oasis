@@ -1,0 +1,43 @@
+{
+  "fixture_version": 1,
+  "source": {
+    "foundry_test": "test/ConstitutionalReview.t.sol:ConstitutionalReviewTest::test_reviewProposal_emitsProposalReviewed()",
+    "contracts_sha": "0x19e8e5db7d2dce557ecf00eeff05c55c9c230293040f11c2f15719d0dbf9ec54",
+    "captured_at": "2026-05-25T22:37:53Z",
+    "solc_version": "0.8.28",
+    "forge_json_version": "1.5.1-stable"
+  },
+  "power": "legislation",
+  "primary_contract": "ConstitutionalReview",
+  "test_status": "Success",
+  "calls": [
+    {
+      "idx": 0,
+      "target_contract": "0xf62849f9a0b5bf2913b396098f7c7019b51a820a",
+      "target_address": "0xf62849f9a0b5bf2913b396098f7c7019b51a820a",
+      "selector": "0x09c15ebc",
+      "function": "0x09c15ebc",
+      "args": [],
+      "raw_calldata": "0x09c15ebcd44a1523927f253367e41fe6fdbafd4d8350abd45b2cfa4d28c8f6c2607b09d50000000000000000000000000000000000000000000000000000000000000001d60b9f916018008d8c9f8a4610f76da06d4d91a319cfbc543e016f97eb6e6b3b",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x"
+      },
+      "events": [
+        {
+          "name": "ProposalReviewed",
+          "args": {
+            "proposalId": "0xd44a1523927f253367e41fe6fdbafd4d8350abd45b2cfa4d28c8f6c2607b09d5",
+            "reviewer": "0x69eb0cef933ddfa455e8d8fe31f39110131a8a25",
+            "verdict": "1",
+            "findingsHash": "0xd60b9f916018008d8c9f8a4610f76da06d4d91a319cfbc543e016f97eb6e6b3b"
+          }
+        }
+      ],
+      "state_delta": [],
+      "revert_reason": null
+    }
+  ]
+}

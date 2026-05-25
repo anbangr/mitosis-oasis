@@ -3,7 +3,7 @@
   "source": {
     "foundry_test": "test/ConstitutionalReview.t.sol:ConstitutionalReviewTest::test_hasPassed_falseForPending()",
     "contracts_sha": "0x19e8e5db7d2dce557ecf00eeff05c55c9c230293040f11c2f15719d0dbf9ec54",
-    "captured_at": "2026-05-25T22:37:53Z",
+    "captured_at": "2026-05-25T22:48:54Z",
     "solc_version": "0.8.28",
     "forge_json_version": "1.5.1-stable"
   },
@@ -13,10 +13,10 @@
   "calls": [
     {
       "idx": 0,
-      "target_contract": "0xf62849f9a0b5bf2913b396098f7c7019b51a820a",
+      "target_contract": "ConstitutionalReview",
       "target_address": "0xf62849f9a0b5bf2913b396098f7c7019b51a820a",
       "selector": "0x15d415fd",
-      "function": "0x15d415fd",
+      "function": "hasPassed(bytes32)",
       "args": [],
       "raw_calldata": "0x15d415fdd44a1523927f253367e41fe6fdbafd4d8350abd45b2cfa4d28c8f6c2607b09d5",
       "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
@@ -31,10 +31,10 @@
     },
     {
       "idx": 1,
-      "target_contract": "0xf62849f9a0b5bf2913b396098f7c7019b51a820a",
+      "target_contract": "ConstitutionalReview",
       "target_address": "0xf62849f9a0b5bf2913b396098f7c7019b51a820a",
       "selector": "0x8184717b",
-      "function": "0x8184717b",
+      "function": "getVerdict(bytes32)",
       "args": [],
       "raw_calldata": "0x8184717bd44a1523927f253367e41fe6fdbafd4d8350abd45b2cfa4d28c8f6c2607b09d5",
       "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",

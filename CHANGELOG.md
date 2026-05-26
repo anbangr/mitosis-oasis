@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.2] — 2026-05-26 — AgentCity Conformance Harness (Phase 1, Task 11 — CodificationModule Adapter)
+
+Second tranche of the AgentCity protocol conformance harness. Adds the
+`CodificationModule` adapter, 35 replay fixtures, and a replay verdict matrix.
+No runtime behavior changes.
+
+### Added
+
+- **CodificationModule adapter** (`test/conformance/adapter/codification_module.py`):
+  maps Solidity `codify` and `verifyDeployment` onto OASIS
+  `Codifier.compile_spec` and `Codifier.verify_deployment`. Explicit GAP
+  annotations for Solidity-only surfaces (whitelist, pause, role storage,
+  deployment-record storage) that have no OASIS counterpart.
+- **35 CodificationModule fixtures**
+  (`fixtures/legislation/CodificationModule/*.json`): captured from the
+  AgentCity Foundry suite covering happy-path, revert, and lifecycle
+  scenarios.
+- **Replay verdict matrix**
+  (`test/conformance/matrix/codification_module_replay_verdicts.json`): full
+  PASS/FAIL/GAP audit trail for every fixture call.
+- **CodificationModule replay tests**
+  (`test/conformance/tests/test_adapter_codification_module.py`): validates
+  every fixture, dispatches through the adapter registry, and asserts
+  conformance.
+
 ## [0.8.1] — 2026-05-26 — AgentCity Conformance Harness (Phase 1, Tasks 1-10)
 
 First half of the AgentCity protocol conformance harness lands as test

@@ -55,6 +55,7 @@ class _ReviewRecord:
     verdict: int
     reviewer: str
     findings_hash: str
+    reviewed_at: int
 
 
 @dataclass
@@ -62,6 +63,7 @@ class _ContractState:
     paused: bool = False
     constitutional_params: str = DEFAULT_PARAMS
     reviews: dict[str, _ReviewRecord] = field(default_factory=dict)
+    review_counter: int = 0
 
 
 _CONTRACT_STATE: dict[str, _ContractState] = {}
@@ -174,10 +176,12 @@ def dispatch_review_proposal(call: FixtureCall) -> CallResult:
     if normalized_proposal in state.reviews:
         return _revert(f"{_ALREADY_REVIEWED_REVERT_PREFIX}{normalized_proposal}")
 
+    state.review_counter += 1
     state.reviews[normalized_proposal] = _ReviewRecord(
         verdict=verdict,
         reviewer=_REVIEWER_ACCOUNT,
         findings_hash=findings_hash,
+        reviewed_at=state.review_counter,
     )
     _publish(
         EventType.TASK_EXECUTED,
@@ -306,6 +310,7 @@ def dispatch_get_review(call: FixtureCall) -> CallResult:
                 "0x0000000000000000000000000000000000000000000000000000000000000000"
                 "000000000000000000000000000000000000000000000000000000000000000000"
                 "0000000000000000000000000000000000000000000000000000000000000000"
+                "0000000000000000000000000000000000000000000000000000000000000000"
             ),
         )
 
@@ -317,6 +322,7 @@ def dispatch_get_review(call: FixtureCall) -> CallResult:
         return_data=(
             _to_uint256(review.verdict)
             + _to_32bytes(review.reviewer.removeprefix("0x"))[2:]
+            + _to_uint256(review.reviewed_at)
             + review.findings_hash.removeprefix("0x")
         ),
     )

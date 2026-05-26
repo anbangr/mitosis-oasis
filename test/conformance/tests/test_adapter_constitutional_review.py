@@ -37,6 +37,8 @@ FIXTURE_DIR = (
 )
 _FIXTURE_PATHS = sorted(FIXTURE_DIR.glob("*.json"))
 
+pytestmark = pytest.mark.conformance
+
 
 @pytest.fixture(autouse=True)
 def _fresh_bus_and_state(tmp_path: Path):

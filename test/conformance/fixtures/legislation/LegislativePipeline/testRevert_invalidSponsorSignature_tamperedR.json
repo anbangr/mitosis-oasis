@@ -1,0 +1,267 @@
+{
+  "fixture_version": 1,
+  "source": {
+    "foundry_test": "test/LegislativePipeline.t.sol:LegislativePipelineTest::testRevert_invalidSponsorSignature_tamperedR()",
+    "contracts_sha": "0x19e8e5db7d2dce557ecf00eeff05c55c9c230293040f11c2f15719d0dbf9ec54",
+    "captured_at": "2026-05-26T03:54:25Z",
+    "solc_version": "0.8.28",
+    "forge_json_version": "1.5.1-stable"
+  },
+  "power": "legislation",
+  "primary_contract": "LegislativePipeline",
+  "test_status": "Success",
+  "calls": [
+    {
+      "idx": 0,
+      "target_contract": "LegislativePipeline",
+      "target_address": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
+      "selector": "0xf698da25",
+      "function": "domainSeparator()",
+      "args": [],
+      "raw_calldata": "0xf698da25",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x9e2b113edebb280b1522ad89f3e0e3102b1ae7369434ba1cf7877da6bc13733c"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 1,
+      "target_contract": "LegislativePipeline",
+      "target_address": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
+      "selector": "0xf698da25",
+      "function": "domainSeparator()",
+      "args": [],
+      "raw_calldata": "0xf698da25",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x9e2b113edebb280b1522ad89f3e0e3102b1ae7369434ba1cf7877da6bc13733c"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 2,
+      "target_contract": "LegislativePipeline",
+      "target_address": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
+      "selector": "0xf698da25",
+      "function": "domainSeparator()",
+      "args": [],
+      "raw_calldata": "0xf698da25",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x9e2b113edebb280b1522ad89f3e0e3102b1ae7369434ba1cf7877da6bc13733c"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 3,
+      "target_contract": "LegislativePipeline",
+      "target_address": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
+      "selector": "0xf698da25",
+      "function": "domainSeparator()",
+      "args": [],
+      "raw_calldata": "0xf698da25",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x9e2b113edebb280b1522ad89f3e0e3102b1ae7369434ba1cf7877da6bc13733c"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 4,
+      "target_contract": "LegislativePipeline",
+      "target_address": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
+      "selector": "0xf698da25",
+      "function": "domainSeparator()",
+      "args": [],
+      "raw_calldata": "0xf698da25",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x9e2b113edebb280b1522ad89f3e0e3102b1ae7369434ba1cf7877da6bc13733c"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 5,
+      "target_contract": "LegislativePipeline",
+      "target_address": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
+      "selector": "0xa2963d2d",
+      "function": "submitProposal(uint256,bytes32,(uint8,bytes32,bytes32,address,uint256,uint256)[5])",
+      "args": [],
+      "raw_calldata": "0xa2963d2d0000000000000000000000000000000000000000000000000000000000000003c884d407be494ad2287784618d203bfdedd4fb0df4983b56a90fa1ae459c3ca9000000000000000000000000000000000000000000000000000000000000001bb24ac686695fae5f13b6c22ec426b773cf1f5a83e08267ae73a962a5426d86be24fe219905151339d4518c3ccc93c057996e27ecc558623d900b15c9546f512f00000000000000000000000002c4fec9457dfa20b4ec07a45f267176fc97d23b00000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000015181000000000000000000000000000000000000000000000000000000000000001bb3f8a79d216382adab941cf4f21b00895b6163d8f7437aad26516af5f60bc0f21838d05cc0453e2758c68a697412872bb6ff9ebd9205dfa9d3bf9dc14bffc7180000000000000000000000002c7006c8e20ac50b09caecb8dba99653f916ebb300000000000000000000000000000000000000000000000000000000000000050000000000000000000000000000000000000000000000000000000000015181000000000000000000000000000000000000000000000000000000000000001c89d531e7a77042248d91590c5af0814dc2dd8754addf86a251e58718754b8d8c3c7c372d11f7e65498560014b17cfdeec3027b9fa78f4c0c981bec25d8816ab300000000000000000000000048f65cc424f8612724db954120cc11da153cc28800000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000015181000000000000000000000000000000000000000000000000000000000000001b004dfb319050f991b5eb790fbd2d5b0afde6e0f5e1fb10d526ee9f55aa6b7eb229e400976cef3be51c42c647930d11ee862e6ead283c7e6c7c8da55a4da615d400000000000000000000000050b58e6db0c34c69991286b52b12550c552e62d700000000000000000000000000000000000000000000000000000000000000070000000000000000000000000000000000000000000000000000000000015181000000000000000000000000000000000000000000000000000000000000001ca07637a67df12441c66cd4607d21afa9ee1bc5de44e9be3114ed2d8577c5eabc25de6249beab0fe350d9f68f199f881854b68892e74d3931ec364e81b76dc93b0000000000000000000000007d75678b964df6242bd3fbba596405c9a65a614800000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000015181",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "revert",
+        "return_data": "0x7463547b0000000000000000000000000000000000000000000000000000000000000001"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 6,
+      "target_contract": "AgentRegistry",
+      "target_address": "0x3ede3eca2a72b3aecc820e955b36f38437d01395",
+      "selector": "0x907a7a60",
+      "function": "isActiveAgent(uint256)",
+      "args": [],
+      "raw_calldata": "0x907a7a600000000000000000000000000000000000000000000000000000000000000003",
+      "msg_sender": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x0000000000000000000000000000000000000000000000000000000000000001"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 7,
+      "target_contract": "AgentRegistry",
+      "target_address": "0x3ede3eca2a72b3aecc820e955b36f38437d01395",
+      "selector": "0xd95e72be",
+      "function": "isAuthorizedOrOwner(address,uint256)",
+      "args": [],
+      "raw_calldata": "0xd95e72be0000000000000000000000006bef539e8319dacba4c2dad055006e79682c0f320000000000000000000000000000000000000000000000000000000000000003",
+      "msg_sender": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x0000000000000000000000000000000000000000000000000000000000000001"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 8,
+      "target_contract": "AgentRegistry",
+      "target_address": "0x3ede3eca2a72b3aecc820e955b36f38437d01395",
+      "selector": "0x907a7a60",
+      "function": "isActiveAgent(uint256)",
+      "args": [],
+      "raw_calldata": "0x907a7a600000000000000000000000000000000000000000000000000000000000000004",
+      "msg_sender": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x0000000000000000000000000000000000000000000000000000000000000001"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 9,
+      "target_contract": "AgentRegistry",
+      "target_address": "0x3ede3eca2a72b3aecc820e955b36f38437d01395",
+      "selector": "0xd95e72be",
+      "function": "isAuthorizedOrOwner(address,uint256)",
+      "args": [],
+      "raw_calldata": "0xd95e72be00000000000000000000000002c4fec9457dfa20b4ec07a45f267176fc97d23b0000000000000000000000000000000000000000000000000000000000000004",
+      "msg_sender": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x0000000000000000000000000000000000000000000000000000000000000001"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 10,
+      "target_contract": "0x0000000000000000000000000000000000000001",
+      "target_address": "0x0000000000000000000000000000000000000001",
+      "selector": "0xf45885cb",
+      "function": "0xf45885cb",
+      "args": [],
+      "raw_calldata": "0xf45885cb19eda9b80afd0bcb6509cb917876d6c0524839b46c840a1af2b7f1c8000000000000000000000000000000000000000000000000000000000000001bb24ac686695fae5f13b6c22ec426b773cf1f5a83e08267ae73a962a5426d86be24fe219905151339d4518c3ccc93c057996e27ecc558623d900b15c9546f512f",
+      "msg_sender": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x00000000000000000000000002c4fec9457dfa20b4ec07a45f267176fc97d23b"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 11,
+      "target_contract": "AgentRegistry",
+      "target_address": "0x3ede3eca2a72b3aecc820e955b36f38437d01395",
+      "selector": "0x907a7a60",
+      "function": "isActiveAgent(uint256)",
+      "args": [],
+      "raw_calldata": "0x907a7a600000000000000000000000000000000000000000000000000000000000000005",
+      "msg_sender": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x0000000000000000000000000000000000000000000000000000000000000001"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 12,
+      "target_contract": "AgentRegistry",
+      "target_address": "0x3ede3eca2a72b3aecc820e955b36f38437d01395",
+      "selector": "0xd95e72be",
+      "function": "isAuthorizedOrOwner(address,uint256)",
+      "args": [],
+      "raw_calldata": "0xd95e72be0000000000000000000000002c7006c8e20ac50b09caecb8dba99653f916ebb30000000000000000000000000000000000000000000000000000000000000005",
+      "msg_sender": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x0000000000000000000000000000000000000000000000000000000000000001"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 13,
+      "target_contract": "0x0000000000000000000000000000000000000001",
+      "target_address": "0x0000000000000000000000000000000000000001",
+      "selector": "0x8044b63d",
+      "function": "0x8044b63d",
+      "args": [],
+      "raw_calldata": "0x8044b63d21e04312b23c1bad45852d2f19b0e41d56952dc246d2c571625e9a0c000000000000000000000000000000000000000000000000000000000000001bb3f8a79d216382adab941cf4f21b00895b6163d8f7437aad26516af5f60bc0f21838d05cc0453e2758c68a697412872bb6ff9ebd9205dfa9d3bf9dc14bffc718",
+      "msg_sender": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x00000000000000000000000072ef3eb9bdfd7a89a2b4e015a271eee10b0d7c1f"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    }
+  ]
+}

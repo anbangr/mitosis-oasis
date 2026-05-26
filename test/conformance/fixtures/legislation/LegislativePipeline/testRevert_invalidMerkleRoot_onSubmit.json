@@ -1,0 +1,123 @@
+{
+  "fixture_version": 1,
+  "source": {
+    "foundry_test": "test/LegislativePipeline.t.sol:LegislativePipelineTest::testRevert_invalidMerkleRoot_onSubmit()",
+    "contracts_sha": "0x19e8e5db7d2dce557ecf00eeff05c55c9c230293040f11c2f15719d0dbf9ec54",
+    "captured_at": "2026-05-26T03:54:25Z",
+    "solc_version": "0.8.28",
+    "forge_json_version": "1.5.1-stable"
+  },
+  "power": "legislation",
+  "primary_contract": "LegislativePipeline",
+  "test_status": "Success",
+  "calls": [
+    {
+      "idx": 0,
+      "target_contract": "LegislativePipeline",
+      "target_address": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
+      "selector": "0xf698da25",
+      "function": "domainSeparator()",
+      "args": [],
+      "raw_calldata": "0xf698da25",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x9e2b113edebb280b1522ad89f3e0e3102b1ae7369434ba1cf7877da6bc13733c"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 1,
+      "target_contract": "LegislativePipeline",
+      "target_address": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
+      "selector": "0xf698da25",
+      "function": "domainSeparator()",
+      "args": [],
+      "raw_calldata": "0xf698da25",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x9e2b113edebb280b1522ad89f3e0e3102b1ae7369434ba1cf7877da6bc13733c"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 2,
+      "target_contract": "LegislativePipeline",
+      "target_address": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
+      "selector": "0xf698da25",
+      "function": "domainSeparator()",
+      "args": [],
+      "raw_calldata": "0xf698da25",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x9e2b113edebb280b1522ad89f3e0e3102b1ae7369434ba1cf7877da6bc13733c"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 3,
+      "target_contract": "LegislativePipeline",
+      "target_address": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
+      "selector": "0xf698da25",
+      "function": "domainSeparator()",
+      "args": [],
+      "raw_calldata": "0xf698da25",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x9e2b113edebb280b1522ad89f3e0e3102b1ae7369434ba1cf7877da6bc13733c"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 4,
+      "target_contract": "LegislativePipeline",
+      "target_address": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
+      "selector": "0xf698da25",
+      "function": "domainSeparator()",
+      "args": [],
+      "raw_calldata": "0xf698da25",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x9e2b113edebb280b1522ad89f3e0e3102b1ae7369434ba1cf7877da6bc13733c"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 5,
+      "target_contract": "LegislativePipeline",
+      "target_address": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
+      "selector": "0xa2963d2d",
+      "function": "submitProposal(uint256,bytes32,(uint8,bytes32,bytes32,address,uint256,uint256)[5])",
+      "args": [],
+      "raw_calldata": "0xa2963d2d00000000000000000000000000000000000000000000000000000000000000030000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001b9ad4b7636f41fd2c984dc768b31bfadfcead08c0e1a64ebc826243d1b37a0b0b4cbbc0b37539a121dd637d3a77d19d90da1f834b5744bd671e494df80408aab500000000000000000000000002c4fec9457dfa20b4ec07a45f267176fc97d23b00000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000015181000000000000000000000000000000000000000000000000000000000000001c9d21faf736e739c53fb4d6bb69b90826bae1b88f78ec7a7538bcf07dc12776104eeb31e9f649d1c6c815d50cfaeecfe1a7902d31906560df8e6b0f5d3fadfefd0000000000000000000000002c7006c8e20ac50b09caecb8dba99653f916ebb300000000000000000000000000000000000000000000000000000000000000050000000000000000000000000000000000000000000000000000000000015181000000000000000000000000000000000000000000000000000000000000001bc540d940875b55eca08128d3cfd440957f19e2777b52041e81d8a160d4c0e14e32bede4378acb353e8c58173e6df292cbfd68dfc30dfcda51f6eb9fef1cfb92700000000000000000000000048f65cc424f8612724db954120cc11da153cc28800000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000015181000000000000000000000000000000000000000000000000000000000000001c38322c912d6213d28834ac45695520557269a70dedadcaacdcd6f2afb97853a921eb71bd812124b033af2043b9256f9694b4badb56fbe79f47af177b3892750100000000000000000000000050b58e6db0c34c69991286b52b12550c552e62d700000000000000000000000000000000000000000000000000000000000000070000000000000000000000000000000000000000000000000000000000015181000000000000000000000000000000000000000000000000000000000000001c253d1f29511895c7f80eab47df421df3f61050840f787d027ea30f0160a010b22edff9fe4096fdca410985c6476ddfeb7c20c2084fa41a3858aeef4880e9c5270000000000000000000000007d75678b964df6242bd3fbba596405c9a65a614800000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000015181",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "revert",
+        "return_data": "0x9dd854d3"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    }
+  ]
+}

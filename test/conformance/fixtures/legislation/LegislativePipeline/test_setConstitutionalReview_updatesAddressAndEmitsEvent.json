@@ -1,0 +1,103 @@
+{
+  "fixture_version": 1,
+  "source": {
+    "foundry_test": "test/LegislativePipeline.t.sol:LegislativePipelineTest::test_setConstitutionalReview_updatesAddressAndEmitsEvent()",
+    "contracts_sha": "0x19e8e5db7d2dce557ecf00eeff05c55c9c230293040f11c2f15719d0dbf9ec54",
+    "captured_at": "2026-05-26T03:54:25Z",
+    "solc_version": "0.8.28",
+    "forge_json_version": "1.5.1-stable"
+  },
+  "power": "legislation",
+  "primary_contract": "LegislativePipeline",
+  "test_status": "Success",
+  "calls": [
+    {
+      "idx": 0,
+      "target_contract": "LegislativePipeline",
+      "target_address": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
+      "selector": "0x5a1505d1",
+      "function": "setConstitutionalReview(address)",
+      "args": [],
+      "raw_calldata": "0x5a1505d1000000000000000000000000f62849f9a0b5bf2913b396098f7c7019b51a820a",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x"
+      },
+      "events": [
+        {
+          "name": "ConstitutionalReviewContractUpdated",
+          "args": {
+            "oldReview": "0x0000000000000000000000000000000000000000",
+            "newReview": "0xf62849f9a0b5bf2913b396098f7c7019b51a820a"
+          }
+        }
+      ],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 1,
+      "target_contract": "LegislativePipeline",
+      "target_address": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
+      "selector": "0x8e742c2a",
+      "function": "constitutionalReview()",
+      "args": [],
+      "raw_calldata": "0x8e742c2a",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x000000000000000000000000f62849f9a0b5bf2913b396098f7c7019b51a820a"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 2,
+      "target_contract": "LegislativePipeline",
+      "target_address": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
+      "selector": "0x5a1505d1",
+      "function": "setConstitutionalReview(address)",
+      "args": [],
+      "raw_calldata": "0x5a1505d10000000000000000000000000000000000000000000000000000000000000000",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x"
+      },
+      "events": [
+        {
+          "name": "ConstitutionalReviewContractUpdated",
+          "args": {
+            "oldReview": "0xf62849f9a0b5bf2913b396098f7c7019b51a820a",
+            "newReview": "0x0000000000000000000000000000000000000000"
+          }
+        }
+      ],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 3,
+      "target_contract": "LegislativePipeline",
+      "target_address": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
+      "selector": "0x8e742c2a",
+      "function": "constitutionalReview()",
+      "args": [],
+      "raw_calldata": "0x8e742c2a",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    }
+  ]
+}

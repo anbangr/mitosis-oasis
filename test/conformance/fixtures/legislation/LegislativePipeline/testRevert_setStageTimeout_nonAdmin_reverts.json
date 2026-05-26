@@ -1,0 +1,51 @@
+{
+  "fixture_version": 1,
+  "source": {
+    "foundry_test": "test/LegislativePipeline.t.sol:LegislativePipelineTest::testRevert_setStageTimeout_nonAdmin_reverts()",
+    "contracts_sha": "0x19e8e5db7d2dce557ecf00eeff05c55c9c230293040f11c2f15719d0dbf9ec54",
+    "captured_at": "2026-05-26T03:54:25Z",
+    "solc_version": "0.8.28",
+    "forge_json_version": "1.5.1-stable"
+  },
+  "power": "legislation",
+  "primary_contract": "LegislativePipeline",
+  "test_status": "Success",
+  "calls": [
+    {
+      "idx": 0,
+      "target_contract": "LegislativePipeline",
+      "target_address": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
+      "selector": "0x8cfc0fb3",
+      "function": "PIPELINE_ADMIN_ROLE()",
+      "args": [],
+      "raw_calldata": "0x8cfc0fb3",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x55b5df42e802ce8ed67f73c59efc2696836eb88fdfca55612dff92926bf98e5b"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 1,
+      "target_contract": "LegislativePipeline",
+      "target_address": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
+      "selector": "0x464b4a3b",
+      "function": "setStageTimeout(uint8,uint64)",
+      "args": [],
+      "raw_calldata": "0x464b4a3b00000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000127500",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "revert",
+        "return_data": "0xe2517d3f000000000000000000000000839b4eaac8efc0de072e7d95649db74e34cdcaf955b5df42e802ce8ed67f73c59efc2696836eb88fdfca55612dff92926bf98e5b"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    }
+  ]
+}

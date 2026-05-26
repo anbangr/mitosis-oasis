@@ -21,9 +21,6 @@ import pytest
 root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../"))
 sys.path.insert(0, root_path)
 
-from oasis.crypto import ed25519  # noqa: E402
-
-
 @pytest.fixture
 def ed25519_keypair(request):
     r"""Deterministic Ed25519 keypair seeded from the test node name.
@@ -32,6 +29,8 @@ def ed25519_keypair(request):
     Calling the fixture from two tests with the same name produces
     identical key material.
     """
+    from oasis.crypto import ed25519
+
     seed = hashlib.sha256(request.node.name.encode()).digest()
     return ed25519.keypair_from_seed(seed)
 

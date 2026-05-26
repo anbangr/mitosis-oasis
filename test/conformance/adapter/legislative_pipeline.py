@@ -56,18 +56,34 @@ from test.conformance.oracle.schema import (
 # pause()                                               -> pause state toggle (mirrored)
 # unpause()                                             -> pause state toggle (mirrored)
 #
-# GAP / not mapped:
+# GAP: COMMITTEE_ROLE()                               -> no direct oasis counterpart yet
+# GAP: CONSTITUTIONAL_REVIEWER_ROLE()                 -> no direct oasis counterpart yet
+# GAP: DEPLOYER_ROLE()                                -> no direct oasis counterpart yet
+# GAP: PIPELINE_ADMIN_ROLE()                          -> no direct oasis counterpart yet
 # - role checks (PIPELINE_ADMIN_ROLE, etc.)
 # - whitelist/access-control mutators (addToWhitelist, grantRole, setApprovalForAll...)
 # - raw selector-only fixtures that are non-decoded / external cross-contract paths.
 
 
+def _clone_model(model, model_type):
+    """Return a deep copy-like clone across pydantic versions.
+
+    Pydantic v1 and v2 expose different APIs (`copy` vs `model_copy`), and
+    conformance tests may run against either depending on the environment.
+    """
+    if hasattr(model, "model_copy"):
+        return model.model_copy(deep=True)
+    if hasattr(model, "copy"):
+        return model.copy(deep=True)
+    return model_type.model_validate(model.model_dump())
+
+
 def _clone_events(call: FixtureCall) -> list[EmittedEvent]:
-    return [event.model_copy(deep=True) for event in call.events]
+    return [_clone_model(event, EmittedEvent) for event in call.events]
 
 
 def _clone_state_delta(call: FixtureCall) -> list[StateDelta]:
-    return [state.model_copy(deep=True) for state in call.state_delta]
+    return [_clone_model(state, StateDelta) for state in call.state_delta]
 
 
 def _echo_expected_call(call: FixtureCall) -> CallResult:

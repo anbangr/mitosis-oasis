@@ -1,0 +1,51 @@
+{
+  "fixture_version": 1,
+  "source": {
+    "foundry_test": "test/CodificationModule.t.sol:CodificationModuleTest::testRevert_addToWhitelist_noRole()",
+    "contracts_sha": "0x19e8e5db7d2dce557ecf00eeff05c55c9c230293040f11c2f15719d0dbf9ec54",
+    "captured_at": "2026-05-26T09:02:21Z",
+    "solc_version": "0.8.28",
+    "forge_json_version": "1.5.1-stable"
+  },
+  "power": "legislation",
+  "primary_contract": "CodificationModule",
+  "test_status": "Success",
+  "calls": [
+    {
+      "idx": 0,
+      "target_contract": "CodificationModule",
+      "target_address": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
+      "selector": "0x7a997ab7",
+      "function": "WHITELIST_ROLE()",
+      "args": [],
+      "raw_calldata": "0x7a997ab7",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0xdc72ed553f2544c34465af23b847953efeb813428162d767f9ba5f4013be6760"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 1,
+      "target_contract": "CodificationModule",
+      "target_address": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
+      "selector": "0xbd8cc962",
+      "function": "addToWhitelist(bytes32)",
+      "args": [],
+      "raw_calldata": "0xbd8cc962008a8337e5b04b08350f0112951dfecb0da84afe7e2166655329747d55876885",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "revert",
+        "return_data": "0xe2517d3f000000000000000000000000078cf03f81ae8d04383907f098b821ec139ac554dc72ed553f2544c34465af23b847953efeb813428162d767f9ba5f4013be6760"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    }
+  ]
+}

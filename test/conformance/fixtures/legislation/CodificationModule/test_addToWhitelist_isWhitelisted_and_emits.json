@@ -1,0 +1,77 @@
+{
+  "fixture_version": 1,
+  "source": {
+    "foundry_test": "test/CodificationModule.t.sol:CodificationModuleTest::test_addToWhitelist_isWhitelisted_and_emits()",
+    "contracts_sha": "0x19e8e5db7d2dce557ecf00eeff05c55c9c230293040f11c2f15719d0dbf9ec54",
+    "captured_at": "2026-05-26T09:02:21Z",
+    "solc_version": "0.8.28",
+    "forge_json_version": "1.5.1-stable"
+  },
+  "power": "legislation",
+  "primary_contract": "CodificationModule",
+  "test_status": "Success",
+  "calls": [
+    {
+      "idx": 0,
+      "target_contract": "CodificationModule",
+      "target_address": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
+      "selector": "0x01a5e3fe",
+      "function": "isWhitelisted(bytes32)",
+      "args": [],
+      "raw_calldata": "0x01a5e3fed56986a93bc5bd3ad1e2706ff2d2682864dfe31a8ac905c785fcf952fb47163c",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 1,
+      "target_contract": "CodificationModule",
+      "target_address": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
+      "selector": "0xbd8cc962",
+      "function": "addToWhitelist(bytes32)",
+      "args": [],
+      "raw_calldata": "0xbd8cc962d56986a93bc5bd3ad1e2706ff2d2682864dfe31a8ac905c785fcf952fb47163c",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x"
+      },
+      "events": [
+        {
+          "name": "WhitelistAdded",
+          "args": {
+            "initBytecodeHash": "0xd56986a93bc5bd3ad1e2706ff2d2682864dfe31a8ac905c785fcf952fb47163c",
+            "addedBy": "0x578d123ff6a136275a94708a6fcc885f5072cbbe"
+          }
+        }
+      ],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 2,
+      "target_contract": "CodificationModule",
+      "target_address": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
+      "selector": "0x01a5e3fe",
+      "function": "isWhitelisted(bytes32)",
+      "args": [],
+      "raw_calldata": "0x01a5e3fed56986a93bc5bd3ad1e2706ff2d2682864dfe31a8ac905c785fcf952fb47163c",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x0000000000000000000000000000000000000000000000000000000000000001"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    }
+  ]
+}

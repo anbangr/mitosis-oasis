@@ -1,0 +1,51 @@
+{
+  "fixture_version": 1,
+  "source": {
+    "foundry_test": "test/CodificationModule.t.sol:CodificationModuleTest::test_constructor_setsDefaultAdmin()",
+    "contracts_sha": "0x19e8e5db7d2dce557ecf00eeff05c55c9c230293040f11c2f15719d0dbf9ec54",
+    "captured_at": "2026-05-26T09:02:21Z",
+    "solc_version": "0.8.28",
+    "forge_json_version": "1.5.1-stable"
+  },
+  "power": "legislation",
+  "primary_contract": "CodificationModule",
+  "test_status": "Success",
+  "calls": [
+    {
+      "idx": 0,
+      "target_contract": "CodificationModule",
+      "target_address": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
+      "selector": "0xa217fddf",
+      "function": "DEFAULT_ADMIN_ROLE()",
+      "args": [],
+      "raw_calldata": "0xa217fddf",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 1,
+      "target_contract": "CodificationModule",
+      "target_address": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
+      "selector": "0x91d14854",
+      "function": "hasRole(bytes32,address)",
+      "args": [],
+      "raw_calldata": "0x91d148540000000000000000000000000000000000000000000000000000000000000000000000000000000000000000aa10a84ce7d9ae517a52c6d5ca153b369af99ecf",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x0000000000000000000000000000000000000000000000000000000000000001"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    }
+  ]
+}

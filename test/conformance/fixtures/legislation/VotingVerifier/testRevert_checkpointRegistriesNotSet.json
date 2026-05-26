@@ -3,7 +3,7 @@
   "source": {
     "foundry_test": "test/VotingVerifier.t.sol:VotingVerifierTest::testRevert_checkpointRegistriesNotSet()",
     "contracts_sha": "0x19e8e5db7d2dce557ecf00eeff05c55c9c230293040f11c2f15719d0dbf9ec54",
-    "captured_at": "2026-05-26T10:53:12Z",
+    "captured_at": "2026-05-26T11:58:43Z",
     "solc_version": "0.8.28",
     "forge_json_version": "1.5.1-stable"
   },
@@ -543,7 +543,7 @@
     },
     {
       "idx": 26,
-      "target_contract": "VotingVerifier",
+      "target_contract": "0x0a6e8c13c22f9c63c514c2fa0c05f0832cfbc7e8",
       "target_address": "0x0a6e8c13c22f9c63c514c2fa0c05f0832cfbc7e8",
       "selector": "0xcb6f5b8c",
       "function": "openCommitPhase(bytes32,uint256,uint64,uint64,uint64)",
@@ -616,7 +616,7 @@
     },
     {
       "idx": 29,
-      "target_contract": "VotingVerifier",
+      "target_contract": "0x0a6e8c13c22f9c63c514c2fa0c05f0832cfbc7e8",
       "target_address": "0x0a6e8c13c22f9c63c514c2fa0c05f0832cfbc7e8",
       "selector": "0x3bbd2235",
       "function": "commitVote(bytes32,bytes32)",

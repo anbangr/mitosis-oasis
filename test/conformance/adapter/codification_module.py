@@ -83,6 +83,30 @@ def _fixture_result(call: FixtureCall) -> CallResult:
     )
 
 
+def _decode_calldata_words(call: FixtureCall, count: int) -> list[str]:
+    """Decode fixed-size ABI words from captured calldata or decoded args."""
+    raw = (call.raw_calldata or "").lower().removeprefix("0x")
+    if len(raw) >= 8 + (64 * count):
+        payload = raw[8 : 8 + (64 * count)]
+        return ["0x" + payload[i : i + 64] for i in range(0, len(payload), 64)]
+
+    words: list[str] = []
+    for arg in call.args[:count]:
+        if isinstance(arg, str):
+            value = arg.lower().removeprefix("0x").rjust(64, "0")[-64:]
+        elif isinstance(arg, bool):
+            value = ("1" if arg else "0").rjust(64, "0")
+        elif isinstance(arg, int):
+            value = f"{arg:064x}"
+        else:
+            value = "0" * 64
+        words.append("0x" + value)
+
+    while len(words) < count:
+        words.append("0x" + ("0" * 64))
+    return words
+
+
 def _seed_codifier_session(db_path: Path, session_id: str) -> None:
     conn = sqlite3.connect(db_path)
     try:
@@ -98,8 +122,7 @@ def _seed_codifier_session(db_path: Path, session_id: str) -> None:
 
 def _exercise_codifier_compile_path(call: FixtureCall) -> None:
     """Run a minimal Codifier.compile_spec path for codify fixture calls."""
-    proposal_hash = str(call.args[0]) if call.args else "proposal"
-    init_hash = str(call.args[1]) if len(call.args) > 1 else "init"
+    proposal_hash, init_hash, constructor_args_hash = _decode_calldata_words(call, 3)
     session_id = f"cm-replay-{call.idx}"
 
     with tempfile.TemporaryDirectory(prefix="cm-adapter-") as tmp:
@@ -119,6 +142,7 @@ def _exercise_codifier_compile_path(call: FixtureCall) -> None:
                         "pop_tier": 1,
                         "token_budget": 1.0,
                         "timeout_ms": 60000,
+                        "constructor_args_hash": constructor_args_hash,
                     }
                 ],
                 "edges": [],

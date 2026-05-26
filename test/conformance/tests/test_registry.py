@@ -3,7 +3,9 @@
 from test.conformance.adapter._base import AdapterBase
 from test.conformance.adapter.registry import CONTRACT_FN_MAP, lookup
 from test.conformance.oracle.schema import (
-    CallResult, CallResultPayload, FixtureCall,
+    CallResult,
+    CallResultPayload,
+    FixtureCall,
 )
 
 
@@ -32,9 +34,17 @@ def test_lookup_returns_adapter_for_registered_pair(monkeypatch):
 
 def test_adapter_base_dispatch_is_abstract():
     import pytest
+
     with pytest.raises(TypeError):
-        AdapterBase().dispatch(FixtureCall(
-            idx=0, target_contract="x", selector="0x0", function="f()",
-            args=[], msg_sender="0x0", value_wei="0",
-            result=CallResultPayload(kind="ok"),
-        ))
+        AdapterBase().dispatch(
+            FixtureCall(
+                idx=0,
+                target_contract="x",
+                selector="0x0",
+                function="f()",
+                args=[],
+                msg_sender="0x0",
+                value_wei="0",
+                result=CallResultPayload(kind="ok"),
+            )
+        )

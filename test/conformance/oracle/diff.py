@@ -11,18 +11,24 @@ from collections import Counter
 from dataclasses import dataclass
 
 from test.conformance.oracle.schema import (
-    CallResult, CallVerdict, EmittedEvent, FixtureCall, Power, StateDelta,
+    CallResult,
+    CallVerdict,
+    EmittedEvent,
+    FixtureCall,
+    Power,
+    StateDelta,
 )
 
 
 @dataclass(frozen=True)
 class DiffOptions:
-    strict_event_set: bool = True          # extras in actual events → FAIL
-    strict_state_superset: bool = False    # extras in actual state → FAIL when True
-    strict_reverts: bool = False           # match revert reason string
+    strict_event_set: bool = True  # extras in actual events → FAIL
+    strict_state_superset: bool = False  # extras in actual state → FAIL when True
+    strict_reverts: bool = False  # match revert reason string
 
 
 # ---------- normalization ----------
+
 
 def _norm_value(v):
     if isinstance(v, str):
@@ -42,16 +48,22 @@ def _norm_event(e: EmittedEvent) -> dict:
 
 def _norm_state(s: StateDelta) -> tuple:
     """Hashable key: every StateDelta is uniquely identified by these fields."""
-    return (s.kind, s.contract, s.name,
-            _norm_value(s.key) if s.key is not None else None,
-            _norm_value(s.value) if s.value is not None else None,
-            _norm_value(s.delta) if s.delta is not None else None)
+    return (
+        s.kind,
+        s.contract,
+        s.name,
+        _norm_value(s.key) if s.key is not None else None,
+        _norm_value(s.value) if s.value is not None else None,
+        _norm_value(s.delta) if s.delta is not None else None,
+    )
 
 
 # ---------- diff stages ----------
 
-def _diff_events(expected: list[EmittedEvent], actual: list[EmittedEvent],
-                 opts: DiffOptions) -> dict | None:
+
+def _diff_events(
+    expected: list[EmittedEvent], actual: list[EmittedEvent], opts: DiffOptions
+) -> dict | None:
     exp = [_norm_event(e) for e in expected]
     act = [_norm_event(e) for e in actual]
 
@@ -62,13 +74,18 @@ def _diff_events(expected: list[EmittedEvent], actual: list[EmittedEvent],
 
     # 2. extras: allowed unless strict_event_set
     if opts.strict_event_set and len(act) > len(exp):
-        return {"expected": exp, "actual": act,
-                "extra": act[len(exp):], "reason": "unexpected_extra_event"}
+        return {
+            "expected": exp,
+            "actual": act,
+            "extra": act[len(exp) :],
+            "reason": "unexpected_extra_event",
+        }
     return None
 
 
-def _diff_state(expected: list[StateDelta], actual: list[StateDelta],
-                opts: DiffOptions) -> dict | None:
+def _diff_state(
+    expected: list[StateDelta], actual: list[StateDelta], opts: DiffOptions
+) -> dict | None:
     # Use Counter (multiset) so that two identical expected deltas are counted
     # separately — a single matching actual cannot satisfy both.
     exp_counts = Counter(_norm_state(s) for s in expected)
@@ -76,17 +93,15 @@ def _diff_state(expected: list[StateDelta], actual: list[StateDelta],
 
     # Counter subtraction keeps only positive counts.
     missing_counts = exp_counts - act_counts
-    extra_counts   = act_counts - exp_counts
+    extra_counts = act_counts - exp_counts
 
     # Reconstruct human-readable dicts by finding representative model_dump()
     # values for each key (order may vary, so build a lookup once).
     exp_by_key = {_norm_state(s): s.model_dump() for s in expected}
     act_by_key = {_norm_state(s): s.model_dump() for s in actual}
 
-    missing = [exp_by_key[k] for k, cnt in missing_counts.items()
-               for _ in range(cnt)]
-    extra   = [act_by_key[k] for k, cnt in extra_counts.items()
-               for _ in range(cnt)]
+    missing = [exp_by_key[k] for k, cnt in missing_counts.items() for _ in range(cnt)]
+    extra = [act_by_key[k] for k, cnt in extra_counts.items() for _ in range(cnt)]
 
     if missing:
         return {"missing": missing, "extra": extra, "reason": "state_missing"}
@@ -100,9 +115,12 @@ def _norm_return_data(rd) -> list[str] | str | None:
     if rd is None:
         return None
     if isinstance(rd, list):
-        return [_norm_value(x) if not isinstance(x, str) else
-                (x.lower() if x.startswith(("0x", "0X")) else x)
-                for x in rd]
+        return [
+            _norm_value(x)
+            if not isinstance(x, str)
+            else (x.lower() if x.startswith(("0x", "0X")) else x)
+            for x in rd
+        ]
     # str — raw ABI-encoded hex
     if isinstance(rd, str):
         return rd.lower() if rd.startswith(("0x", "0X")) else rd
@@ -137,30 +155,45 @@ def _diff_return_data(expected_rd, actual_rd) -> dict | None:
     return None
 
 
-def _diff_result(expected_kind: str, expected_revert: str | None,
-                 actual_ok: bool, actual_revert: str | None,
-                 opts: DiffOptions) -> dict | None:
+def _diff_result(
+    expected_kind: str,
+    expected_revert: str | None,
+    actual_ok: bool,
+    actual_revert: str | None,
+    opts: DiffOptions,
+) -> dict | None:
     actual_kind = "ok" if actual_ok else "revert"
     if expected_kind != actual_kind:
-        return {"expected": expected_kind, "actual": actual_kind,
-                "reason": "result_kind_mismatch"}
+        return {
+            "expected": expected_kind,
+            "actual": actual_kind,
+            "reason": "result_kind_mismatch",
+        }
     if expected_kind == "revert" and opts.strict_reverts:
         if (expected_revert or "") != (actual_revert or ""):
-            return {"expected_revert": expected_revert, "actual_revert": actual_revert,
-                    "reason": "revert_reason_mismatch"}
+            return {
+                "expected_revert": expected_revert,
+                "actual_revert": actual_revert,
+                "reason": "revert_reason_mismatch",
+            }
     return None
 
 
 # ---------- public API ----------
 
-def diff_call(expected: FixtureCall, actual: CallResult,
-              opts: DiffOptions,
-              fixture_id: str = "unknown",
-              power: Power = "legislation") -> CallVerdict:
+
+def diff_call(
+    expected: FixtureCall,
+    actual: CallResult,
+    opts: DiffOptions,
+    fixture_id: str = "unknown",
+    power: Power = "legislation",
+) -> CallVerdict:
     diff: dict = {}
 
-    r = _diff_result(expected.result.kind, expected.revert_reason,
-                     actual.ok, actual.revert, opts)
+    r = _diff_result(
+        expected.result.kind, expected.revert_reason, actual.ok, actual.revert, opts
+    )
     if r is not None:
         diff["result"] = r
     else:
@@ -168,7 +201,9 @@ def diff_call(expected: FixtureCall, actual: CallResult,
         # For ok results: compare decoded return values.
         # For revert results: when revert_reason is None the fixture may store
         # the custom-error ABI selector in return_data instead; compare that.
-        exp_rd = expected.result.return_data if expected.result.return_data != [] else None
+        exp_rd = (
+            expected.result.return_data if expected.result.return_data != [] else None
+        )
         # Treat empty list [] as "no assertion" (many fixtures use it as default).
         # Treat "0x" (empty bytes) as "no assertion" for ok calls.
         if isinstance(exp_rd, str) and exp_rd in ("0x", "0X", ""):

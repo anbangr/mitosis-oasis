@@ -7,15 +7,14 @@ from typing import Protocol
 from test.conformance.oracle.schema import StateDelta
 
 
-SnapshotKey = tuple[str, str, str | None]   # (contract, name, key|None)
+SnapshotKey = tuple[str, str, str | None]  # (contract, name, key|None)
 Snapshot = dict[SnapshotKey, str | None]
 
 
 class StateReader(Protocol):
     """One reader per contract. Returns the full observable state of that contract."""
 
-    def read_all(self) -> Snapshot:
-        ...
+    def read_all(self) -> Snapshot: ...
 
 
 class StateView:
@@ -42,15 +41,27 @@ class StateView:
             contract, name, key = k
             if pre is None:
                 kind = "mapping_set" if key is not None else "field_set"
-                deltas.append(StateDelta(
-                    kind=kind, contract=contract, name=name, key=key, value=post,
-                ))
+                deltas.append(
+                    StateDelta(
+                        kind=kind,
+                        contract=contract,
+                        name=name,
+                        key=key,
+                        value=post,
+                    )
+                )
                 continue
             if post is None:
                 # treated as field cleared back to None (rare)
-                deltas.append(StateDelta(
-                    kind="field_set", contract=contract, name=name, key=key, value=None,
-                ))
+                deltas.append(
+                    StateDelta(
+                        kind="field_set",
+                        contract=contract,
+                        name=name,
+                        key=key,
+                        value=None,
+                    )
+                )
                 continue
             # both not-None, both differ: counter inc/dec if numeric, else field_set
             try:
@@ -58,19 +69,35 @@ class StateView:
                 post_i = int(post)
                 d = post_i - pre_i
                 if d > 0:
-                    deltas.append(StateDelta(
-                        kind="counter_inc", contract=contract, name=name, key=key,
-                        delta=str(d),
-                    ))
+                    deltas.append(
+                        StateDelta(
+                            kind="counter_inc",
+                            contract=contract,
+                            name=name,
+                            key=key,
+                            delta=str(d),
+                        )
+                    )
                 elif d < 0:
-                    deltas.append(StateDelta(
-                        kind="counter_dec", contract=contract, name=name, key=key,
-                        delta=str(-d),
-                    ))
+                    deltas.append(
+                        StateDelta(
+                            kind="counter_dec",
+                            contract=contract,
+                            name=name,
+                            key=key,
+                            delta=str(-d),
+                        )
+                    )
                 continue
             except (TypeError, ValueError):
                 pass
-            deltas.append(StateDelta(
-                kind="field_set", contract=contract, name=name, key=key, value=post,
-            ))
+            deltas.append(
+                StateDelta(
+                    kind="field_set",
+                    contract=contract,
+                    name=name,
+                    key=key,
+                    value=post,
+                )
+            )
         return deltas

@@ -2,7 +2,11 @@
 
 from test.conformance.oracle.diff import DiffOptions, diff_call
 from test.conformance.oracle.schema import (
-    CallResult, CallResultPayload, EmittedEvent, FixtureCall, StateDelta,
+    CallResult,
+    CallResultPayload,
+    EmittedEvent,
+    FixtureCall,
+    StateDelta,
 )
 
 
@@ -27,8 +31,10 @@ def _fix(events=None, state=None, kind="ok", revert=None, return_data=None):
 
 def _act(events=None, state=None, ok=True, revert=None, return_data=None):
     return CallResult(
-        ok=ok, revert=revert,
-        events=events or [], state_delta=state or [],
+        ok=ok,
+        revert=revert,
+        events=events or [],
+        state_delta=state or [],
         return_data=return_data,
     )
 
@@ -62,14 +68,14 @@ def test_extra_event_fails_by_default_strict_event_set():
 
 def test_event_order_matters():
     ev_expected = [EmittedEvent(name="A", args={}), EmittedEvent(name="B", args={})]
-    ev_actual   = [EmittedEvent(name="B", args={}), EmittedEvent(name="A", args={})]
+    ev_actual = [EmittedEvent(name="B", args={}), EmittedEvent(name="A", args={})]
     v = diff_call(_fix(ev_expected, []), _act(ev_actual, []), DiffOptions())
     assert v.verdict == "FAIL"
 
 
 def test_event_args_normalize_addresses_to_lowercase():
     expected = [EmittedEvent(name="X", args={"who": "0xabcdef"})]
-    actual   = [EmittedEvent(name="X", args={"who": "0xABCDEF"})]
+    actual = [EmittedEvent(name="X", args={"who": "0xABCDEF"})]
     v = diff_call(_fix(expected, []), _act(actual, []), DiffOptions())
     assert v.verdict == "PASS"
 
@@ -98,7 +104,8 @@ def test_extra_state_delta_fails_in_strict_state_superset_mode():
         StateDelta(kind="field_set", contract="X", name="extra", value="z"),
     ]
     v = diff_call(
-        _fix([], st_expected), _act([], st_actual),
+        _fix([], st_expected),
+        _act([], st_actual),
         DiffOptions(strict_state_superset=True),
     )
     assert v.verdict == "FAIL"
@@ -130,6 +137,7 @@ def test_strict_reverts_enforces_reason_match():
 
 
 # --- return_data comparison tests (HIGH 1 + HIGH 2) ---
+
 
 def test_return_data_match_ok():
     """Expected and actual both have the same return_data → PASS."""
@@ -199,6 +207,7 @@ def test_revert_selector_match_passes():
 
 
 # --- state delta multiset tests (MED 6) ---
+
 
 def test_duplicate_state_delta_counts_must_match():
     """Two identical expected increments vs one actual increment → FAIL.

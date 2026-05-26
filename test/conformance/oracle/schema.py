@@ -8,8 +8,12 @@ from pydantic import BaseModel, ConfigDict, Field
 
 Power = Literal["legislation", "execution", "adjudication", "support"]
 StateDeltaKind = Literal[
-    "mapping_set", "counter_inc", "counter_dec", "field_set",
-    "array_push", "array_pop",
+    "mapping_set",
+    "counter_inc",
+    "counter_dec",
+    "field_set",
+    "array_push",
+    "array_pop",
 ]
 ResultKind = Literal["ok", "revert"]
 Verdict = Literal["PASS", "FAIL", "GAP", "ERROR"]
@@ -36,9 +40,9 @@ class StateDelta(BaseModel):
     kind: StateDeltaKind
     contract: str
     name: str
-    key: Optional[str] = None       # for mapping_set / array_* (index)
-    value: Optional[str] = None     # for mapping_set / field_set
-    delta: Optional[str] = None     # for counter_inc / counter_dec
+    key: Optional[str] = None  # for mapping_set / array_* (index)
+    value: Optional[str] = None  # for mapping_set / field_set
+    delta: Optional[str] = None  # for counter_inc / counter_dec
 
 
 class CallResultPayload(BaseModel):
@@ -57,7 +61,7 @@ class FixtureCall(BaseModel):
     # target_contract when the contract is unlabeled).
     target_address: Optional[str] = None
     selector: str
-    function: str                    # "name(types)" canonical form or raw selector hex
+    function: str  # "name(types)" canonical form or raw selector hex
     args: list[str | int | bool | list | dict | None] = Field(default_factory=list)
     # Raw ABI-encoded calldata captured from the forge trace (optional).
     raw_calldata: Optional[str] = None
@@ -82,8 +86,10 @@ class Fixture(BaseModel):
 
 # Runtime types (oasis-side capture)
 
+
 class CallResult(BaseModel):
     """What the adapter returns after invoking an oasis function."""
+
     model_config = ConfigDict(extra="forbid")
     ok: bool
     revert: Optional[str] = None
@@ -97,9 +103,10 @@ class CallResult(BaseModel):
 
 class CallVerdict(BaseModel):
     """The oracle's per-call verdict."""
+
     model_config = ConfigDict(extra="forbid")
     verdict: Verdict
-    fixture_id: str            # e.g. "legislation/ConstitutionalParameters/test_setQuorum_happy"
+    fixture_id: str  # e.g. "legislation/ConstitutionalParameters/test_setQuorum_happy"
     call_idx: int
     contract: str
     function: str

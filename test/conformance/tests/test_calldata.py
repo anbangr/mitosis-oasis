@@ -23,7 +23,10 @@ def test_decode_args_strips_selector_and_decodes():
     # setQuorum(uint256) with argument 10:
     #   selector: keccak256("setQuorum(uint256)")[:4] = 0x6a0eb579
     #   arg: 0x000…000a (32-byte big-endian 10)
-    raw = "0x6a0eb579" + "000000000000000000000000000000000000000000000000000000000000000a"
+    raw = (
+        "0x6a0eb579"
+        + "000000000000000000000000000000000000000000000000000000000000000a"
+    )
     result = decode_args(raw, "setQuorum(uint256)")
     assert result == ["10"]
 
@@ -53,7 +56,10 @@ def test_decode_args_empty_calldata():
 def test_decode_args_signature_mismatch_returns_empty():
     """A selector/type mismatch must return [] without raising."""
     # Valid uint256 calldata but decoded with the wrong signature (address).
-    raw = "0xdeadbeef" + "000000000000000000000000000000000000000000000000000000000000000a"
+    raw = (
+        "0xdeadbeef"
+        + "000000000000000000000000000000000000000000000000000000000000000a"
+    )
     # address type expects a 20-byte value padded to 32 bytes; the data above
     # happens to be valid padding for an address, so use a tuple type to force
     # a decode error.
@@ -65,9 +71,11 @@ def test_decode_args_signature_mismatch_returns_empty():
 # Stub behaviour when eth_abi is absent (always runs)
 # ---------------------------------------------------------------------------
 
+
 def test_decode_args_returns_empty_list_when_eth_abi_unavailable(monkeypatch):
     """When eth_abi is not available the function must return [] for any input."""
     import test.conformance.adapter._calldata as mod
+
     monkeypatch.setattr(mod, "_ETH_ABI_AVAILABLE", False)
     assert decode_args("0x6a0eb579" + "00" * 32, "setQuorum(uint256)") == []
     assert decode_args("", "f()") == []

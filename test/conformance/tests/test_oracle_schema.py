@@ -1,10 +1,14 @@
 """Schema validation for fixture JSON."""
 
-import json
 import pytest
 from pydantic import ValidationError
 
-from test.conformance.oracle.schema import Fixture, FixtureCall, StateDelta, EmittedEvent
+from test.conformance.oracle.schema import (
+    Fixture,
+    FixtureCall,
+    StateDelta,
+    EmittedEvent,
+)
 
 
 def test_fixture_parses_minimal_valid_payload():
@@ -54,8 +58,14 @@ def test_call_round_trip():
         result={"kind": "ok", "return_data": []},
         events=[EmittedEvent(name="QuorumSet", args={"quorum": "100"})],
         state_delta=[
-            StateDelta(kind="field_set", contract="ConstitutionalParameters",
-                       name="quorum", key=None, value="100", delta=None)
+            StateDelta(
+                kind="field_set",
+                contract="ConstitutionalParameters",
+                name="quorum",
+                key=None,
+                value="100",
+                delta=None,
+            )
         ],
         revert_reason=None,
     )

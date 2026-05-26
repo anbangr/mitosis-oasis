@@ -20,6 +20,7 @@ from typing import Any
 
 try:
     import eth_abi  # type: ignore[import]
+
     _ETH_ABI_AVAILABLE = True
 except ImportError:
     _ETH_ABI_AVAILABLE = False
@@ -28,6 +29,7 @@ except ImportError:
 # ---------------------------------------------------------------------------
 # Internal helpers
 # ---------------------------------------------------------------------------
+
 
 def _extract_types(function_signature: str) -> list[str]:
     """Parse ``"name(uint256,address)"`` → ``["uint256", "address"]``."""
@@ -60,6 +62,7 @@ def _to_str(value: Any) -> str:
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
+
 
 def decode_args(raw_calldata: str, function_signature: str) -> list[str]:
     """Decode ABI-encoded arguments from *raw_calldata*.

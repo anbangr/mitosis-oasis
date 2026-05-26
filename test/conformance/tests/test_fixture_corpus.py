@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import json
 import re
-import sys
 import warnings
 from pathlib import Path
 
@@ -48,6 +47,7 @@ def _fixture_id(path: Path) -> str:
 # Test: every fixture parses as Fixture (parameterized)
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.parametrize("fixture_path", _FIXTURE_PATHS, ids=_fixture_id)
 def test_every_fixture_parses_as_Fixture(fixture_path: Path):
     """Each .json file under fixtures/ must deserialise without ValidationError."""
@@ -56,14 +56,13 @@ def test_every_fixture_parses_as_Fixture(fixture_path: Path):
     try:
         Fixture.model_validate(data)
     except ValidationError as exc:
-        pytest.fail(
-            f"Fixture {fixture_path.name} failed schema validation:\n{exc}"
-        )
+        pytest.fail(f"Fixture {fixture_path.name} failed schema validation:\n{exc}")
 
 
 # ---------------------------------------------------------------------------
 # Test: every fixture has at least one call (soft warning, not hard fail)
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.parametrize("fixture_path", _FIXTURE_PATHS, ids=_fixture_id)
 def test_every_fixture_has_at_least_one_call(fixture_path: Path):
@@ -84,6 +83,7 @@ def test_every_fixture_has_at_least_one_call(fixture_path: Path):
 # Test: primary_contract must be a key in power_map.by_contract
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.parametrize("fixture_path", _FIXTURE_PATHS, ids=_fixture_id)
 def test_every_fixture_primary_contract_is_in_power_map(fixture_path: Path):
     """fixture.primary_contract must appear as a key in power_map.json."""
@@ -103,6 +103,7 @@ def test_every_fixture_primary_contract_is_in_power_map(fixture_path: Path):
 # ---------------------------------------------------------------------------
 # Test: every call's target_contract is known or is a raw hex address
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.parametrize("fixture_path", _FIXTURE_PATHS, ids=_fixture_id)
 def test_every_call_target_contract_is_known_or_hex(fixture_path: Path):
@@ -127,6 +128,7 @@ def test_every_call_target_contract_is_known_or_hex(fixture_path: Path):
 # ---------------------------------------------------------------------------
 # Test: power_map.json structural integrity
 # ---------------------------------------------------------------------------
+
 
 def test_power_map_schema_version_is_1():
     """power_map.json must declare schema_version==1 and a non-empty by_contract."""

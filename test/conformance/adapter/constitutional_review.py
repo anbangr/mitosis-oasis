@@ -205,9 +205,9 @@ def dispatch_has_passed(call: FixtureCall) -> CallResult:
 
     proposal_id = _left_pad(decoded, 64)
     verdict = _reviewed_verdict(call.target_contract, proposal_id)
-    result = "0x0000000000000000000000000000000000000000000000000000000000000001"
-    if verdict in (None, 0):
-        result = result[:-1] + "0"
+    result = "0x0000000000000000000000000000000000000000000000000000000000000000"
+    if verdict == 1:
+        result = result[:-1] + "1"
     return CallResult(
         ok=True,
         revert=None,

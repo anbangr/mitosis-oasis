@@ -54,7 +54,6 @@ from test.conformance.adapter._base import AdapterBase
 from test.conformance.adapter.registry import register
 from test.conformance.oracle.schema import (
     CallResult,
-    CallVerdict,
     EmittedEvent,
     FixtureCall,
 )
@@ -83,6 +82,11 @@ class _Session:
 
 
 _SESSIONS: dict[str, _Session] = {}
+
+
+def reset_state() -> None:
+    """Clear replay state between independently selected fixture calls."""
+    _SESSIONS.clear()
 
 
 def _strip_selector(raw_calldata: str) -> str:
@@ -552,23 +556,3 @@ _MAPPED_FUNCTIONS: tuple[str, ...] = (
 _ADAPTER = VotingVerifierAdapter()
 for fn in _MAPPED_FUNCTIONS:
     register("VotingVerifier", fn, _ADAPTER.dispatch)
-
-
-def _submit_voting_proof_gap(call: FixtureCall) -> CallVerdict:
-    return CallVerdict(
-        verdict="GAP",
-        fixture_id="VotingVerifier",
-        call_idx=call.idx,
-        contract=call.target_contract,
-        function=call.function,
-        power="legislation",
-        diff=None,
-        error=f"GAP: {call.target_contract}.{call.function}",
-    )
-
-
-register(
-    "VotingVerifier",
-    "submitVotingProof(bytes32,bytes32,uint256,uint256)",
-    _submit_voting_proof_gap,
-)

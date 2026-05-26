@@ -25,11 +25,13 @@ from test.conformance.oracle.schema import (
 # submitProposal(...)                                   -> Speaker.receive_proposal
 # submitDissent(...)                                    -> Session-level dissent/notes path (mirrored)
 # advanceToRatification(...)                             -> Speaker / state-machine stage transition
+# expireProposal(bytes32)                                -> expiry transition handling (mirrored)
 # submitVotingProof(...)                                -> Regulator evaluate / stage transition
 # passConstitutionalReview(...)                          -> Speaker/Regulator approval path
 # verifyDeployment(bytes32,(string,string,string,uint8,uint64,uint64,uint256,bytes32[]))
 #                                                      -> Codifier.verify_deployment
 # verifyDeployment(bytes32,bytes32,bytes32)              -> deployment verification path (mirrored)
+# submitCodeDeployment(bytes32,bytes32)                   -> deployment proposal submission path (mirrored)
 # setQuorumBps(uint256)                                -> constitutional quorum param
 # setStageTimeout(uint8,uint64)                         -> stage timeout config
 # getStageTimeout(uint8)                                -> stage timeout readback (mirrored)
@@ -99,10 +101,12 @@ _MAPPED_FUNCTIONS: tuple[str, ...] = (
     "submitProposal(uint256,bytes32,(uint8,bytes32,bytes32,address,uint256,uint256)[5])",
     "submitDissent(bytes32,uint256,bytes32)",
     "advanceToRatification(bytes32)",
+    "expireProposal(bytes32)",
     "submitVotingProof(bytes32,bytes32,uint256,uint256)",
     "passConstitutionalReview(bytes32)",
     "verifyDeployment(bytes32,(string,string,string,uint8,uint64,uint64,uint256,bytes32[]))",
     "verifyDeployment(bytes32,bytes32,bytes32)",
+    "submitCodeDeployment(bytes32,bytes32)",
     "setQuorumBps(uint256)",
     "setStageTimeout(uint8,uint64)",
     "getStageTimeout(uint8)",

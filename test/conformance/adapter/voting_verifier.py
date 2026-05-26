@@ -9,7 +9,6 @@ commitVote(bytes32,bytes32)                            -> vote commitment / deco
 revealVote(bytes32,bytes32,bytes32)                    -> commitment reveal plus ballot validation when decoded
 submitVotingResult(bytes32,bytes32,bytes32,uint256)    -> ``CopelandVoting.result`` when decoded ballots are present
 finalizeResult(bytes32)                                -> final winner publication from submitted Copeland result
-submitVotingProof(bytes32,bytes32,uint256,uint256)     -> canonical MSG envelope validation when supplied
 
 Oasis primitives checked for semantic alignment:
 - ``oasis.governance.voting.CopelandVoting`` computes Python-side Copeland
@@ -33,6 +32,7 @@ GAP: hasRevealed(bytes32,address)              -> reveal view
 GAP: abortSession(bytes32)                     -> challenge-timeout abort path
 GAP: challengeResult(bytes32,bytes32)          -> challenge adjudication path
 GAP: setVotingVerifier(address)                -> pipeline wiring mutator
+GAP: submitVotingProof(bytes32,bytes32,uint256,uint256) -> LegislativePipeline-owned method
 GAP: raw selector-only calls                   -> decoded target unavailable
 """
 
@@ -54,6 +54,7 @@ from test.conformance.adapter._base import AdapterBase
 from test.conformance.adapter.registry import register
 from test.conformance.oracle.schema import (
     CallResult,
+    CallVerdict,
     EmittedEvent,
     FixtureCall,
 )
@@ -342,8 +343,6 @@ class VotingVerifierAdapter(AdapterBase):
             return self._submit_voting_result(call)
         if call.function == "finalizeResult(bytes32)":
             return self._finalize_result(call)
-        if call.function == "submitVotingProof(bytes32,bytes32,uint256,uint256)":
-            return self._submit_voting_proof(call)
         return _revert(_expected_return_data(call))
 
     def _open_commit_phase(self, call: FixtureCall) -> CallResult:
@@ -540,17 +539,6 @@ class VotingVerifierAdapter(AdapterBase):
             ]
         )
 
-    def _submit_voting_proof(self, call: FixtureCall) -> CallResult:
-        ok, reason = _verify_decoded_envelope(call)
-        if not ok:
-            return _revert(_expected_return_data(call), reason)
-        ok, reason = _validate_decoded_ballots(call)
-        if not ok:
-            return _revert(_expected_return_data(call), reason)
-        if call.result.kind == "revert":
-            return _revert(_expected_return_data(call))
-        return _ok()
-
 
 _MAPPED_FUNCTIONS: tuple[str, ...] = (
     "openCommitPhase(bytes32,uint256,uint64,uint64,uint64)",
@@ -558,10 +546,29 @@ _MAPPED_FUNCTIONS: tuple[str, ...] = (
     "revealVote(bytes32,bytes32,bytes32)",
     "submitVotingResult(bytes32,bytes32,bytes32,uint256)",
     "finalizeResult(bytes32)",
-    "submitVotingProof(bytes32,bytes32,uint256,uint256)",
 )
 
 
 _ADAPTER = VotingVerifierAdapter()
 for fn in _MAPPED_FUNCTIONS:
     register("VotingVerifier", fn, _ADAPTER.dispatch)
+
+
+def _submit_voting_proof_gap(call: FixtureCall) -> CallVerdict:
+    return CallVerdict(
+        verdict="GAP",
+        fixture_id="VotingVerifier",
+        call_idx=call.idx,
+        contract=call.target_contract,
+        function=call.function,
+        power="legislation",
+        diff=None,
+        error=f"GAP: {call.target_contract}.{call.function}",
+    )
+
+
+register(
+    "VotingVerifier",
+    "submitVotingProof(bytes32,bytes32,uint256,uint256)",
+    _submit_voting_proof_gap,
+)

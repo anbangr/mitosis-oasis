@@ -1,0 +1,116 @@
+{
+  "fixture_version": 1,
+  "source": {
+    "foundry_test": "synthetic:VotingVerifier::decoded_copeland_ballots()",
+    "contracts_sha": "synthetic-voting-verifier-copeland",
+    "captured_at": "2026-05-26T00:00:00Z",
+    "solc_version": "0.8.28",
+    "forge_json_version": "synthetic"
+  },
+  "power": "legislation",
+  "primary_contract": "VotingVerifier",
+  "test_status": "Success",
+  "calls": [
+    {
+      "idx": 0,
+      "target_contract": "VotingVerifier",
+      "target_address": "0x0ad6161c0dc6b9a6c73b1bc505f142c6b91b2e26",
+      "selector": "0xcb6f5b8c",
+      "function": "openCommitPhase(bytes32,uint256,uint64,uint64,uint64)",
+      "args": [],
+      "raw_calldata": "0xcb6f5b8c111111111111111111111111111111111111111111111111111111111111111100000000000000000000000000000000000000000000000000000000000000030000000000000000000000000000000000000000000000000000000000000e100000000000000000000000000000000000000000000000000000000000000e100000000000000000000000000000000000000000000000000000000000000e10",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x"
+      },
+      "events": [
+        {
+          "name": "EligibleVoterSnapshotRecorded",
+          "args": {
+            "proposalId": "0x1111111111111111111111111111111111111111111111111111111111111111",
+            "snapshotTime": "1",
+            "eligibleVoterCount": "3"
+          }
+        },
+        {
+          "name": "CommitPhaseOpened",
+          "args": {
+            "proposalId": "0x1111111111111111111111111111111111111111111111111111111111111111",
+            "commitDeadline": "3601",
+            "revealDeadline": "7201",
+            "challengeDuration": "3600",
+            "eligibleVoterCount": "3"
+          }
+        }
+      ],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 1,
+      "target_contract": "VotingVerifier",
+      "target_address": "0x0ad6161c0dc6b9a6c73b1bc505f142c6b91b2e26",
+      "selector": "0x8a75eb34",
+      "function": "submitVotingResult(bytes32,bytes32,bytes32,uint256)",
+      "args": [
+        {
+          "candidates": ["A", "B", "C"],
+          "ballots": {
+            "agent-1": ["A", "B", "C"],
+            "agent-2": ["A", "C", "B"],
+            "agent-3": ["B", "A", "C"]
+          }
+        }
+      ],
+      "raw_calldata": "0x8a75eb341111111111111111111111111111111111111111111111111111111111111111222222222222222222222222222222222222222222222222222222222222222203783fac2efed8fbc9ad443e592ee30e61d65f471140c10ca155e937b435b7600000000000000000000000000000000000000000000000000000000000000003",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x"
+      },
+      "events": [
+        {
+          "name": "VotingResultSubmitted",
+          "args": {
+            "proposalId": "0x1111111111111111111111111111111111111111111111111111111111111111",
+            "resultRoot": "0x2222222222222222222222222222222222222222222222222222222222222222",
+            "winnerHash": "0x03783fac2efed8fbc9ad443e592ee30e61d65f471140c10ca155e937b435b760",
+            "voterCount": "3"
+          }
+        }
+      ],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 2,
+      "target_contract": "VotingVerifier",
+      "target_address": "0x0ad6161c0dc6b9a6c73b1bc505f142c6b91b2e26",
+      "selector": "0x9d77be29",
+      "function": "finalizeResult(bytes32)",
+      "args": [],
+      "raw_calldata": "0x9d77be291111111111111111111111111111111111111111111111111111111111111111",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x"
+      },
+      "events": [
+        {
+          "name": "VotingResultFinalized",
+          "args": {
+            "proposalId": "0x1111111111111111111111111111111111111111111111111111111111111111",
+            "winnerHash": "0x03783fac2efed8fbc9ad443e592ee30e61d65f471140c10ca155e937b435b760",
+            "resultRoot": "0x2222222222222222222222222222222222222222222222222222222222222222"
+          }
+        }
+      ],
+      "state_delta": [],
+      "revert_reason": null
+    }
+  ]
+}

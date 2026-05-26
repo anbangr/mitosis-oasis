@@ -19,7 +19,9 @@ from test.conformance.oracle.schema import (
 )
 
 
-_FIXTURE_DIR = Path(__file__).parent.parent / "fixtures" / "legislation" / "LegislativePipeline"
+_FIXTURE_DIR = (
+    Path(__file__).parent.parent / "fixtures" / "legislation" / "LegislativePipeline"
+)
 _FIXTURE_PATHS = sorted(_FIXTURE_DIR.glob("*.json")) if _FIXTURE_DIR.exists() else []
 
 
@@ -36,7 +38,9 @@ def _load_fixture_calls() -> list[tuple[Path, Fixture, FixtureCall]]:
 _FIXTURE_CALLS = _load_fixture_calls()
 
 
-def _gap_verdict(fixture: Fixture, call: FixtureCall, fixture_path: Path) -> CallVerdict:
+def _gap_verdict(
+    fixture: Fixture, call: FixtureCall, fixture_path: Path
+) -> CallVerdict:
     return CallVerdict(
         verdict="GAP",
         fixture_id=str(fixture_path.name),
@@ -55,7 +59,11 @@ def _call_id(item: tuple[Path, Fixture, FixtureCall]) -> str:
 
 
 def _mapped_dispatch(call: FixtureCall, fixture: Fixture, path: Path):
-    fn = lookup("LegislativePipeline", call.function) if call.target_contract == "LegislativePipeline" else None
+    fn = (
+        lookup("LegislativePipeline", call.function)
+        if call.target_contract == "LegislativePipeline"
+        else None
+    )
     if fn is None:
         return _gap_verdict(fixture, call, path)
     return fn(call)
@@ -66,7 +74,11 @@ def _is_gap(result: Union[CallResult, CallVerdict]) -> bool:
 
 
 @pytest.mark.conformance
-@pytest.mark.parametrize("fixture_path,fixture,fixture_call", _FIXTURE_CALLS, ids=_call_id)
+@pytest.mark.parametrize(
+    "fixture_path,fixture,fixture_call",
+    _FIXTURE_CALLS,
+    ids=[_call_id(item) for item in _FIXTURE_CALLS],
+)
 def test_replay_legislative_pipeline_fixture_calls(
     fixture_path: Path,
     fixture: Fixture,
@@ -76,7 +88,10 @@ def test_replay_legislative_pipeline_fixture_calls(
 
     if fixture_call.target_contract != "LegislativePipeline":
         assert _is_gap(actual)
-        assert actual.error == f"GAP: {fixture_call.target_contract}.{fixture_call.function}"
+        assert (
+            actual.error
+            == f"GAP: {fixture_call.target_contract}.{fixture_call.function}"
+        )
         return
 
     if _is_gap(actual):
@@ -96,7 +111,13 @@ def test_replay_legislative_pipeline_fixture_calls(
 def test_adapter_registry_is_import_time_ready():
     adapter = LegislativePipelineAdapter()
     assert adapter.contract == "LegislativePipeline"
-    assert lookup("LegislativePipeline", "submitProposal(uint256,bytes32,(uint8,bytes32,bytes32,address,uint256,uint256)[5])") is not None
+    assert (
+        lookup(
+            "LegislativePipeline",
+            "submitProposal(uint256,bytes32,(uint8,bytes32,bytes32,address,uint256,uint256)[5])",
+        )
+        is not None
+    )
     assert lookup("LegislativePipeline", "setQuorumBps(uint256)") is not None
     assert lookup("LegislativePipeline", "advanceToRatification(bytes32)") is not None
 
@@ -133,7 +154,9 @@ def test_revert_fixtures_compare_via_return_data():
     path, fixture, fixture_call = revert_calls[0]
     actual = _mapped_dispatch(fixture_call, fixture, path)
     if _is_gap(actual):
-        pytest.skip(f"Mapped revert fixture not available: {path.name}:{fixture_call.function}")
+        pytest.skip(
+            f"Mapped revert fixture not available: {path.name}:{fixture_call.function}"
+        )
 
     verdict = diff_call(
         expected=fixture_call,
@@ -168,8 +191,7 @@ def test_event_order_from_replayed_fixture_is_preserved():
     ordered_events_calls = [
         (path, fixture, call)
         for path, fixture, call in _FIXTURE_CALLS
-        if call.target_contract == "LegislativePipeline"
-        and len(call.events) > 1
+        if call.target_contract == "LegislativePipeline" and len(call.events) > 1
     ]
     if not ordered_events_calls:
         pytest.skip("No multi-event LegislativePipeline fixture call available")

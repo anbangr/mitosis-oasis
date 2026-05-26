@@ -21,8 +21,9 @@ def fresh_bus(tmp_path: Path):
 def test_collector_records_events_emitted_inside_with_block(fresh_bus):
     with EventCollector() as collector:
         fresh_bus.publish(
-            Event(event_type=EventType.PROPOSAL_SUBMITTED,
-                  payload={"proposal_id": "p1"})
+            Event(
+                event_type=EventType.PROPOSAL_SUBMITTED, payload={"proposal_id": "p1"}
+            )
         )
     assert len(collector.events) == 1
     assert collector.events[0].event_type == EventType.PROPOSAL_SUBMITTED

@@ -9,7 +9,12 @@ from __future__ import annotations
 
 from test.conformance.adapter._base import AdapterBase
 from test.conformance.adapter.registry import register
-from test.conformance.oracle.schema import CallResult, EmittedEvent, FixtureCall, StateDelta
+from test.conformance.oracle.schema import (
+    CallResult,
+    EmittedEvent,
+    FixtureCall,
+    StateDelta,
+)
 
 
 # Mapping comment block:
@@ -126,4 +131,3 @@ _MAPPED_FUNCTIONS: tuple[str, ...] = (
 _ADAPTER = LegislativePipelineAdapter()
 for fn in _MAPPED_FUNCTIONS:
     register("LegislativePipeline", fn, _ADAPTER.dispatch)
-

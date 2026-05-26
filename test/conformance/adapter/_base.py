@@ -13,5 +13,4 @@ class AdapterBase(ABC):
     contract: str = ""
 
     @abstractmethod
-    def dispatch(self, call: FixtureCall) -> CallResult:
-        ...
+    def dispatch(self, call: FixtureCall) -> CallResult: ...

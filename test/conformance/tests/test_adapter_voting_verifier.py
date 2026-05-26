@@ -9,6 +9,8 @@ from typing import Union
 
 import pytest
 
+from oasis.crypto import ed25519
+from oasis.governance.messages import DAGProposal, canonical_signed_bytes
 from test.conformance.adapter.registry import lookup
 from test.conformance.oracle.diff import DiffOptions, diff_call
 from test.conformance.oracle.schema import (
@@ -23,6 +25,8 @@ _FIXTURE_DIR = (
     Path(__file__).parent.parent / "fixtures" / "legislation" / "VotingVerifier"
 )
 _FIXTURE_PATHS = sorted(_FIXTURE_DIR.glob("*.json")) if _FIXTURE_DIR.exists() else []
+_UNIT_FIXTURE_DIR = Path(__file__).parent.parent / "fixtures" / "unit" / "VotingVerifier"
+_DECODED_COPELAND_FIXTURE = _UNIT_FIXTURE_DIR / "decoded_copeland_ballots.json"
 
 _EXPECTED_VV_MAPPINGS = (
     "openCommitPhase(bytes32,uint256,uint64,uint64,uint64)",
@@ -81,8 +85,26 @@ def _is_gap(result: Union[CallResult, CallVerdict]) -> bool:
     return isinstance(result, CallVerdict) and result.verdict == "GAP"
 
 
-def _adapter_fn(call: FixtureCall):
-    if call.target_contract != "VotingVerifier":
+def _is_hex_address(value: str) -> bool:
+    body = value.removeprefix("0x")
+    return value.startswith("0x") and len(body) == 40 and all(
+        char in "0123456789abcdefABCDEF" for char in body
+    )
+
+
+def _is_voting_verifier_call(call: FixtureCall, fixture: Fixture | None = None) -> bool:
+    if call.target_contract == "VotingVerifier":
+        return True
+    return (
+        fixture is not None
+        and fixture.primary_contract == "VotingVerifier"
+        and _is_hex_address(call.target_contract)
+        and call.function in _EXPECTED_VV_MAPPINGS
+    )
+
+
+def _adapter_fn(call: FixtureCall, fixture: Fixture | None = None):
+    if not _is_voting_verifier_call(call, fixture):
         return None
     return lookup("VotingVerifier", call.function)
 
@@ -103,7 +125,7 @@ def _reset_and_replay_prefix(fixture: Fixture, target_call: FixtureCall) -> None
     for prior_call in fixture.calls:
         if _same_fixture_call(prior_call, target_call):
             break
-        fn = _adapter_fn(prior_call)
+        fn = _adapter_fn(prior_call, fixture)
         if fn is not None:
             fn(prior_call)
 
@@ -112,7 +134,7 @@ def _mapped_dispatch(
     call: FixtureCall, fixture: Fixture, path: Path
 ) -> Union[CallResult, CallVerdict]:
     _reset_and_replay_prefix(fixture, call)
-    fn = _adapter_fn(call)
+    fn = _adapter_fn(call, fixture)
     if fn is None:
         return _gap_verdict(fixture, call, path)
     return fn(call)
@@ -123,7 +145,7 @@ def _vv_calls_matching(*functions: str) -> list[tuple[Path, Fixture, FixtureCall
     return [
         (path, fixture, call)
         for path, fixture, call in _FIXTURE_CALLS
-        if call.target_contract == "VotingVerifier" and call.function in wanted
+        if _is_voting_verifier_call(call, fixture) and call.function in wanted
     ]
 
 
@@ -190,6 +212,125 @@ def test_copeland_tally_fixtures_match_solidity_or_surface_explicit_diff():
             power=fixture.power,
         )
         assert verdict.verdict in {"PASS", "FAIL"}, verdict.model_dump()
+
+
+def test_synthetic_copeland_fixture_is_not_in_captured_replay_corpus():
+    assert all(
+        path.name != "test_synthetic_copeland_decoded_ballots.json"
+        for path in _FIXTURE_PATHS
+    )
+
+
+def test_address_targeted_voting_verifier_calls_dispatch_through_adapter():
+    address_targeted_calls = [
+        (path, fixture, call)
+        for path, fixture, call in _FIXTURE_CALLS
+        if fixture.primary_contract == "VotingVerifier"
+        and call.target_contract.startswith("0x")
+        and call.function in _EXPECTED_VV_MAPPINGS
+    ]
+    assert address_targeted_calls
+
+    for path, fixture, call in address_targeted_calls:
+        actual = _mapped_dispatch(call, fixture, path)
+        assert not _is_gap(actual), (
+            f"GAP while replaying address-targeted VotingVerifier call "
+            f"{path.name}:{call.idx}"
+        )
+
+
+def test_decoded_copeland_unit_fixture_exercises_oasis_tally():
+    fixture = Fixture.model_validate(json.loads(_DECODED_COPELAND_FIXTURE.read_text()))
+    path = _DECODED_COPELAND_FIXTURE
+
+    for call in fixture.calls:
+        actual = _mapped_dispatch(call, fixture, path)
+        assert not _is_gap(actual), f"GAP while replaying unit fixture call {call.idx}"
+        verdict = diff_call(
+            expected=call,
+            actual=actual,
+            opts=DiffOptions(),
+            fixture_id=f"VotingVerifierUnit/{path.name}",
+            power=fixture.power,
+        )
+        assert verdict.verdict == "PASS", verdict.model_dump()
+
+
+def _proposal_envelope(signature: str | None = None, public_key: str | None = None):
+    payload = {
+        "msg_type": "DAG_PROPOSAL",
+        "session_id": "session-vv-envelope",
+        "proposer_did": "did:key:agent",
+        "dag_spec": {"nodes": ["task-1"]},
+        "rationale": "fixture coverage",
+        "token_budget_total": 1.0,
+        "deadline_ms": 1000,
+    }
+    if signature is not None:
+        payload["signature"] = signature
+    if public_key is not None:
+        payload["public_key"] = public_key
+    return payload
+
+
+def _call_with_payload(payload: dict) -> FixtureCall:
+    return FixtureCall(
+        idx=0,
+        target_contract="VotingVerifier",
+        selector="0x0a6d7c2b",
+        function="commitVote(bytes32,bytes32)",
+        args=[payload],
+        raw_calldata=(
+            "0x0a6d7c2b"
+            "1111111111111111111111111111111111111111111111111111111111111111"
+            "2222222222222222222222222222222222222222222222222222222222222222"
+        ),
+        msg_sender="0x0000000000000000000000000000000000000001",
+        value_wei="0",
+        result={"kind": "ok", "return_data": "0x"},
+        events=[],
+        state_delta=[],
+        revert_reason=None,
+    )
+
+
+def test_decoded_envelope_and_ballot_paths_are_exercised():
+    module = _require_voting_verifier_adapter_loaded()
+    adapter = module.VotingVerifierAdapter()
+    private_key, public_key = ed25519.generate_keypair()
+    unsigned = DAGProposal.model_validate(_proposal_envelope())
+    signature = ed25519.sign(private_key, canonical_signed_bytes(unsigned)).hex()
+
+    valid = adapter.dispatch(
+        _call_with_payload(
+            {
+                "envelope": _proposal_envelope(signature, public_key.hex()),
+                "candidates": ["A", "B"],
+                "ranking": ["A", "B"],
+            }
+        )
+    )
+    assert valid.ok is True
+
+    bad_signature = adapter.dispatch(
+        _call_with_payload(
+            {"envelope": _proposal_envelope("00" * 64, public_key.hex())}
+        )
+    )
+    assert bad_signature.ok is False
+    assert bad_signature.revert == "Ed25519 signature verification failed"
+
+    malformed = adapter.dispatch(
+        _call_with_payload({"envelope": {"signature": signature}})
+    )
+    assert malformed.ok is False
+    assert malformed.revert == "Unsupported decoded envelope message type"
+
+    empty_ballot = adapter.dispatch(
+        _call_with_payload({"candidates": ["A", "B"], "ranking": []})
+    )
+    assert empty_ballot.ok is False
+    assert empty_ballot.revert
 
 
 def test_malformed_or_empty_vote_envelopes_reject_like_solidity():

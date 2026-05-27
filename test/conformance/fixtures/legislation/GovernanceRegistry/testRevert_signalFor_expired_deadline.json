@@ -1,0 +1,108 @@
+{
+  "fixture_version": 1,
+  "source": {
+    "foundry_test": "test/GovernanceRegistry.t.sol:GovernanceRegistryTest::testRevert_signalFor_expired_deadline()",
+    "contracts_sha": "0x19e8e5db7d2dce557ecf00eeff05c55c9c230293040f11c2f15719d0dbf9ec54",
+    "captured_at": "2026-05-26T16:14:48Z",
+    "solc_version": "0.8.28",
+    "forge_json_version": "1.5.1-stable"
+  },
+  "power": "legislation",
+  "primary_contract": "GovernanceRegistry",
+  "test_status": "Success",
+  "calls": [
+    {
+      "idx": 0,
+      "target_contract": "GovernanceRegistry",
+      "target_address": "0x6d9da78b6a5bedca287aa5d49613ba36b90c15c4",
+      "selector": "0x8e462f48",
+      "function": "createLaw((string,string,string,uint8,uint64,uint64,uint256,bytes32[]))",
+      "args": [],
+      "raw_calldata": "0x8e462f48000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000140000000000000000000000000000000000000000000000000000000000000018000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000093a80000000000000000000000000000000000000000000000000000000000003f480000000000000000000000000000000000000000000000000000000000000138800000000000000000000000000000000000000000000000000000000000001c000000000000000000000000000000000000000000000000000000000000000084e4f4e5f4841524d00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000154e6f6e2d4861726d202f20446f204e6f204861726d0000000000000000000000000000000000000000000000000000000000000000000000000000000000001b4167656e7473206d757374206e6f74206361757365206861726d2e00000000000000000000000000000000000000000000000000000000000000000000000000",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x0000000000000000000000000000000000000000000000000000000000000001"
+      },
+      "events": [
+        {
+          "name": "LawCreated",
+          "args": {
+            "lawId": "1",
+            "code": "0xcfe00326ed64a83994ff4675e4edf7bffdc0778f76de1ff0c4cd06fd52475f41",
+            "contentHash": "0xfef8e2f12b01cd765038985b0719b48789c3156e1ed82162c79a0433783c8fd4",
+            "version": "1",
+            "title": "Non-Harm / Do No Harm",
+            "body": "Agents must not cause harm.",
+            "scope": "0"
+          }
+        }
+      ],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 1,
+      "target_contract": "GovernanceRegistry",
+      "target_address": "0x6d9da78b6a5bedca287aa5d49613ba36b90c15c4",
+      "selector": "0x914c5467",
+      "function": "openSignaling(uint256)",
+      "args": [],
+      "raw_calldata": "0x914c54670000000000000000000000000000000000000000000000000000000000000001",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x"
+      },
+      "events": [
+        {
+          "name": "LawSignalingOpened",
+          "args": {
+            "lawId": "1",
+            "signalingEndsAt": "604801"
+          }
+        }
+      ],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 2,
+      "target_contract": "GovernanceRegistry",
+      "target_address": "0x6d9da78b6a5bedca287aa5d49613ba36b90c15c4",
+      "selector": "0xf698da25",
+      "function": "domainSeparator()",
+      "args": [],
+      "raw_calldata": "0xf698da25",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x1536388fd74c0513f78ec6bc4d47980dcc752624088a38f96ea22aa6d7112f86"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 3,
+      "target_contract": "GovernanceRegistry",
+      "target_address": "0x6d9da78b6a5bedca287aa5d49613ba36b90c15c4",
+      "selector": "0xbd0cb31a",
+      "function": "signalFor(uint256,uint256,bool,uint256,bytes)",
+      "args": [],
+      "raw_calldata": "0xbd0cb31a000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a00000000000000000000000000000000000000000000000000000000000000041344e8169acbe21c8408b508524c6b24abb882fb1887c8be281959e308cad0d5356b935dadcba051ae54d53bcb9ce866a77f3a7ca8dff0b2f9d5c914dab61e1221b00000000000000000000000000000000000000000000000000000000000000",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "revert",
+        "return_data": "0xcd21db4f0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    }
+  ]
+}

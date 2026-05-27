@@ -79,6 +79,7 @@ def write_report(
     fixture_count: int,
     call_count: int,
     out_root: Path,
+    pass_threshold: float = 0.95,
 ) -> Path:
     out_dir = Path(out_root) / contracts_sha
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -90,6 +91,7 @@ def write_report(
             "generated_at": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
             "fixture_count": fixture_count,
             "call_count": call_count,
+            "pass_threshold": pass_threshold,
         },
         "scoreboard": _scoreboard_dict(scoreboard),
     }
@@ -97,5 +99,5 @@ def write_report(
     (out_dir / "conformance.json").write_text(
         json.dumps(payload, indent=2, sort_keys=True) + "\n"
     )
-    (out_dir / "conformance.md").write_text(_render_markdown(payload) + "\n")
+    (out_dir / "conformance.md").write_text(_render_markdown(payload).rstrip() + "\n")
     return out_dir

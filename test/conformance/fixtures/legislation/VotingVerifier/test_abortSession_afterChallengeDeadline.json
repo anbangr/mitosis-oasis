@@ -3,11 +3,11 @@
   "source": {
     "foundry_test": "test/VotingVerifier.t.sol:VotingVerifierTest::test_abortSession_afterChallengeDeadline()",
     "contracts_sha": "0x19e8e5db7d2dce557ecf00eeff05c55c9c230293040f11c2f15719d0dbf9ec54",
-    "captured_at": "2026-05-27T08:33:42Z",
+    "captured_at": "2026-05-27T08:40:20Z",
     "solc_version": "0.8.28",
     "forge_json_version": "1.5.1-stable"
   },
-  "power": "legislative",
+  "power": "legislation",
   "primary_contract": "VotingVerifier",
   "test_status": "Success",
   "calls": [
@@ -637,7 +637,7 @@
     },
     {
       "idx": 31,
-      "target_contract": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
+      "target_contract": "MockStakingCheckpoint",
       "target_address": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
       "selector": "0xdb46088c",
       "function": "getPastTotalStaked(uint256,uint48)",
@@ -972,7 +972,7 @@
     },
     {
       "idx": 47,
-      "target_contract": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
+      "target_contract": "MockStakingCheckpoint",
       "target_address": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
       "selector": "0xdb46088c",
       "function": "getPastTotalStaked(uint256,uint48)",
@@ -1026,7 +1026,7 @@
     },
     {
       "idx": 50,
-      "target_contract": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
+      "target_contract": "MockStakingCheckpoint",
       "target_address": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
       "selector": "0xdb46088c",
       "function": "getPastTotalStaked(uint256,uint48)",
@@ -1089,7 +1089,7 @@
     },
     {
       "idx": 53,
-      "target_contract": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
+      "target_contract": "MockStakingCheckpoint",
       "target_address": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
       "selector": "0xdb46088c",
       "function": "getPastTotalStaked(uint256,uint48)",
@@ -1152,7 +1152,7 @@
     },
     {
       "idx": 56,
-      "target_contract": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
+      "target_contract": "MockStakingCheckpoint",
       "target_address": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
       "selector": "0xdb46088c",
       "function": "getPastTotalStaked(uint256,uint48)",

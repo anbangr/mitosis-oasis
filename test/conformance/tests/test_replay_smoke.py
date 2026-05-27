@@ -141,8 +141,12 @@ def _read_report(reports_root: Path, sha: str) -> dict:
 
 def _assert_legislative_rollup_matches_totals(report_json: dict) -> None:
     totals = report_json["scoreboard"]["totals"]
-    legislative = report_json["scoreboard"]["by_power"]["legislative"]
-    assert legislative == totals
+    legislative = report_json["scoreboard"]["by_power"]["legislation"]
+    for status in ("PASS", "FAIL", "ERROR"):
+        assert legislative[status] == totals[status], (
+            f"by_power[legislation][{status}]={legislative[status]} "
+            f"!= totals[{status}]={totals[status]}"
+        )
 
 
 def test_replay_smoke_runs_stub_corpus_and_writes_validated_sha_report(
@@ -210,7 +214,7 @@ def test_full_corpus_replay_writes_one_validated_report_with_phase1_gate(
     expected_gate = "PASS" if totals.get("FAIL", 0) == 0 and totals.get("GAP", 0) == 0 else "FAIL"
     report_md = (tmp_path / "reports" / validated_sha / "conformance.md").read_text()
     legislative_lines = [
-        line for line in report_md.splitlines() if "legislative" in line
+        line for line in report_md.splitlines() if "legislation" in line
     ]
     assert any(expected_gate in line for line in legislative_lines)
 
@@ -218,12 +222,11 @@ def test_full_corpus_replay_writes_one_validated_report_with_phase1_gate(
 def test_adapter_modules_register_all_phase1_contracts_on_import():
     replay = _replay_module()
     assert replay.PHASE1_POWER_MAP == {
-        "ConstitutionalReview": "legislative",
-        "ConstitutionalParameters": "legislative",
-        "LegislativePipeline": "legislative",
-        "CodificationModule": "legislative",
-        "VotingVerifier": "legislative",
-        "GovernanceRegistry": "legislative",
+        "ConstitutionalReview": "legislation",
+        "LegislativePipeline": "legislation",
+        "CodificationModule": "legislation",
+        "VotingVerifier": "legislation",
+        "GovernanceRegistry": "legislation",
     }
 
     expected_contracts = set(replay.PHASE1_POWER_MAP)

@@ -27,6 +27,7 @@
     "Treasury": "support",
     "DEXWhitelist": "support",
     "InvestmentVault": "support",
-    "InvestmentVaultFactory": "support"
+    "InvestmentVaultFactory": "support",
+    "MockStakingCheckpoint": "legislation"
   }
 }

@@ -30,12 +30,11 @@ DEFAULT_FIXTURE_ROOT = REPO_ROOT / "test" / "conformance" / "fixtures" / "legisl
 DEFAULT_REPORT_ROOT = REPO_ROOT / "test" / "conformance" / "reports"
 
 PHASE1_POWER_MAP = {
-    "ConstitutionalReview": "legislative",
-    "ConstitutionalParameters": "legislative",
-    "LegislativePipeline": "legislative",
-    "CodificationModule": "legislative",
-    "VotingVerifier": "legislative",
-    "GovernanceRegistry": "legislative",
+    "ConstitutionalReview": "legislation",
+    "LegislativePipeline": "legislation",
+    "CodificationModule": "legislation",
+    "VotingVerifier": "legislation",
+    "GovernanceRegistry": "legislation",
 }
 
 

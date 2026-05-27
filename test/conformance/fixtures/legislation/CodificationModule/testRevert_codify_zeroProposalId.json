@@ -3,11 +3,11 @@
   "source": {
     "foundry_test": "test/CodificationModule.t.sol:CodificationModuleTest::testRevert_codify_zeroProposalId()",
     "contracts_sha": "0x19e8e5db7d2dce557ecf00eeff05c55c9c230293040f11c2f15719d0dbf9ec54",
-    "captured_at": "2026-05-27T08:33:25Z",
+    "captured_at": "2026-05-27T08:40:18Z",
     "solc_version": "0.8.28",
     "forge_json_version": "1.5.1-stable"
   },
-  "power": "legislative",
+  "power": "legislation",
   "primary_contract": "CodificationModule",
   "test_status": "Success",
   "calls": [

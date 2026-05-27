@@ -13,13 +13,42 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 import hashlib
 import os
+import re
 import sys
+from pathlib import Path
 
 import pytest
 
 # Add the project root directory to sys.path
 root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../"))
 sys.path.insert(0, root_path)
+
+
+def _selects_only_conformance(markexpr):
+    tokens = set(re.findall(r"\b\w+\b", markexpr))
+    if "conformance" not in tokens or "or" in tokens:
+        return False
+
+    for match in re.finditer(r"\bconformance\b", markexpr):
+        prefix = markexpr[: match.start()].rstrip()
+        if not prefix.endswith("not"):
+            return True
+    return False
+
+
+def pytest_ignore_collect(collection_path, config):
+    markexpr = getattr(config.option, "markexpr", "") or ""
+    if not _selects_only_conformance(markexpr):
+        return False
+
+    path = Path(str(collection_path)).resolve()
+    conformance_root = Path(root_path).resolve() / "test" / "conformance"
+    if path == conformance_root or conformance_root in path.parents:
+        return False
+    if path == conformance_root.parent or conformance_root.parent in path.parents:
+        return True
+    return False
+
 
 @pytest.fixture
 def ed25519_keypair(request):

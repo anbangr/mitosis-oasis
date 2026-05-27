@@ -3,7 +3,7 @@
   "source": {
     "foundry_test": "test/LegislativePipeline.t.sol:LegislativePipelineTest::test_passConstitutionalReview_succeeds_afterReviewContractPasses()",
     "contracts_sha": "0x19e8e5db7d2dce557ecf00eeff05c55c9c230293040f11c2f15719d0dbf9ec54",
-    "captured_at": "2026-05-26T04:17:12Z",
+    "captured_at": "2026-05-27T08:40:14Z",
     "solc_version": "0.8.28",
     "forge_json_version": "1.5.1-stable"
   },
@@ -593,7 +593,7 @@
       "target_contract": "0xf62849f9a0b5bf2913b396098f7c7019b51a820a",
       "target_address": "0xf62849f9a0b5bf2913b396098f7c7019b51a820a",
       "selector": "0x0303b2e1",
-      "function": "0x0303b2e1",
+      "function": "setPassed(bytes32)",
       "args": [],
       "raw_calldata": "0x0303b2e17e1502978668d22efb9f8833d1de7c8dd6874dde84e91ba1ddc60fc2b0548897",
       "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",

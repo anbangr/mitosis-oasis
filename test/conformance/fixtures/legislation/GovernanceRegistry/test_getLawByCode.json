@@ -3,7 +3,7 @@
   "source": {
     "foundry_test": "test/GovernanceRegistry.t.sol:GovernanceRegistryTest::test_getLawByCode()",
     "contracts_sha": "0x19e8e5db7d2dce557ecf00eeff05c55c9c230293040f11c2f15719d0dbf9ec54",
-    "captured_at": "2026-05-26T16:14:48Z",
+    "captured_at": "2026-05-27T08:40:23Z",
     "solc_version": "0.8.28",
     "forge_json_version": "1.5.1-stable"
   },

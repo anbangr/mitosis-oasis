@@ -75,38 +75,38 @@ _BUNDLE_IGNORES = [
 
 
 # ---------------------------------------------------------------------------
-# T1 — Version lockstep at 0.8.1
+# T1 — Version lockstep at 0.8.2
 #
 # Bundle 5 shipped at 0.8.0; the AgentCity conformance harness (Phase 1
-# Tasks 1-10, PR #23) ships as a PATCH bump to 0.8.1. The four runtime
+# Tasks 1-10, PR #23) ships as a PATCH bump to 0.8.2. The four runtime
 # surfaces must remain in lockstep at the current released version.
 # ---------------------------------------------------------------------------
 
 
 def test_t1_pyproject_version_is_080() -> None:
     version = _read_pyproject_version()
-    assert version == "0.8.1", (
-        f"pyproject.toml version is {version!r}, expected '0.8.1'"
+    assert version == "0.8.2", (
+        f"pyproject.toml version is {version!r}, expected '0.8.2'"
     )
 
 
 def test_t1_init_version_is_080() -> None:
     text = _read_file_text("oasis/__init__.py")
     assert re.search(r'__version__\s*=\s*"0\.8\.1"', text), (
-        "oasis/__init__.py missing __version__ = '0.8.1'"
+        "oasis/__init__.py missing __version__ = '0.8.2'"
     )
 
 
 def test_t1_api_version_is_080() -> None:
     text = _read_file_text("oasis/api.py")
     assert re.search(r'version\s*=\s*"0\.8\.1"', text), (
-        "oasis/api.py missing version='0.8.1' in FastAPI(...)"
+        "oasis/api.py missing version='0.8.2' in FastAPI(...)"
     )
 
 
 def test_t1_domain_version_is_080() -> None:
-    assert DOMAIN["version"] == "0.8.1", (
-        f"DOMAIN['version']={DOMAIN['version']!r}, expected '0.8.1'"
+    assert DOMAIN["version"] == "0.8.2", (
+        f"DOMAIN['version']={DOMAIN['version']!r}, expected '0.8.2'"
     )
 
 

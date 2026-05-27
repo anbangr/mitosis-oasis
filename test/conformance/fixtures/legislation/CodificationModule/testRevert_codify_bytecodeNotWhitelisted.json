@@ -1,0 +1,33 @@
+{
+  "fixture_version": 1,
+  "source": {
+    "foundry_test": "test/CodificationModule.t.sol:CodificationModuleTest::testRevert_codify_bytecodeNotWhitelisted()",
+    "contracts_sha": "0x19e8e5db7d2dce557ecf00eeff05c55c9c230293040f11c2f15719d0dbf9ec54",
+    "captured_at": "2026-05-26T09:32:52Z",
+    "solc_version": "0.8.28",
+    "forge_json_version": "1.5.1-stable"
+  },
+  "power": "legislation",
+  "primary_contract": "CodificationModule",
+  "test_status": "Success",
+  "calls": [
+    {
+      "idx": 0,
+      "target_contract": "CodificationModule",
+      "target_address": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
+      "selector": "0x3b6921c2",
+      "function": "codify(bytes32,bytes32,bytes32)",
+      "args": [],
+      "raw_calldata": "0x3b6921c2072da8cbcc4fadbb243f403a14fd9d3d4d054dd615c15dd317a97785ab10145749868f7e25c0b690ee006d01de715f44de5be92d0a7fb57b2d7ac3e38168ca91c89f77a40b3658029a8e9d6a1e132f48142b33893b4e9612e87c2f20bd561476",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "revert",
+        "return_data": "0x6163530a49868f7e25c0b690ee006d01de715f44de5be92d0a7fb57b2d7ac3e38168ca91"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    }
+  ]
+}

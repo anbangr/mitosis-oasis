@@ -1,0 +1,1882 @@
+{
+  "adapter": "CodificationModule",
+  "failures_and_gaps": [
+    {
+      "call_idx": 0,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.addToWhitelist(bytes32)",
+      "fixture_id": "CodificationModule/testRevert_addToWhitelist_duplicate.json",
+      "function": "addToWhitelist(bytes32)",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 0,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.WHITELIST_ROLE()",
+      "fixture_id": "CodificationModule/testRevert_addToWhitelist_noRole.json",
+      "function": "WHITELIST_ROLE()",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 1,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.addToWhitelist(bytes32)",
+      "fixture_id": "CodificationModule/testRevert_addToWhitelist_noRole.json",
+      "function": "addToWhitelist(bytes32)",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 0,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.addToWhitelist(bytes32)",
+      "fixture_id": "CodificationModule/testRevert_addToWhitelist_zeroHash.json",
+      "function": "addToWhitelist(bytes32)",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 0,
+      "contract": "CodificationModule",
+      "diff": {
+        "events": {
+          "actual": [
+            {
+              "args": {
+                "sessionId": "cm-replay-0-ab101457",
+                "validationProof": "compiled-cm-replay-0-ab101457-spec-e0ff09cd"
+              },
+              "name": "SpecCompiled"
+            }
+          ],
+          "expected": [],
+          "extra": [
+            {
+              "args": {
+                "sessionId": "cm-replay-0-ab101457",
+                "validationProof": "compiled-cm-replay-0-ab101457-spec-e0ff09cd"
+              },
+              "name": "SpecCompiled"
+            }
+          ],
+          "reason": "unexpected_extra_event"
+        },
+        "result": {
+          "actual": "ok",
+          "expected": "revert",
+          "reason": "result_kind_mismatch"
+        }
+      },
+      "error": null,
+      "fixture_id": "CodificationModule/testRevert_codify_bytecodeNotWhitelisted.json",
+      "function": "codify(bytes32,bytes32,bytes32)",
+      "power": "legislation",
+      "verdict": "FAIL"
+    },
+    {
+      "call_idx": 0,
+      "contract": "CodificationModule",
+      "diff": {
+        "events": {
+          "actual": [
+            {
+              "args": {
+                "sessionId": "cm-replay-0-ab101457",
+                "validationProof": "compiled-cm-replay-0-ab101457-spec-d0bdebcf"
+              },
+              "name": "SpecCompiled"
+            }
+          ],
+          "expected": [
+            {
+              "args": {
+                "codifier": "0xf57b8b59aabe95df872acf596dab87f8d828bd35",
+                "constructorArgsHash": "0xc89f77a40b3658029a8e9d6a1e132f48142b33893b4e9612e87c2f20bd561476",
+                "initBytecodeHash": "0xdfd37052aedff92c0705cd5b827f84709ee4187718c2092581bfa9a2045bbb05",
+                "proposalId": "0x072da8cbcc4fadbb243f403a14fd9d3d4d054dd615c15dd317a97785ab101457"
+              },
+              "name": "Codified"
+            }
+          ],
+          "reason": "sequence_mismatch"
+        }
+      },
+      "error": null,
+      "fixture_id": "CodificationModule/testRevert_codify_duplicateRecord.json",
+      "function": "codify(bytes32,bytes32,bytes32)",
+      "power": "legislation",
+      "verdict": "FAIL"
+    },
+    {
+      "call_idx": 1,
+      "contract": "CodificationModule",
+      "diff": {
+        "events": {
+          "actual": [
+            {
+              "args": {
+                "sessionId": "cm-replay-1-ab101457",
+                "validationProof": "compiled-cm-replay-1-ab101457-spec-bda4bb4c"
+              },
+              "name": "SpecCompiled"
+            }
+          ],
+          "expected": [],
+          "extra": [
+            {
+              "args": {
+                "sessionId": "cm-replay-1-ab101457",
+                "validationProof": "compiled-cm-replay-1-ab101457-spec-bda4bb4c"
+              },
+              "name": "SpecCompiled"
+            }
+          ],
+          "reason": "unexpected_extra_event"
+        },
+        "result": {
+          "actual": "ok",
+          "expected": "revert",
+          "reason": "result_kind_mismatch"
+        }
+      },
+      "error": null,
+      "fixture_id": "CodificationModule/testRevert_codify_duplicateRecord.json",
+      "function": "codify(bytes32,bytes32,bytes32)",
+      "power": "legislation",
+      "verdict": "FAIL"
+    },
+    {
+      "call_idx": 0,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.CODIFIER_ROLE()",
+      "fixture_id": "CodificationModule/testRevert_codify_noRole.json",
+      "function": "CODIFIER_ROLE()",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 1,
+      "contract": "CodificationModule",
+      "diff": {
+        "events": {
+          "actual": [
+            {
+              "args": {
+                "sessionId": "cm-replay-1-ab101457",
+                "validationProof": "compiled-cm-replay-1-ab101457-spec-ee8b8981"
+              },
+              "name": "SpecCompiled"
+            }
+          ],
+          "expected": [],
+          "extra": [
+            {
+              "args": {
+                "sessionId": "cm-replay-1-ab101457",
+                "validationProof": "compiled-cm-replay-1-ab101457-spec-ee8b8981"
+              },
+              "name": "SpecCompiled"
+            }
+          ],
+          "reason": "unexpected_extra_event"
+        },
+        "result": {
+          "actual": "ok",
+          "expected": "revert",
+          "reason": "result_kind_mismatch"
+        }
+      },
+      "error": null,
+      "fixture_id": "CodificationModule/testRevert_codify_noRole.json",
+      "function": "codify(bytes32,bytes32,bytes32)",
+      "power": "legislation",
+      "verdict": "FAIL"
+    },
+    {
+      "call_idx": 0,
+      "contract": "CodificationModule",
+      "diff": {
+        "events": {
+          "actual": [
+            {
+              "args": {
+                "sessionId": "cm-replay-0-ab101457",
+                "validationProof": "compiled-cm-replay-0-ab101457-spec-a0ead5ed"
+              },
+              "name": "SpecCompiled"
+            }
+          ],
+          "expected": [],
+          "extra": [
+            {
+              "args": {
+                "sessionId": "cm-replay-0-ab101457",
+                "validationProof": "compiled-cm-replay-0-ab101457-spec-a0ead5ed"
+              },
+              "name": "SpecCompiled"
+            }
+          ],
+          "reason": "unexpected_extra_event"
+        },
+        "result": {
+          "actual": "ok",
+          "expected": "revert",
+          "reason": "result_kind_mismatch"
+        }
+      },
+      "error": null,
+      "fixture_id": "CodificationModule/testRevert_codify_zeroInitBytecodeHash.json",
+      "function": "codify(bytes32,bytes32,bytes32)",
+      "power": "legislation",
+      "verdict": "FAIL"
+    },
+    {
+      "call_idx": 0,
+      "contract": "CodificationModule",
+      "diff": {
+        "events": {
+          "actual": [
+            {
+              "args": {
+                "sessionId": "cm-replay-0-00000000",
+                "validationProof": "compiled-cm-replay-0-00000000-spec-315405ed"
+              },
+              "name": "SpecCompiled"
+            }
+          ],
+          "expected": [],
+          "extra": [
+            {
+              "args": {
+                "sessionId": "cm-replay-0-00000000",
+                "validationProof": "compiled-cm-replay-0-00000000-spec-315405ed"
+              },
+              "name": "SpecCompiled"
+            }
+          ],
+          "reason": "unexpected_extra_event"
+        },
+        "result": {
+          "actual": "ok",
+          "expected": "revert",
+          "reason": "result_kind_mismatch"
+        }
+      },
+      "error": null,
+      "fixture_id": "CodificationModule/testRevert_codify_zeroProposalId.json",
+      "function": "codify(bytes32,bytes32,bytes32)",
+      "power": "legislation",
+      "verdict": "FAIL"
+    },
+    {
+      "call_idx": 0,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.getRecord(bytes32)",
+      "fixture_id": "CodificationModule/testRevert_getRecord_notFound.json",
+      "function": "getRecord(bytes32)",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 0,
+      "contract": "CodificationModule",
+      "diff": {
+        "events": {
+          "actual": [
+            {
+              "args": {
+                "sessionId": "cm-replay-0-ab101457",
+                "validationProof": "compiled-cm-replay-0-ab101457-spec-2e4fcfbf"
+              },
+              "name": "SpecCompiled"
+            }
+          ],
+          "expected": [
+            {
+              "args": {
+                "codifier": "0xf57b8b59aabe95df872acf596dab87f8d828bd35",
+                "constructorArgsHash": "0xc89f77a40b3658029a8e9d6a1e132f48142b33893b4e9612e87c2f20bd561476",
+                "initBytecodeHash": "0xdfd37052aedff92c0705cd5b827f84709ee4187718c2092581bfa9a2045bbb05",
+                "proposalId": "0x072da8cbcc4fadbb243f403a14fd9d3d4d054dd615c15dd317a97785ab101457"
+              },
+              "name": "Codified"
+            }
+          ],
+          "reason": "sequence_mismatch"
+        }
+      },
+      "error": null,
+      "fixture_id": "CodificationModule/testRevert_recordDeployment_noRole.json",
+      "function": "codify(bytes32,bytes32,bytes32)",
+      "power": "legislation",
+      "verdict": "FAIL"
+    },
+    {
+      "call_idx": 1,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.DEPLOYER_ROLE()",
+      "fixture_id": "CodificationModule/testRevert_recordDeployment_noRole.json",
+      "function": "DEPLOYER_ROLE()",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 2,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.recordDeployment(bytes32,address,bytes32)",
+      "fixture_id": "CodificationModule/testRevert_recordDeployment_noRole.json",
+      "function": "recordDeployment(bytes32,address,bytes32)",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 0,
+      "contract": "CodificationModule",
+      "diff": {
+        "events": {
+          "actual": [
+            {
+              "args": {
+                "sessionId": "cm-replay-0-ab101457",
+                "validationProof": "compiled-cm-replay-0-ab101457-spec-2508fd34"
+              },
+              "name": "SpecCompiled"
+            }
+          ],
+          "expected": [
+            {
+              "args": {
+                "codifier": "0xf57b8b59aabe95df872acf596dab87f8d828bd35",
+                "constructorArgsHash": "0xc89f77a40b3658029a8e9d6a1e132f48142b33893b4e9612e87c2f20bd561476",
+                "initBytecodeHash": "0xdfd37052aedff92c0705cd5b827f84709ee4187718c2092581bfa9a2045bbb05",
+                "proposalId": "0x072da8cbcc4fadbb243f403a14fd9d3d4d054dd615c15dd317a97785ab101457"
+              },
+              "name": "Codified"
+            }
+          ],
+          "reason": "sequence_mismatch"
+        }
+      },
+      "error": null,
+      "fixture_id": "CodificationModule/testRevert_recordDeployment_wrongStatus_notPending.json",
+      "function": "codify(bytes32,bytes32,bytes32)",
+      "power": "legislation",
+      "verdict": "FAIL"
+    },
+    {
+      "call_idx": 1,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.recordDeployment(bytes32,address,bytes32)",
+      "fixture_id": "CodificationModule/testRevert_recordDeployment_wrongStatus_notPending.json",
+      "function": "recordDeployment(bytes32,address,bytes32)",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 2,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.recordDeployment(bytes32,address,bytes32)",
+      "fixture_id": "CodificationModule/testRevert_recordDeployment_wrongStatus_notPending.json",
+      "function": "recordDeployment(bytes32,address,bytes32)",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 0,
+      "contract": "CodificationModule",
+      "diff": {
+        "events": {
+          "actual": [
+            {
+              "args": {
+                "sessionId": "cm-replay-0-ab101457",
+                "validationProof": "compiled-cm-replay-0-ab101457-spec-5ef74784"
+              },
+              "name": "SpecCompiled"
+            }
+          ],
+          "expected": [
+            {
+              "args": {
+                "codifier": "0xf57b8b59aabe95df872acf596dab87f8d828bd35",
+                "constructorArgsHash": "0xc89f77a40b3658029a8e9d6a1e132f48142b33893b4e9612e87c2f20bd561476",
+                "initBytecodeHash": "0xdfd37052aedff92c0705cd5b827f84709ee4187718c2092581bfa9a2045bbb05",
+                "proposalId": "0x072da8cbcc4fadbb243f403a14fd9d3d4d054dd615c15dd317a97785ab101457"
+              },
+              "name": "Codified"
+            }
+          ],
+          "reason": "sequence_mismatch"
+        }
+      },
+      "error": null,
+      "fixture_id": "CodificationModule/testRevert_recordDeployment_zeroAddress.json",
+      "function": "codify(bytes32,bytes32,bytes32)",
+      "power": "legislation",
+      "verdict": "FAIL"
+    },
+    {
+      "call_idx": 1,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.recordDeployment(bytes32,address,bytes32)",
+      "fixture_id": "CodificationModule/testRevert_recordDeployment_zeroAddress.json",
+      "function": "recordDeployment(bytes32,address,bytes32)",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 0,
+      "contract": "CodificationModule",
+      "diff": {
+        "events": {
+          "actual": [
+            {
+              "args": {
+                "sessionId": "cm-replay-0-ab101457",
+                "validationProof": "compiled-cm-replay-0-ab101457-spec-ce48ea05"
+              },
+              "name": "SpecCompiled"
+            }
+          ],
+          "expected": [
+            {
+              "args": {
+                "codifier": "0xf57b8b59aabe95df872acf596dab87f8d828bd35",
+                "constructorArgsHash": "0xc89f77a40b3658029a8e9d6a1e132f48142b33893b4e9612e87c2f20bd561476",
+                "initBytecodeHash": "0xdfd37052aedff92c0705cd5b827f84709ee4187718c2092581bfa9a2045bbb05",
+                "proposalId": "0x072da8cbcc4fadbb243f403a14fd9d3d4d054dd615c15dd317a97785ab101457"
+              },
+              "name": "Codified"
+            }
+          ],
+          "reason": "sequence_mismatch"
+        }
+      },
+      "error": null,
+      "fixture_id": "CodificationModule/testRevert_recordDeployment_zeroRuntimeHash.json",
+      "function": "codify(bytes32,bytes32,bytes32)",
+      "power": "legislation",
+      "verdict": "FAIL"
+    },
+    {
+      "call_idx": 1,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.recordDeployment(bytes32,address,bytes32)",
+      "fixture_id": "CodificationModule/testRevert_recordDeployment_zeroRuntimeHash.json",
+      "function": "recordDeployment(bytes32,address,bytes32)",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 0,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.WHITELIST_ROLE()",
+      "fixture_id": "CodificationModule/testRevert_removeFromWhitelist_noRole.json",
+      "function": "WHITELIST_ROLE()",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 1,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.removeFromWhitelist(bytes32)",
+      "fixture_id": "CodificationModule/testRevert_removeFromWhitelist_noRole.json",
+      "function": "removeFromWhitelist(bytes32)",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 0,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.removeFromWhitelist(bytes32)",
+      "fixture_id": "CodificationModule/testRevert_removeFromWhitelist_notWhitelisted.json",
+      "function": "removeFromWhitelist(bytes32)",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 0,
+      "contract": "CodificationModule",
+      "diff": {
+        "events": {
+          "actual": [
+            {
+              "args": {
+                "sessionId": "cm-replay-0-ab101457",
+                "validationProof": "compiled-cm-replay-0-ab101457-spec-fb00c253"
+              },
+              "name": "SpecCompiled"
+            }
+          ],
+          "expected": [
+            {
+              "args": {
+                "codifier": "0xf57b8b59aabe95df872acf596dab87f8d828bd35",
+                "constructorArgsHash": "0xc89f77a40b3658029a8e9d6a1e132f48142b33893b4e9612e87c2f20bd561476",
+                "initBytecodeHash": "0xdfd37052aedff92c0705cd5b827f84709ee4187718c2092581bfa9a2045bbb05",
+                "proposalId": "0x072da8cbcc4fadbb243f403a14fd9d3d4d054dd615c15dd317a97785ab101457"
+              },
+              "name": "Codified"
+            }
+          ],
+          "reason": "sequence_mismatch"
+        }
+      },
+      "error": null,
+      "fixture_id": "CodificationModule/testRevert_triggerRollback_fromRolledBack_isTerminal.json",
+      "function": "codify(bytes32,bytes32,bytes32)",
+      "power": "legislation",
+      "verdict": "FAIL"
+    },
+    {
+      "call_idx": 1,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.triggerRollback(bytes32)",
+      "fixture_id": "CodificationModule/testRevert_triggerRollback_fromRolledBack_isTerminal.json",
+      "function": "triggerRollback(bytes32)",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 2,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.triggerRollback(bytes32)",
+      "fixture_id": "CodificationModule/testRevert_triggerRollback_fromRolledBack_isTerminal.json",
+      "function": "triggerRollback(bytes32)",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 0,
+      "contract": "CodificationModule",
+      "diff": {
+        "events": {
+          "actual": [
+            {
+              "args": {
+                "sessionId": "cm-replay-0-ab101457",
+                "validationProof": "compiled-cm-replay-0-ab101457-spec-51507632"
+              },
+              "name": "SpecCompiled"
+            }
+          ],
+          "expected": [
+            {
+              "args": {
+                "codifier": "0xf57b8b59aabe95df872acf596dab87f8d828bd35",
+                "constructorArgsHash": "0xc89f77a40b3658029a8e9d6a1e132f48142b33893b4e9612e87c2f20bd561476",
+                "initBytecodeHash": "0xdfd37052aedff92c0705cd5b827f84709ee4187718c2092581bfa9a2045bbb05",
+                "proposalId": "0x072da8cbcc4fadbb243f403a14fd9d3d4d054dd615c15dd317a97785ab101457"
+              },
+              "name": "Codified"
+            }
+          ],
+          "reason": "sequence_mismatch"
+        }
+      },
+      "error": null,
+      "fixture_id": "CodificationModule/testRevert_triggerRollback_fromVerified_isTerminal.json",
+      "function": "codify(bytes32,bytes32,bytes32)",
+      "power": "legislation",
+      "verdict": "FAIL"
+    },
+    {
+      "call_idx": 1,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.recordDeployment(bytes32,address,bytes32)",
+      "fixture_id": "CodificationModule/testRevert_triggerRollback_fromVerified_isTerminal.json",
+      "function": "recordDeployment(bytes32,address,bytes32)",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 2,
+      "contract": "CodificationModule",
+      "diff": {
+        "events": {
+          "actual": [
+            {
+              "args": {
+                "mismatches": "",
+                "passed": "true"
+              },
+              "name": "OasisDeploymentVerified"
+            }
+          ],
+          "expected": [
+            {
+              "args": {
+                "proposalId": "0x072da8cbcc4fadbb243f403a14fd9d3d4d054dd615c15dd317a97785ab101457",
+                "verifier": "0xae0bdc4eeac5e950b67c6819b118761caaf61946"
+              },
+              "name": "DeploymentVerified"
+            }
+          ],
+          "reason": "sequence_mismatch"
+        }
+      },
+      "error": null,
+      "fixture_id": "CodificationModule/testRevert_triggerRollback_fromVerified_isTerminal.json",
+      "function": "verifyDeployment(bytes32,bytes32,bytes32)",
+      "power": "legislation",
+      "verdict": "FAIL"
+    },
+    {
+      "call_idx": 3,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.triggerRollback(bytes32)",
+      "fixture_id": "CodificationModule/testRevert_triggerRollback_fromVerified_isTerminal.json",
+      "function": "triggerRollback(bytes32)",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 0,
+      "contract": "CodificationModule",
+      "diff": {
+        "events": {
+          "actual": [
+            {
+              "args": {
+                "sessionId": "cm-replay-0-ab101457",
+                "validationProof": "compiled-cm-replay-0-ab101457-spec-8c9d2820"
+              },
+              "name": "SpecCompiled"
+            }
+          ],
+          "expected": [
+            {
+              "args": {
+                "codifier": "0xf57b8b59aabe95df872acf596dab87f8d828bd35",
+                "constructorArgsHash": "0xc89f77a40b3658029a8e9d6a1e132f48142b33893b4e9612e87c2f20bd561476",
+                "initBytecodeHash": "0xdfd37052aedff92c0705cd5b827f84709ee4187718c2092581bfa9a2045bbb05",
+                "proposalId": "0x072da8cbcc4fadbb243f403a14fd9d3d4d054dd615c15dd317a97785ab101457"
+              },
+              "name": "Codified"
+            }
+          ],
+          "reason": "sequence_mismatch"
+        }
+      },
+      "error": null,
+      "fixture_id": "CodificationModule/testRevert_triggerRollback_noRole.json",
+      "function": "codify(bytes32,bytes32,bytes32)",
+      "power": "legislation",
+      "verdict": "FAIL"
+    },
+    {
+      "call_idx": 1,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.DEPLOYER_ROLE()",
+      "fixture_id": "CodificationModule/testRevert_triggerRollback_noRole.json",
+      "function": "DEPLOYER_ROLE()",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 2,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.triggerRollback(bytes32)",
+      "fixture_id": "CodificationModule/testRevert_triggerRollback_noRole.json",
+      "function": "triggerRollback(bytes32)",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 0,
+      "contract": "CodificationModule",
+      "diff": {
+        "events": {
+          "actual": [
+            {
+              "args": {
+                "sessionId": "cm-replay-0-ab101457",
+                "validationProof": "compiled-cm-replay-0-ab101457-spec-84810adc"
+              },
+              "name": "SpecCompiled"
+            }
+          ],
+          "expected": [
+            {
+              "args": {
+                "codifier": "0xf57b8b59aabe95df872acf596dab87f8d828bd35",
+                "constructorArgsHash": "0xc89f77a40b3658029a8e9d6a1e132f48142b33893b4e9612e87c2f20bd561476",
+                "initBytecodeHash": "0xdfd37052aedff92c0705cd5b827f84709ee4187718c2092581bfa9a2045bbb05",
+                "proposalId": "0x072da8cbcc4fadbb243f403a14fd9d3d4d054dd615c15dd317a97785ab101457"
+              },
+              "name": "Codified"
+            }
+          ],
+          "reason": "sequence_mismatch"
+        }
+      },
+      "error": null,
+      "fixture_id": "CodificationModule/testRevert_verifyDeployment_constructorArgsMismatch.json",
+      "function": "codify(bytes32,bytes32,bytes32)",
+      "power": "legislation",
+      "verdict": "FAIL"
+    },
+    {
+      "call_idx": 1,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.recordDeployment(bytes32,address,bytes32)",
+      "fixture_id": "CodificationModule/testRevert_verifyDeployment_constructorArgsMismatch.json",
+      "function": "recordDeployment(bytes32,address,bytes32)",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 2,
+      "contract": "CodificationModule",
+      "diff": {
+        "events": {
+          "actual": [
+            {
+              "args": {
+                "mismatches": "",
+                "passed": "true"
+              },
+              "name": "OasisDeploymentVerified"
+            }
+          ],
+          "expected": [],
+          "extra": [
+            {
+              "args": {
+                "mismatches": "",
+                "passed": "true"
+              },
+              "name": "OasisDeploymentVerified"
+            }
+          ],
+          "reason": "unexpected_extra_event"
+        },
+        "result": {
+          "actual": "ok",
+          "expected": "revert",
+          "reason": "result_kind_mismatch"
+        }
+      },
+      "error": null,
+      "fixture_id": "CodificationModule/testRevert_verifyDeployment_constructorArgsMismatch.json",
+      "function": "verifyDeployment(bytes32,bytes32,bytes32)",
+      "power": "legislation",
+      "verdict": "FAIL"
+    },
+    {
+      "call_idx": 0,
+      "contract": "CodificationModule",
+      "diff": {
+        "events": {
+          "actual": [
+            {
+              "args": {
+                "sessionId": "cm-replay-0-ab101457",
+                "validationProof": "compiled-cm-replay-0-ab101457-spec-959a7cbb"
+              },
+              "name": "SpecCompiled"
+            }
+          ],
+          "expected": [
+            {
+              "args": {
+                "codifier": "0xf57b8b59aabe95df872acf596dab87f8d828bd35",
+                "constructorArgsHash": "0xc89f77a40b3658029a8e9d6a1e132f48142b33893b4e9612e87c2f20bd561476",
+                "initBytecodeHash": "0xdfd37052aedff92c0705cd5b827f84709ee4187718c2092581bfa9a2045bbb05",
+                "proposalId": "0x072da8cbcc4fadbb243f403a14fd9d3d4d054dd615c15dd317a97785ab101457"
+              },
+              "name": "Codified"
+            }
+          ],
+          "reason": "sequence_mismatch"
+        }
+      },
+      "error": null,
+      "fixture_id": "CodificationModule/testRevert_verifyDeployment_noRole.json",
+      "function": "codify(bytes32,bytes32,bytes32)",
+      "power": "legislation",
+      "verdict": "FAIL"
+    },
+    {
+      "call_idx": 1,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.recordDeployment(bytes32,address,bytes32)",
+      "fixture_id": "CodificationModule/testRevert_verifyDeployment_noRole.json",
+      "function": "recordDeployment(bytes32,address,bytes32)",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 2,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.DEPLOYER_ROLE()",
+      "fixture_id": "CodificationModule/testRevert_verifyDeployment_noRole.json",
+      "function": "DEPLOYER_ROLE()",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 3,
+      "contract": "CodificationModule",
+      "diff": {
+        "events": {
+          "actual": [
+            {
+              "args": {
+                "mismatches": "",
+                "passed": "true"
+              },
+              "name": "OasisDeploymentVerified"
+            }
+          ],
+          "expected": [],
+          "extra": [
+            {
+              "args": {
+                "mismatches": "",
+                "passed": "true"
+              },
+              "name": "OasisDeploymentVerified"
+            }
+          ],
+          "reason": "unexpected_extra_event"
+        },
+        "result": {
+          "actual": "ok",
+          "expected": "revert",
+          "reason": "result_kind_mismatch"
+        }
+      },
+      "error": null,
+      "fixture_id": "CodificationModule/testRevert_verifyDeployment_noRole.json",
+      "function": "verifyDeployment(bytes32,bytes32,bytes32)",
+      "power": "legislation",
+      "verdict": "FAIL"
+    },
+    {
+      "call_idx": 0,
+      "contract": "CodificationModule",
+      "diff": {
+        "events": {
+          "actual": [
+            {
+              "args": {
+                "sessionId": "cm-replay-0-ab101457",
+                "validationProof": "compiled-cm-replay-0-ab101457-spec-f99f6ef1"
+              },
+              "name": "SpecCompiled"
+            }
+          ],
+          "expected": [
+            {
+              "args": {
+                "codifier": "0xf57b8b59aabe95df872acf596dab87f8d828bd35",
+                "constructorArgsHash": "0xc89f77a40b3658029a8e9d6a1e132f48142b33893b4e9612e87c2f20bd561476",
+                "initBytecodeHash": "0xdfd37052aedff92c0705cd5b827f84709ee4187718c2092581bfa9a2045bbb05",
+                "proposalId": "0x072da8cbcc4fadbb243f403a14fd9d3d4d054dd615c15dd317a97785ab101457"
+              },
+              "name": "Codified"
+            }
+          ],
+          "reason": "sequence_mismatch"
+        }
+      },
+      "error": null,
+      "fixture_id": "CodificationModule/testRevert_verifyDeployment_runtimeBytecodeHashMismatch.json",
+      "function": "codify(bytes32,bytes32,bytes32)",
+      "power": "legislation",
+      "verdict": "FAIL"
+    },
+    {
+      "call_idx": 1,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.recordDeployment(bytes32,address,bytes32)",
+      "fixture_id": "CodificationModule/testRevert_verifyDeployment_runtimeBytecodeHashMismatch.json",
+      "function": "recordDeployment(bytes32,address,bytes32)",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 2,
+      "contract": "CodificationModule",
+      "diff": {
+        "events": {
+          "actual": [
+            {
+              "args": {
+                "mismatches": "",
+                "passed": "true"
+              },
+              "name": "OasisDeploymentVerified"
+            }
+          ],
+          "expected": [],
+          "extra": [
+            {
+              "args": {
+                "mismatches": "",
+                "passed": "true"
+              },
+              "name": "OasisDeploymentVerified"
+            }
+          ],
+          "reason": "unexpected_extra_event"
+        },
+        "result": {
+          "actual": "ok",
+          "expected": "revert",
+          "reason": "result_kind_mismatch"
+        }
+      },
+      "error": null,
+      "fixture_id": "CodificationModule/testRevert_verifyDeployment_runtimeBytecodeHashMismatch.json",
+      "function": "verifyDeployment(bytes32,bytes32,bytes32)",
+      "power": "legislation",
+      "verdict": "FAIL"
+    },
+    {
+      "call_idx": 0,
+      "contract": "CodificationModule",
+      "diff": {
+        "events": {
+          "actual": [
+            {
+              "args": {
+                "sessionId": "cm-replay-0-ab101457",
+                "validationProof": "compiled-cm-replay-0-ab101457-spec-0e5d5941"
+              },
+              "name": "SpecCompiled"
+            }
+          ],
+          "expected": [
+            {
+              "args": {
+                "codifier": "0xf57b8b59aabe95df872acf596dab87f8d828bd35",
+                "constructorArgsHash": "0xc89f77a40b3658029a8e9d6a1e132f48142b33893b4e9612e87c2f20bd561476",
+                "initBytecodeHash": "0xdfd37052aedff92c0705cd5b827f84709ee4187718c2092581bfa9a2045bbb05",
+                "proposalId": "0x072da8cbcc4fadbb243f403a14fd9d3d4d054dd615c15dd317a97785ab101457"
+              },
+              "name": "Codified"
+            }
+          ],
+          "reason": "sequence_mismatch"
+        }
+      },
+      "error": null,
+      "fixture_id": "CodificationModule/testRevert_verifyDeployment_wrongStatus_notDeployed.json",
+      "function": "codify(bytes32,bytes32,bytes32)",
+      "power": "legislation",
+      "verdict": "FAIL"
+    },
+    {
+      "call_idx": 1,
+      "contract": "CodificationModule",
+      "diff": {
+        "events": {
+          "actual": [
+            {
+              "args": {
+                "mismatches": "",
+                "passed": "true"
+              },
+              "name": "OasisDeploymentVerified"
+            }
+          ],
+          "expected": [],
+          "extra": [
+            {
+              "args": {
+                "mismatches": "",
+                "passed": "true"
+              },
+              "name": "OasisDeploymentVerified"
+            }
+          ],
+          "reason": "unexpected_extra_event"
+        },
+        "result": {
+          "actual": "ok",
+          "expected": "revert",
+          "reason": "result_kind_mismatch"
+        }
+      },
+      "error": null,
+      "fixture_id": "CodificationModule/testRevert_verifyDeployment_wrongStatus_notDeployed.json",
+      "function": "verifyDeployment(bytes32,bytes32,bytes32)",
+      "power": "legislation",
+      "verdict": "FAIL"
+    },
+    {
+      "call_idx": 0,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.isWhitelisted(bytes32)",
+      "fixture_id": "CodificationModule/test_addToWhitelist_isWhitelisted_and_emits.json",
+      "function": "isWhitelisted(bytes32)",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 1,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.addToWhitelist(bytes32)",
+      "fixture_id": "CodificationModule/test_addToWhitelist_isWhitelisted_and_emits.json",
+      "function": "addToWhitelist(bytes32)",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 2,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.isWhitelisted(bytes32)",
+      "fixture_id": "CodificationModule/test_addToWhitelist_isWhitelisted_and_emits.json",
+      "function": "isWhitelisted(bytes32)",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 0,
+      "contract": "CodificationModule",
+      "diff": {
+        "events": {
+          "actual": [
+            {
+              "args": {
+                "sessionId": "cm-replay-0-ab101457",
+                "validationProof": "compiled-cm-replay-0-ab101457-spec-9a1d30eb"
+              },
+              "name": "SpecCompiled"
+            }
+          ],
+          "expected": [
+            {
+              "args": {
+                "codifier": "0xf57b8b59aabe95df872acf596dab87f8d828bd35",
+                "constructorArgsHash": "0xc89f77a40b3658029a8e9d6a1e132f48142b33893b4e9612e87c2f20bd561476",
+                "initBytecodeHash": "0xdfd37052aedff92c0705cd5b827f84709ee4187718c2092581bfa9a2045bbb05",
+                "proposalId": "0x072da8cbcc4fadbb243f403a14fd9d3d4d054dd615c15dd317a97785ab101457"
+              },
+              "name": "Codified"
+            }
+          ],
+          "reason": "sequence_mismatch"
+        }
+      },
+      "error": null,
+      "fixture_id": "CodificationModule/test_codify_createsRecord_pendingStatus_andEmits.json",
+      "function": "codify(bytes32,bytes32,bytes32)",
+      "power": "legislation",
+      "verdict": "FAIL"
+    },
+    {
+      "call_idx": 1,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.getRecord(bytes32)",
+      "fixture_id": "CodificationModule/test_codify_createsRecord_pendingStatus_andEmits.json",
+      "function": "getRecord(bytes32)",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 2,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.isVerified(bytes32)",
+      "fixture_id": "CodificationModule/test_codify_createsRecord_pendingStatus_andEmits.json",
+      "function": "isVerified(bytes32)",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 0,
+      "contract": "CodificationModule",
+      "diff": {
+        "events": {
+          "actual": [
+            {
+              "args": {
+                "sessionId": "cm-replay-0-ab101457",
+                "validationProof": "compiled-cm-replay-0-ab101457-spec-5330edb8"
+              },
+              "name": "SpecCompiled"
+            }
+          ],
+          "expected": [
+            {
+              "args": {
+                "codifier": "0xf57b8b59aabe95df872acf596dab87f8d828bd35",
+                "constructorArgsHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+                "initBytecodeHash": "0xdfd37052aedff92c0705cd5b827f84709ee4187718c2092581bfa9a2045bbb05",
+                "proposalId": "0x072da8cbcc4fadbb243f403a14fd9d3d4d054dd615c15dd317a97785ab101457"
+              },
+              "name": "Codified"
+            }
+          ],
+          "reason": "sequence_mismatch"
+        }
+      },
+      "error": null,
+      "fixture_id": "CodificationModule/test_codify_zeroConstructorArgsHash_isAllowed.json",
+      "function": "codify(bytes32,bytes32,bytes32)",
+      "power": "legislation",
+      "verdict": "FAIL"
+    },
+    {
+      "call_idx": 1,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.getRecord(bytes32)",
+      "fixture_id": "CodificationModule/test_codify_zeroConstructorArgsHash_isAllowed.json",
+      "function": "getRecord(bytes32)",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 0,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.DEFAULT_ADMIN_ROLE()",
+      "fixture_id": "CodificationModule/test_constructor_setsDefaultAdmin.json",
+      "function": "DEFAULT_ADMIN_ROLE()",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 1,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.hasRole(bytes32,address)",
+      "fixture_id": "CodificationModule/test_constructor_setsDefaultAdmin.json",
+      "function": "hasRole(bytes32,address)",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 0,
+      "contract": "CodificationModule",
+      "diff": {
+        "events": {
+          "actual": [
+            {
+              "args": {
+                "sessionId": "cm-replay-0-ab101457",
+                "validationProof": "compiled-cm-replay-0-ab101457-spec-6ce0457d"
+              },
+              "name": "SpecCompiled"
+            }
+          ],
+          "expected": [
+            {
+              "args": {
+                "codifier": "0xf57b8b59aabe95df872acf596dab87f8d828bd35",
+                "constructorArgsHash": "0xc89f77a40b3658029a8e9d6a1e132f48142b33893b4e9612e87c2f20bd561476",
+                "initBytecodeHash": "0xdfd37052aedff92c0705cd5b827f84709ee4187718c2092581bfa9a2045bbb05",
+                "proposalId": "0x072da8cbcc4fadbb243f403a14fd9d3d4d054dd615c15dd317a97785ab101457"
+              },
+              "name": "Codified"
+            }
+          ],
+          "reason": "sequence_mismatch"
+        }
+      },
+      "error": null,
+      "fixture_id": "CodificationModule/test_fullLifecycle_auditTrail_allTimestampsPopulated.json",
+      "function": "codify(bytes32,bytes32,bytes32)",
+      "power": "legislation",
+      "verdict": "FAIL"
+    },
+    {
+      "call_idx": 1,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.recordDeployment(bytes32,address,bytes32)",
+      "fixture_id": "CodificationModule/test_fullLifecycle_auditTrail_allTimestampsPopulated.json",
+      "function": "recordDeployment(bytes32,address,bytes32)",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 2,
+      "contract": "CodificationModule",
+      "diff": {
+        "events": {
+          "actual": [
+            {
+              "args": {
+                "mismatches": "",
+                "passed": "true"
+              },
+              "name": "OasisDeploymentVerified"
+            }
+          ],
+          "expected": [
+            {
+              "args": {
+                "proposalId": "0x072da8cbcc4fadbb243f403a14fd9d3d4d054dd615c15dd317a97785ab101457",
+                "verifier": "0xae0bdc4eeac5e950b67c6819b118761caaf61946"
+              },
+              "name": "DeploymentVerified"
+            }
+          ],
+          "reason": "sequence_mismatch"
+        }
+      },
+      "error": null,
+      "fixture_id": "CodificationModule/test_fullLifecycle_auditTrail_allTimestampsPopulated.json",
+      "function": "verifyDeployment(bytes32,bytes32,bytes32)",
+      "power": "legislation",
+      "verdict": "FAIL"
+    },
+    {
+      "call_idx": 3,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.getRecord(bytes32)",
+      "fixture_id": "CodificationModule/test_fullLifecycle_auditTrail_allTimestampsPopulated.json",
+      "function": "getRecord(bytes32)",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 4,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.isVerified(bytes32)",
+      "fixture_id": "CodificationModule/test_fullLifecycle_auditTrail_allTimestampsPopulated.json",
+      "function": "isVerified(bytes32)",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 0,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.isVerified(bytes32)",
+      "fixture_id": "CodificationModule/test_isVerified_falseForNonExistentRecord.json",
+      "function": "isVerified(bytes32)",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 0,
+      "contract": "CodificationModule",
+      "diff": {
+        "events": {
+          "actual": [
+            {
+              "args": {
+                "sessionId": "cm-replay-0-f2c534a1",
+                "validationProof": "compiled-cm-replay-0-f2c534a1-spec-87395298"
+              },
+              "name": "SpecCompiled"
+            }
+          ],
+          "expected": [
+            {
+              "args": {
+                "codifier": "0xf57b8b59aabe95df872acf596dab87f8d828bd35",
+                "constructorArgsHash": "0xc89f77a40b3658029a8e9d6a1e132f48142b33893b4e9612e87c2f20bd561476",
+                "initBytecodeHash": "0xdfd37052aedff92c0705cd5b827f84709ee4187718c2092581bfa9a2045bbb05",
+                "proposalId": "0xe7d1053cc7a6da6e7a73b814ae40581fdc01a1f16b60b2fa7e51c384f2c534a1"
+              },
+              "name": "Codified"
+            }
+          ],
+          "reason": "sequence_mismatch"
+        }
+      },
+      "error": null,
+      "fixture_id": "CodificationModule/test_multipleProposals_independent.json",
+      "function": "codify(bytes32,bytes32,bytes32)",
+      "power": "legislation",
+      "verdict": "FAIL"
+    },
+    {
+      "call_idx": 1,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.recordDeployment(bytes32,address,bytes32)",
+      "fixture_id": "CodificationModule/test_multipleProposals_independent.json",
+      "function": "recordDeployment(bytes32,address,bytes32)",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 2,
+      "contract": "CodificationModule",
+      "diff": {
+        "events": {
+          "actual": [
+            {
+              "args": {
+                "mismatches": "",
+                "passed": "true"
+              },
+              "name": "OasisDeploymentVerified"
+            }
+          ],
+          "expected": [
+            {
+              "args": {
+                "proposalId": "0xe7d1053cc7a6da6e7a73b814ae40581fdc01a1f16b60b2fa7e51c384f2c534a1",
+                "verifier": "0xae0bdc4eeac5e950b67c6819b118761caaf61946"
+              },
+              "name": "DeploymentVerified"
+            }
+          ],
+          "reason": "sequence_mismatch"
+        }
+      },
+      "error": null,
+      "fixture_id": "CodificationModule/test_multipleProposals_independent.json",
+      "function": "verifyDeployment(bytes32,bytes32,bytes32)",
+      "power": "legislation",
+      "verdict": "FAIL"
+    },
+    {
+      "call_idx": 3,
+      "contract": "CodificationModule",
+      "diff": {
+        "events": {
+          "actual": [
+            {
+              "args": {
+                "sessionId": "cm-replay-3-b30d7372",
+                "validationProof": "compiled-cm-replay-3-b30d7372-spec-e200f29f"
+              },
+              "name": "SpecCompiled"
+            }
+          ],
+          "expected": [
+            {
+              "args": {
+                "codifier": "0xf57b8b59aabe95df872acf596dab87f8d828bd35",
+                "constructorArgsHash": "0xc89f77a40b3658029a8e9d6a1e132f48142b33893b4e9612e87c2f20bd561476",
+                "initBytecodeHash": "0xdfd37052aedff92c0705cd5b827f84709ee4187718c2092581bfa9a2045bbb05",
+                "proposalId": "0x024078c1d50d1453e540045559b7726787443ecae2d2f09af8adc02fb30d7372"
+              },
+              "name": "Codified"
+            }
+          ],
+          "reason": "sequence_mismatch"
+        }
+      },
+      "error": null,
+      "fixture_id": "CodificationModule/test_multipleProposals_independent.json",
+      "function": "codify(bytes32,bytes32,bytes32)",
+      "power": "legislation",
+      "verdict": "FAIL"
+    },
+    {
+      "call_idx": 4,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.isVerified(bytes32)",
+      "fixture_id": "CodificationModule/test_multipleProposals_independent.json",
+      "function": "isVerified(bytes32)",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 5,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.isVerified(bytes32)",
+      "fixture_id": "CodificationModule/test_multipleProposals_independent.json",
+      "function": "isVerified(bytes32)",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 6,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.getRecord(bytes32)",
+      "fixture_id": "CodificationModule/test_multipleProposals_independent.json",
+      "function": "getRecord(bytes32)",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 0,
+      "contract": "CodificationModule",
+      "diff": {
+        "events": {
+          "actual": [
+            {
+              "args": {
+                "sessionId": "cm-replay-0-ab101457",
+                "validationProof": "compiled-cm-replay-0-ab101457-spec-07fc5f4c"
+              },
+              "name": "SpecCompiled"
+            }
+          ],
+          "expected": [
+            {
+              "args": {
+                "codifier": "0xf57b8b59aabe95df872acf596dab87f8d828bd35",
+                "constructorArgsHash": "0xc89f77a40b3658029a8e9d6a1e132f48142b33893b4e9612e87c2f20bd561476",
+                "initBytecodeHash": "0xdfd37052aedff92c0705cd5b827f84709ee4187718c2092581bfa9a2045bbb05",
+                "proposalId": "0x072da8cbcc4fadbb243f403a14fd9d3d4d054dd615c15dd317a97785ab101457"
+              },
+              "name": "Codified"
+            }
+          ],
+          "reason": "sequence_mismatch"
+        }
+      },
+      "error": null,
+      "fixture_id": "CodificationModule/test_pausedState_blocksAllMutating.json",
+      "function": "codify(bytes32,bytes32,bytes32)",
+      "power": "legislation",
+      "verdict": "FAIL"
+    },
+    {
+      "call_idx": 1,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.pause()",
+      "fixture_id": "CodificationModule/test_pausedState_blocksAllMutating.json",
+      "function": "pause()",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 2,
+      "contract": "CodificationModule",
+      "diff": {
+        "events": {
+          "actual": [
+            {
+              "args": {
+                "sessionId": "cm-replay-2-e576cfe1",
+                "validationProof": "compiled-cm-replay-2-e576cfe1-spec-0ac2234c"
+              },
+              "name": "SpecCompiled"
+            }
+          ],
+          "expected": [],
+          "extra": [
+            {
+              "args": {
+                "sessionId": "cm-replay-2-e576cfe1",
+                "validationProof": "compiled-cm-replay-2-e576cfe1-spec-0ac2234c"
+              },
+              "name": "SpecCompiled"
+            }
+          ],
+          "reason": "unexpected_extra_event"
+        },
+        "result": {
+          "actual": "ok",
+          "expected": "revert",
+          "reason": "result_kind_mismatch"
+        }
+      },
+      "error": null,
+      "fixture_id": "CodificationModule/test_pausedState_blocksAllMutating.json",
+      "function": "codify(bytes32,bytes32,bytes32)",
+      "power": "legislation",
+      "verdict": "FAIL"
+    },
+    {
+      "call_idx": 3,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.recordDeployment(bytes32,address,bytes32)",
+      "fixture_id": "CodificationModule/test_pausedState_blocksAllMutating.json",
+      "function": "recordDeployment(bytes32,address,bytes32)",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 4,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.triggerRollback(bytes32)",
+      "fixture_id": "CodificationModule/test_pausedState_blocksAllMutating.json",
+      "function": "triggerRollback(bytes32)",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 5,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.isVerified(bytes32)",
+      "fixture_id": "CodificationModule/test_pausedState_blocksAllMutating.json",
+      "function": "isVerified(bytes32)",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 6,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.isWhitelisted(bytes32)",
+      "fixture_id": "CodificationModule/test_pausedState_blocksAllMutating.json",
+      "function": "isWhitelisted(bytes32)",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 7,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.unpause()",
+      "fixture_id": "CodificationModule/test_pausedState_blocksAllMutating.json",
+      "function": "unpause()",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 8,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.recordDeployment(bytes32,address,bytes32)",
+      "fixture_id": "CodificationModule/test_pausedState_blocksAllMutating.json",
+      "function": "recordDeployment(bytes32,address,bytes32)",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 9,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.getRecord(bytes32)",
+      "fixture_id": "CodificationModule/test_pausedState_blocksAllMutating.json",
+      "function": "getRecord(bytes32)",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 0,
+      "contract": "CodificationModule",
+      "diff": {
+        "events": {
+          "actual": [
+            {
+              "args": {
+                "sessionId": "cm-replay-0-ab101457",
+                "validationProof": "compiled-cm-replay-0-ab101457-spec-2204d49b"
+              },
+              "name": "SpecCompiled"
+            }
+          ],
+          "expected": [
+            {
+              "args": {
+                "codifier": "0xf57b8b59aabe95df872acf596dab87f8d828bd35",
+                "constructorArgsHash": "0xc89f77a40b3658029a8e9d6a1e132f48142b33893b4e9612e87c2f20bd561476",
+                "initBytecodeHash": "0xdfd37052aedff92c0705cd5b827f84709ee4187718c2092581bfa9a2045bbb05",
+                "proposalId": "0x072da8cbcc4fadbb243f403a14fd9d3d4d054dd615c15dd317a97785ab101457"
+              },
+              "name": "Codified"
+            }
+          ],
+          "reason": "sequence_mismatch"
+        }
+      },
+      "error": null,
+      "fixture_id": "CodificationModule/test_recordDeployment_advancesStatus_andEmits.json",
+      "function": "codify(bytes32,bytes32,bytes32)",
+      "power": "legislation",
+      "verdict": "FAIL"
+    },
+    {
+      "call_idx": 1,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.recordDeployment(bytes32,address,bytes32)",
+      "fixture_id": "CodificationModule/test_recordDeployment_advancesStatus_andEmits.json",
+      "function": "recordDeployment(bytes32,address,bytes32)",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 2,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.getRecord(bytes32)",
+      "fixture_id": "CodificationModule/test_recordDeployment_advancesStatus_andEmits.json",
+      "function": "getRecord(bytes32)",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 0,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.removeFromWhitelist(bytes32)",
+      "fixture_id": "CodificationModule/test_removeFromWhitelist_clears_and_emits.json",
+      "function": "removeFromWhitelist(bytes32)",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 1,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.isWhitelisted(bytes32)",
+      "fixture_id": "CodificationModule/test_removeFromWhitelist_clears_and_emits.json",
+      "function": "isWhitelisted(bytes32)",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 2,
+      "contract": "CodificationModule",
+      "diff": {
+        "events": {
+          "actual": [
+            {
+              "args": {
+                "sessionId": "cm-replay-2-ab101457",
+                "validationProof": "compiled-cm-replay-2-ab101457-spec-a88d1c2a"
+              },
+              "name": "SpecCompiled"
+            }
+          ],
+          "expected": [],
+          "extra": [
+            {
+              "args": {
+                "sessionId": "cm-replay-2-ab101457",
+                "validationProof": "compiled-cm-replay-2-ab101457-spec-a88d1c2a"
+              },
+              "name": "SpecCompiled"
+            }
+          ],
+          "reason": "unexpected_extra_event"
+        },
+        "result": {
+          "actual": "ok",
+          "expected": "revert",
+          "reason": "result_kind_mismatch"
+        }
+      },
+      "error": null,
+      "fixture_id": "CodificationModule/test_removeFromWhitelist_clears_and_emits.json",
+      "function": "codify(bytes32,bytes32,bytes32)",
+      "power": "legislation",
+      "verdict": "FAIL"
+    },
+    {
+      "call_idx": 0,
+      "contract": "CodificationModule",
+      "diff": {
+        "events": {
+          "actual": [
+            {
+              "args": {
+                "sessionId": "cm-replay-0-ab101457",
+                "validationProof": "compiled-cm-replay-0-ab101457-spec-f4e87f4a"
+              },
+              "name": "SpecCompiled"
+            }
+          ],
+          "expected": [
+            {
+              "args": {
+                "codifier": "0xf57b8b59aabe95df872acf596dab87f8d828bd35",
+                "constructorArgsHash": "0xc89f77a40b3658029a8e9d6a1e132f48142b33893b4e9612e87c2f20bd561476",
+                "initBytecodeHash": "0xdfd37052aedff92c0705cd5b827f84709ee4187718c2092581bfa9a2045bbb05",
+                "proposalId": "0x072da8cbcc4fadbb243f403a14fd9d3d4d054dd615c15dd317a97785ab101457"
+              },
+              "name": "Codified"
+            }
+          ],
+          "reason": "sequence_mismatch"
+        }
+      },
+      "error": null,
+      "fixture_id": "CodificationModule/test_triggerRollback_fromDeployed_emitsPriorStatus.json",
+      "function": "codify(bytes32,bytes32,bytes32)",
+      "power": "legislation",
+      "verdict": "FAIL"
+    },
+    {
+      "call_idx": 1,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.recordDeployment(bytes32,address,bytes32)",
+      "fixture_id": "CodificationModule/test_triggerRollback_fromDeployed_emitsPriorStatus.json",
+      "function": "recordDeployment(bytes32,address,bytes32)",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 2,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.triggerRollback(bytes32)",
+      "fixture_id": "CodificationModule/test_triggerRollback_fromDeployed_emitsPriorStatus.json",
+      "function": "triggerRollback(bytes32)",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 3,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.getRecord(bytes32)",
+      "fixture_id": "CodificationModule/test_triggerRollback_fromDeployed_emitsPriorStatus.json",
+      "function": "getRecord(bytes32)",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 0,
+      "contract": "CodificationModule",
+      "diff": {
+        "events": {
+          "actual": [
+            {
+              "args": {
+                "sessionId": "cm-replay-0-ab101457",
+                "validationProof": "compiled-cm-replay-0-ab101457-spec-437ecc90"
+              },
+              "name": "SpecCompiled"
+            }
+          ],
+          "expected": [
+            {
+              "args": {
+                "codifier": "0xf57b8b59aabe95df872acf596dab87f8d828bd35",
+                "constructorArgsHash": "0xc89f77a40b3658029a8e9d6a1e132f48142b33893b4e9612e87c2f20bd561476",
+                "initBytecodeHash": "0xdfd37052aedff92c0705cd5b827f84709ee4187718c2092581bfa9a2045bbb05",
+                "proposalId": "0x072da8cbcc4fadbb243f403a14fd9d3d4d054dd615c15dd317a97785ab101457"
+              },
+              "name": "Codified"
+            }
+          ],
+          "reason": "sequence_mismatch"
+        }
+      },
+      "error": null,
+      "fixture_id": "CodificationModule/test_triggerRollback_fromPending_emitsPriorStatus.json",
+      "function": "codify(bytes32,bytes32,bytes32)",
+      "power": "legislation",
+      "verdict": "FAIL"
+    },
+    {
+      "call_idx": 1,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.triggerRollback(bytes32)",
+      "fixture_id": "CodificationModule/test_triggerRollback_fromPending_emitsPriorStatus.json",
+      "function": "triggerRollback(bytes32)",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 2,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.getRecord(bytes32)",
+      "fixture_id": "CodificationModule/test_triggerRollback_fromPending_emitsPriorStatus.json",
+      "function": "getRecord(bytes32)",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 0,
+      "contract": "CodificationModule",
+      "diff": {
+        "events": {
+          "actual": [
+            {
+              "args": {
+                "sessionId": "cm-replay-0-ab101457",
+                "validationProof": "compiled-cm-replay-0-ab101457-spec-25e09a84"
+              },
+              "name": "SpecCompiled"
+            }
+          ],
+          "expected": [
+            {
+              "args": {
+                "codifier": "0xf57b8b59aabe95df872acf596dab87f8d828bd35",
+                "constructorArgsHash": "0xc89f77a40b3658029a8e9d6a1e132f48142b33893b4e9612e87c2f20bd561476",
+                "initBytecodeHash": "0xdfd37052aedff92c0705cd5b827f84709ee4187718c2092581bfa9a2045bbb05",
+                "proposalId": "0x072da8cbcc4fadbb243f403a14fd9d3d4d054dd615c15dd317a97785ab101457"
+              },
+              "name": "Codified"
+            }
+          ],
+          "reason": "sequence_mismatch"
+        }
+      },
+      "error": null,
+      "fixture_id": "CodificationModule/test_verifyDeployment_advancesStatus_andEmits.json",
+      "function": "codify(bytes32,bytes32,bytes32)",
+      "power": "legislation",
+      "verdict": "FAIL"
+    },
+    {
+      "call_idx": 1,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.recordDeployment(bytes32,address,bytes32)",
+      "fixture_id": "CodificationModule/test_verifyDeployment_advancesStatus_andEmits.json",
+      "function": "recordDeployment(bytes32,address,bytes32)",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 2,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.isVerified(bytes32)",
+      "fixture_id": "CodificationModule/test_verifyDeployment_advancesStatus_andEmits.json",
+      "function": "isVerified(bytes32)",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 3,
+      "contract": "CodificationModule",
+      "diff": {
+        "events": {
+          "actual": [
+            {
+              "args": {
+                "mismatches": "",
+                "passed": "true"
+              },
+              "name": "OasisDeploymentVerified"
+            }
+          ],
+          "expected": [
+            {
+              "args": {
+                "proposalId": "0x072da8cbcc4fadbb243f403a14fd9d3d4d054dd615c15dd317a97785ab101457",
+                "verifier": "0xae0bdc4eeac5e950b67c6819b118761caaf61946"
+              },
+              "name": "DeploymentVerified"
+            }
+          ],
+          "reason": "sequence_mismatch"
+        }
+      },
+      "error": null,
+      "fixture_id": "CodificationModule/test_verifyDeployment_advancesStatus_andEmits.json",
+      "function": "verifyDeployment(bytes32,bytes32,bytes32)",
+      "power": "legislation",
+      "verdict": "FAIL"
+    },
+    {
+      "call_idx": 4,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.isVerified(bytes32)",
+      "fixture_id": "CodificationModule/test_verifyDeployment_advancesStatus_andEmits.json",
+      "function": "isVerified(bytes32)",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 5,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.getRecord(bytes32)",
+      "fixture_id": "CodificationModule/test_verifyDeployment_advancesStatus_andEmits.json",
+      "function": "getRecord(bytes32)",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 0,
+      "contract": "CodificationModule",
+      "diff": {
+        "events": {
+          "actual": [
+            {
+              "args": {
+                "sessionId": "cm-replay-0-ab101457",
+                "validationProof": "compiled-cm-replay-0-ab101457-spec-4a16bea7"
+              },
+              "name": "SpecCompiled"
+            }
+          ],
+          "expected": [
+            {
+              "args": {
+                "codifier": "0xf57b8b59aabe95df872acf596dab87f8d828bd35",
+                "constructorArgsHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+                "initBytecodeHash": "0xdfd37052aedff92c0705cd5b827f84709ee4187718c2092581bfa9a2045bbb05",
+                "proposalId": "0x072da8cbcc4fadbb243f403a14fd9d3d4d054dd615c15dd317a97785ab101457"
+              },
+              "name": "Codified"
+            }
+          ],
+          "reason": "sequence_mismatch"
+        }
+      },
+      "error": null,
+      "fixture_id": "CodificationModule/test_verifyDeployment_zeroConstructorArgsHash_acceptedWhenCommittedAsZero.json",
+      "function": "codify(bytes32,bytes32,bytes32)",
+      "power": "legislation",
+      "verdict": "FAIL"
+    },
+    {
+      "call_idx": 1,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.recordDeployment(bytes32,address,bytes32)",
+      "fixture_id": "CodificationModule/test_verifyDeployment_zeroConstructorArgsHash_acceptedWhenCommittedAsZero.json",
+      "function": "recordDeployment(bytes32,address,bytes32)",
+      "verdict": "GAP"
+    },
+    {
+      "call_idx": 2,
+      "contract": "CodificationModule",
+      "diff": {
+        "events": {
+          "actual": [
+            {
+              "args": {
+                "mismatches": "",
+                "passed": "true"
+              },
+              "name": "OasisDeploymentVerified"
+            }
+          ],
+          "expected": [
+            {
+              "args": {
+                "proposalId": "0x072da8cbcc4fadbb243f403a14fd9d3d4d054dd615c15dd317a97785ab101457",
+                "verifier": "0xae0bdc4eeac5e950b67c6819b118761caaf61946"
+              },
+              "name": "DeploymentVerified"
+            }
+          ],
+          "reason": "sequence_mismatch"
+        }
+      },
+      "error": null,
+      "fixture_id": "CodificationModule/test_verifyDeployment_zeroConstructorArgsHash_acceptedWhenCommittedAsZero.json",
+      "function": "verifyDeployment(bytes32,bytes32,bytes32)",
+      "power": "legislation",
+      "verdict": "FAIL"
+    },
+    {
+      "call_idx": 3,
+      "contract": "CodificationModule",
+      "error": "GAP: CodificationModule.isVerified(bytes32)",
+      "fixture_id": "CodificationModule/test_verifyDeployment_zeroConstructorArgsHash_acceptedWhenCommittedAsZero.json",
+      "function": "isVerified(bytes32)",
+      "verdict": "GAP"
+    }
+  ],
+  "summary": {
+    "FAIL": 39,
+    "GAP": 64,
+    "PASS": 0
+  }
+}

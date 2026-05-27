@@ -1,0 +1,79 @@
+{
+  "fixture_version": 1,
+  "source": {
+    "foundry_test": "test/CodificationModule.t.sol:CodificationModuleTest::test_codify_createsRecord_pendingStatus_andEmits()",
+    "contracts_sha": "0x19e8e5db7d2dce557ecf00eeff05c55c9c230293040f11c2f15719d0dbf9ec54",
+    "captured_at": "2026-05-26T09:32:52Z",
+    "solc_version": "0.8.28",
+    "forge_json_version": "1.5.1-stable"
+  },
+  "power": "legislation",
+  "primary_contract": "CodificationModule",
+  "test_status": "Success",
+  "calls": [
+    {
+      "idx": 0,
+      "target_contract": "CodificationModule",
+      "target_address": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
+      "selector": "0x3b6921c2",
+      "function": "codify(bytes32,bytes32,bytes32)",
+      "args": [],
+      "raw_calldata": "0x3b6921c2072da8cbcc4fadbb243f403a14fd9d3d4d054dd615c15dd317a97785ab101457dfd37052aedff92c0705cd5b827f84709ee4187718c2092581bfa9a2045bbb05c89f77a40b3658029a8e9d6a1e132f48142b33893b4e9612e87c2f20bd561476",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x"
+      },
+      "events": [
+        {
+          "name": "Codified",
+          "args": {
+            "proposalId": "0x072da8cbcc4fadbb243f403a14fd9d3d4d054dd615c15dd317a97785ab101457",
+            "initBytecodeHash": "0xdfd37052aedff92c0705cd5b827f84709ee4187718c2092581bfa9a2045bbb05",
+            "codifier": "0xf57b8b59aabe95df872acf596dab87f8d828bd35",
+            "constructorArgsHash": "0xc89f77a40b3658029a8e9d6a1e132f48142b33893b4e9612e87c2f20bd561476"
+          }
+        }
+      ],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 1,
+      "target_contract": "CodificationModule",
+      "target_address": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
+      "selector": "0x213681cd",
+      "function": "getRecord(bytes32)",
+      "args": [],
+      "raw_calldata": "0x213681cd072da8cbcc4fadbb243f403a14fd9d3d4d054dd615c15dd317a97785ab101457",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x072da8cbcc4fadbb243f403a14fd9d3d4d054dd615c15dd317a97785ab101457dfd37052aedff92c0705cd5b827f84709ee4187718c2092581bfa9a2045bbb05c89f77a40b3658029a8e9d6a1e132f48142b33893b4e9612e87c2f20bd561476000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f57b8b59aabe95df872acf596dab87f8d828bd35000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 2,
+      "target_contract": "CodificationModule",
+      "target_address": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
+      "selector": "0xc181b273",
+      "function": "isVerified(bytes32)",
+      "args": [],
+      "raw_calldata": "0xc181b273072da8cbcc4fadbb243f403a14fd9d3d4d054dd615c15dd317a97785ab101457",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    }
+  ]
+}

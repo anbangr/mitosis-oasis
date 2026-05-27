@@ -16,7 +16,7 @@ def _scoreboard_dict(scoreboard: Scoreboard | dict) -> dict:
 
 
 def _gate(counts: dict[str, int]) -> str:
-    return "PASS" if counts.get("FAIL", 0) == 0 and counts.get("GAP", 0) == 0 else "FAIL"
+    return "PASS" if counts.get("FAIL", 0) == 0 and counts.get("ERROR", 0) == 0 else "FAIL"
 
 
 def _render_top(title: str, rows: list[dict]) -> list[str]:

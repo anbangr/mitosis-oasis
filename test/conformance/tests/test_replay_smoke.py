@@ -6,6 +6,7 @@ The primary implementation phase supplies them after this RED phase.
 
 from __future__ import annotations
 
+import hashlib
 import importlib
 import json
 import re
@@ -315,6 +316,29 @@ def test_empty_fixture_corpus_aborts_instead_of_publishing_external_sha(
         _validate_contracts_sha(fixture_root.parent, _VALIDATED_SHA)
 
     assert not (reports_root / _VALIDATED_SHA).exists()
+
+
+def test_external_contracts_sha_prefers_live_source_bytes_over_lockfile(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    conftest = _conftest_module()
+    core_dir = tmp_path / "agent-city-contract" / "contracts" / "src" / "core"
+    core_dir.mkdir(parents=True)
+    first = core_dir / "A.sol"
+    second = core_dir / "B.sol"
+    first.write_text("contract A {}\n")
+    second.write_text("contract B {}\n")
+    stale_lockfile = tmp_path / ".contracts-sha"
+    stale_lockfile.write_text(_VALIDATED_SHA)
+
+    monkeypatch.setattr(conftest, "_contract_core_candidates", lambda: [core_dir])
+    monkeypatch.setattr(conftest, "_sha_file_candidates", lambda: [stale_lockfile])
+
+    digest = hashlib.sha256()
+    for path in sorted([first, second]):
+        digest.update(path.read_bytes())
+
+    assert conftest.compute_external_contracts_sha() == "0x" + digest.hexdigest()
 
 
 def test_adapter_exception_is_recorded_as_error_then_fails_error_zero_gate(

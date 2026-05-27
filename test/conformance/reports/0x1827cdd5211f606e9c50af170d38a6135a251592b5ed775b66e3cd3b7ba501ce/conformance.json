@@ -1,17 +1,35 @@
 {
   "metadata": {
-    "call_count": 1357,
-    "contracts_sha": "0x19e8e5db7d2dce557ecf00eeff05c55c9c230293040f11c2f15719d0dbf9ec54",
-    "fixture_count": 71,
-    "generated_at": "2026-05-27T04:34:10Z",
-    "run_id": "20260527T043410Z-1639526"
+    "call_count": 1976,
+    "contracts_sha": "0x1827cdd5211f606e9c50af170d38a6135a251592b5ed775b66e3cd3b7ba501ce",
+    "fixture_count": 145,
+    "generated_at": "2026-05-27T04:54:38Z",
+    "run_id": "20260527T045438Z-1a8f37c"
   },
   "scoreboard": {
     "by_contract": {
       "0x0000000000000000000000000000000000000001": {
         "ERROR": 0,
         "FAIL": 0,
-        "GAP": 213,
+        "GAP": 269,
+        "PASS": 0
+      },
+      "0x0a6e8c13c22f9c63c514c2fa0c05f0832cfbc7e8": {
+        "ERROR": 0,
+        "FAIL": 0,
+        "GAP": 2,
+        "PASS": 0
+      },
+      "0x2e234dae75c793f67a35089c9d99245e1c58470b": {
+        "ERROR": 0,
+        "FAIL": 0,
+        "GAP": 14,
+        "PASS": 0
+      },
+      "0x5615deb798bb3e4dfa0139dfa1b3d433cc23b72f": {
+        "ERROR": 0,
+        "FAIL": 0,
+        "GAP": 4,
         "PASS": 0
       },
       "0xf62849f9a0b5bf2913b396098f7c7019b51a820a": {
@@ -23,8 +41,14 @@
       "AgentRegistry": {
         "ERROR": 0,
         "FAIL": 0,
-        "GAP": 543,
+        "GAP": 688,
         "PASS": 0
+      },
+      "CodificationModule": {
+        "ERROR": 0,
+        "FAIL": 0,
+        "GAP": 38,
+        "PASS": 65
       },
       "ConstitutionalReview": {
         "ERROR": 0,
@@ -35,28 +59,34 @@
       "EvidenceAnchor": {
         "ERROR": 0,
         "FAIL": 0,
-        "GAP": 66,
+        "GAP": 77,
         "PASS": 0
       },
       "GovernanceRegistry": {
         "ERROR": 0,
         "FAIL": 0,
-        "GAP": 0,
-        "PASS": 9
+        "GAP": 106,
+        "PASS": 41
       },
       "LegislativePipeline": {
         "ERROR": 0,
         "FAIL": 0,
-        "GAP": 5,
-        "PASS": 475
+        "GAP": 18,
+        "PASS": 550
+      },
+      "VotingVerifier": {
+        "ERROR": 0,
+        "FAIL": 0,
+        "GAP": 58,
+        "PASS": 0
       }
     },
     "by_power": {
       "legislative": {
         "ERROR": 0,
         "FAIL": 24,
-        "GAP": 842,
-        "PASS": 491
+        "GAP": 1289,
+        "PASS": 663
       }
     },
     "has_error": false,
@@ -270,122 +300,122 @@
     ],
     "top_gaps": [
       {
-        "call_idx": 6,
-        "contract": "AgentRegistry",
+        "call_idx": 0,
+        "contract": "CodificationModule",
         "diff": {
           "reason": "adapter_not_registered"
         },
         "error": null,
-        "fixture_id": "legislation/LegislativePipeline/testFuzz_quorumMath_matchesBpsFormula(uint256,uint256)",
-        "function": "isActiveAgent(uint256)",
+        "fixture_id": "legislation/CodificationModule/testRevert_addToWhitelist_duplicate",
+        "function": "addToWhitelist(bytes32)",
         "power": "legislation",
         "verdict": "GAP"
       },
       {
-        "call_idx": 7,
-        "contract": "AgentRegistry",
+        "call_idx": 0,
+        "contract": "CodificationModule",
         "diff": {
           "reason": "adapter_not_registered"
         },
         "error": null,
-        "fixture_id": "legislation/LegislativePipeline/testFuzz_quorumMath_matchesBpsFormula(uint256,uint256)",
-        "function": "isAuthorizedOrOwner(address,uint256)",
+        "fixture_id": "legislation/CodificationModule/testRevert_addToWhitelist_noRole",
+        "function": "WHITELIST_ROLE()",
         "power": "legislation",
         "verdict": "GAP"
       },
       {
-        "call_idx": 8,
-        "contract": "AgentRegistry",
+        "call_idx": 1,
+        "contract": "CodificationModule",
         "diff": {
           "reason": "adapter_not_registered"
         },
         "error": null,
-        "fixture_id": "legislation/LegislativePipeline/testFuzz_quorumMath_matchesBpsFormula(uint256,uint256)",
-        "function": "isActiveAgent(uint256)",
+        "fixture_id": "legislation/CodificationModule/testRevert_addToWhitelist_noRole",
+        "function": "addToWhitelist(bytes32)",
         "power": "legislation",
         "verdict": "GAP"
       },
       {
-        "call_idx": 9,
-        "contract": "AgentRegistry",
+        "call_idx": 0,
+        "contract": "CodificationModule",
         "diff": {
           "reason": "adapter_not_registered"
         },
         "error": null,
-        "fixture_id": "legislation/LegislativePipeline/testFuzz_quorumMath_matchesBpsFormula(uint256,uint256)",
-        "function": "isAuthorizedOrOwner(address,uint256)",
+        "fixture_id": "legislation/CodificationModule/testRevert_addToWhitelist_zeroHash",
+        "function": "addToWhitelist(bytes32)",
         "power": "legislation",
         "verdict": "GAP"
       },
       {
-        "call_idx": 10,
-        "contract": "0x0000000000000000000000000000000000000001",
+        "call_idx": 0,
+        "contract": "CodificationModule",
         "diff": {
           "reason": "adapter_not_registered"
         },
         "error": null,
-        "fixture_id": "legislation/LegislativePipeline/testFuzz_quorumMath_matchesBpsFormula(uint256,uint256)",
-        "function": "0x0c50fe20",
+        "fixture_id": "legislation/CodificationModule/testRevert_codify_noRole",
+        "function": "CODIFIER_ROLE()",
         "power": "legislation",
         "verdict": "GAP"
       },
       {
-        "call_idx": 11,
-        "contract": "AgentRegistry",
+        "call_idx": 0,
+        "contract": "CodificationModule",
         "diff": {
           "reason": "adapter_not_registered"
         },
         "error": null,
-        "fixture_id": "legislation/LegislativePipeline/testFuzz_quorumMath_matchesBpsFormula(uint256,uint256)",
-        "function": "isActiveAgent(uint256)",
+        "fixture_id": "legislation/CodificationModule/testRevert_getRecord_notFound",
+        "function": "getRecord(bytes32)",
         "power": "legislation",
         "verdict": "GAP"
       },
       {
-        "call_idx": 12,
-        "contract": "AgentRegistry",
+        "call_idx": 1,
+        "contract": "CodificationModule",
         "diff": {
           "reason": "adapter_not_registered"
         },
         "error": null,
-        "fixture_id": "legislation/LegislativePipeline/testFuzz_quorumMath_matchesBpsFormula(uint256,uint256)",
-        "function": "isAuthorizedOrOwner(address,uint256)",
+        "fixture_id": "legislation/CodificationModule/testRevert_recordDeployment_noRole",
+        "function": "DEPLOYER_ROLE()",
         "power": "legislation",
         "verdict": "GAP"
       },
       {
-        "call_idx": 13,
-        "contract": "0x0000000000000000000000000000000000000001",
+        "call_idx": 0,
+        "contract": "CodificationModule",
         "diff": {
           "reason": "adapter_not_registered"
         },
         "error": null,
-        "fixture_id": "legislation/LegislativePipeline/testFuzz_quorumMath_matchesBpsFormula(uint256,uint256)",
-        "function": "0x66285407",
+        "fixture_id": "legislation/CodificationModule/testRevert_removeFromWhitelist_noRole",
+        "function": "WHITELIST_ROLE()",
         "power": "legislation",
         "verdict": "GAP"
       },
       {
-        "call_idx": 14,
-        "contract": "AgentRegistry",
+        "call_idx": 1,
+        "contract": "CodificationModule",
         "diff": {
           "reason": "adapter_not_registered"
         },
         "error": null,
-        "fixture_id": "legislation/LegislativePipeline/testFuzz_quorumMath_matchesBpsFormula(uint256,uint256)",
-        "function": "isActiveAgent(uint256)",
+        "fixture_id": "legislation/CodificationModule/testRevert_removeFromWhitelist_noRole",
+        "function": "removeFromWhitelist(bytes32)",
         "power": "legislation",
         "verdict": "GAP"
       },
       {
-        "call_idx": 15,
-        "contract": "AgentRegistry",
+        "call_idx": 0,
+        "contract": "CodificationModule",
         "diff": {
           "reason": "adapter_not_registered"
         },
         "error": null,
-        "fixture_id": "legislation/LegislativePipeline/testFuzz_quorumMath_matchesBpsFormula(uint256,uint256)",
-        "function": "isAuthorizedOrOwner(address,uint256)",
+        "fixture_id": "legislation/CodificationModule/testRevert_removeFromWhitelist_notWhitelisted",
+        "function": "removeFromWhitelist(bytes32)",
         "power": "legislation",
         "verdict": "GAP"
       }
@@ -393,8 +423,8 @@
     "totals": {
       "ERROR": 0,
       "FAIL": 24,
-      "GAP": 842,
-      "PASS": 491
+      "GAP": 1289,
+      "PASS": 663
     }
   }
 }

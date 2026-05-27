@@ -28,9 +28,9 @@ def _seed_event_bus(tmp_path: Path):
 
 def _sha_file_candidates() -> list[Path]:
     return [
-        REPO_ROOT / ".contracts-sha",
         REPO_ROOT / "agent-city-contract" / ".contracts-sha",
         REPO_ROOT.parent / "agent-city-contract" / ".contracts-sha",
+        REPO_ROOT / ".contracts-sha",
     ]
 
 
@@ -43,12 +43,6 @@ def _contract_core_candidates() -> list[Path]:
 
 def compute_external_contracts_sha() -> str:
     """Return the AgentCity core-contract SHA from a lockfile or source bytes."""
-    for sha_file in _sha_file_candidates():
-        if sha_file.exists():
-            value = sha_file.read_text().strip()
-            if value:
-                return value
-
     for core_dir in _contract_core_candidates():
         if not core_dir.exists():
             continue
@@ -59,6 +53,12 @@ def compute_external_contracts_sha() -> str:
         for path in sol_files:
             digest.update(path.read_bytes())
         return "0x" + digest.hexdigest()
+
+    for sha_file in _sha_file_candidates():
+        if sha_file.exists():
+            value = sha_file.read_text().strip()
+            if value:
+                return value
 
     pytest.fail(
         "external contract SHA unavailable: expected .contracts-sha or "

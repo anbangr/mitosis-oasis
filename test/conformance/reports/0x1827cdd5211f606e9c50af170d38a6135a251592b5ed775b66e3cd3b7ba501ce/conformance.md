@@ -1,21 +1,21 @@
 # Conformance Report
 
-- contracts_sha: `0x19e8e5db7d2dce557ecf00eeff05c55c9c230293040f11c2f15719d0dbf9ec54`
-- run_id: `20260527T043410Z-1639526`
-- fixture_count: 71
-- call_count: 1357
+- contracts_sha: `0x1827cdd5211f606e9c50af170d38a6135a251592b5ed775b66e3cd3b7ba501ce`
+- run_id: `20260527T045438Z-1a8f37c`
+- fixture_count: 145
+- call_count: 1976
 
 ## Totals
 
 | PASS | FAIL | GAP | ERROR | Has error |
 | ---: | ---: | ---: | ---: | :--- |
-| 491 | 24 | 842 | 0 | False |
+| 663 | 24 | 1289 | 0 | False |
 
 ## Per-power Gate
 
 | Power | PASS | FAIL | GAP | ERROR | Gate |
 | :--- | ---: | ---: | ---: | ---: | :--- |
-| legislative | 491 | 24 | 842 | 0 | FAIL |
+| legislative | 663 | 24 | 1289 | 0 | FAIL |
 
 ## Top FAILures
 
@@ -32,14 +32,14 @@
 
 ## Top GAPs
 
-- legislation/LegislativePipeline/testFuzz_quorumMath_matchesBpsFormula(uint256,uint256) call 6 AgentRegistry.isActiveAgent(uint256)
-- legislation/LegislativePipeline/testFuzz_quorumMath_matchesBpsFormula(uint256,uint256) call 7 AgentRegistry.isAuthorizedOrOwner(address,uint256)
-- legislation/LegislativePipeline/testFuzz_quorumMath_matchesBpsFormula(uint256,uint256) call 8 AgentRegistry.isActiveAgent(uint256)
-- legislation/LegislativePipeline/testFuzz_quorumMath_matchesBpsFormula(uint256,uint256) call 9 AgentRegistry.isAuthorizedOrOwner(address,uint256)
-- legislation/LegislativePipeline/testFuzz_quorumMath_matchesBpsFormula(uint256,uint256) call 10 0x0000000000000000000000000000000000000001.0x0c50fe20
-- legislation/LegislativePipeline/testFuzz_quorumMath_matchesBpsFormula(uint256,uint256) call 11 AgentRegistry.isActiveAgent(uint256)
-- legislation/LegislativePipeline/testFuzz_quorumMath_matchesBpsFormula(uint256,uint256) call 12 AgentRegistry.isAuthorizedOrOwner(address,uint256)
-- legislation/LegislativePipeline/testFuzz_quorumMath_matchesBpsFormula(uint256,uint256) call 13 0x0000000000000000000000000000000000000001.0x66285407
-- legislation/LegislativePipeline/testFuzz_quorumMath_matchesBpsFormula(uint256,uint256) call 14 AgentRegistry.isActiveAgent(uint256)
-- legislation/LegislativePipeline/testFuzz_quorumMath_matchesBpsFormula(uint256,uint256) call 15 AgentRegistry.isAuthorizedOrOwner(address,uint256)
+- legislation/CodificationModule/testRevert_addToWhitelist_duplicate call 0 CodificationModule.addToWhitelist(bytes32)
+- legislation/CodificationModule/testRevert_addToWhitelist_noRole call 0 CodificationModule.WHITELIST_ROLE()
+- legislation/CodificationModule/testRevert_addToWhitelist_noRole call 1 CodificationModule.addToWhitelist(bytes32)
+- legislation/CodificationModule/testRevert_addToWhitelist_zeroHash call 0 CodificationModule.addToWhitelist(bytes32)
+- legislation/CodificationModule/testRevert_codify_noRole call 0 CodificationModule.CODIFIER_ROLE()
+- legislation/CodificationModule/testRevert_getRecord_notFound call 0 CodificationModule.getRecord(bytes32)
+- legislation/CodificationModule/testRevert_recordDeployment_noRole call 1 CodificationModule.DEPLOYER_ROLE()
+- legislation/CodificationModule/testRevert_removeFromWhitelist_noRole call 0 CodificationModule.WHITELIST_ROLE()
+- legislation/CodificationModule/testRevert_removeFromWhitelist_noRole call 1 CodificationModule.removeFromWhitelist(bytes32)
+- legislation/CodificationModule/testRevert_removeFromWhitelist_notWhitelisted call 0 CodificationModule.removeFromWhitelist(bytes32)
 

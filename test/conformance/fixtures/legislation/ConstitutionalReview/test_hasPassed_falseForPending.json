@@ -2,8 +2,8 @@
   "fixture_version": 1,
   "source": {
     "foundry_test": "test/ConstitutionalReview.t.sol:ConstitutionalReviewTest::test_hasPassed_falseForPending()",
-    "contracts_sha": "0x19e8e5db7d2dce557ecf00eeff05c55c9c230293040f11c2f15719d0dbf9ec54",
-    "captured_at": "2026-05-25T22:48:54Z",
+    "contracts_sha": "0x1827cdd5211f606e9c50af170d38a6135a251592b5ed775b66e3cd3b7ba501ce",
+    "captured_at": "2026-05-27T04:51:40Z",
     "solc_version": "0.8.28",
     "forge_json_version": "1.5.1-stable"
   },

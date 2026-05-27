@@ -1,0 +1,33 @@
+{
+  "fixture_version": 1,
+  "source": {
+    "foundry_test": "test/CodificationModule.t.sol:CodificationModuleTest::testRevert_removeFromWhitelist_notWhitelisted()",
+    "contracts_sha": "0x1827cdd5211f606e9c50af170d38a6135a251592b5ed775b66e3cd3b7ba501ce",
+    "captured_at": "2026-05-27T04:51:40Z",
+    "solc_version": "0.8.28",
+    "forge_json_version": "1.5.1-stable"
+  },
+  "power": "legislation",
+  "primary_contract": "CodificationModule",
+  "test_status": "Success",
+  "calls": [
+    {
+      "idx": 0,
+      "target_contract": "CodificationModule",
+      "target_address": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
+      "selector": "0x0fc6288c",
+      "function": "removeFromWhitelist(bytes32)",
+      "args": [],
+      "raw_calldata": "0x0fc6288c95351fba64ccbdc32956b4c8dda6ba59ce9731002d5511131af14add77dd2f7a",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "revert",
+        "return_data": "0x91d90fa495351fba64ccbdc32956b4c8dda6ba59ce9731002d5511131af14add77dd2f7a"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    }
+  ]
+}

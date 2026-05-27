@@ -1,0 +1,1416 @@
+{
+  "fixture_version": 1,
+  "source": {
+    "foundry_test": "test/VotingVerifier.t.sol:VotingVerifierTest::test_abortSession_afterChallengeDeadline()",
+    "contracts_sha": "0x1827cdd5211f606e9c50af170d38a6135a251592b5ed775b66e3cd3b7ba501ce",
+    "captured_at": "2026-05-27T04:51:40Z",
+    "solc_version": "0.8.28",
+    "forge_json_version": "1.5.1-stable"
+  },
+  "power": "legislation",
+  "primary_contract": "VotingVerifier",
+  "test_status": "Success",
+  "calls": [
+    {
+      "idx": 0,
+      "target_contract": "LegislativePipeline",
+      "target_address": "0x0c45111b08fdd26af7b157851122826fc6791937",
+      "selector": "0xf698da25",
+      "function": "domainSeparator()",
+      "args": [],
+      "raw_calldata": "0xf698da25",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x7519378f9201517052f828039b5d111ae171060110e99e8ae71f84518b229443"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 1,
+      "target_contract": "LegislativePipeline",
+      "target_address": "0x0c45111b08fdd26af7b157851122826fc6791937",
+      "selector": "0xf698da25",
+      "function": "domainSeparator()",
+      "args": [],
+      "raw_calldata": "0xf698da25",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x7519378f9201517052f828039b5d111ae171060110e99e8ae71f84518b229443"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 2,
+      "target_contract": "LegislativePipeline",
+      "target_address": "0x0c45111b08fdd26af7b157851122826fc6791937",
+      "selector": "0xf698da25",
+      "function": "domainSeparator()",
+      "args": [],
+      "raw_calldata": "0xf698da25",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x7519378f9201517052f828039b5d111ae171060110e99e8ae71f84518b229443"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 3,
+      "target_contract": "LegislativePipeline",
+      "target_address": "0x0c45111b08fdd26af7b157851122826fc6791937",
+      "selector": "0xf698da25",
+      "function": "domainSeparator()",
+      "args": [],
+      "raw_calldata": "0xf698da25",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x7519378f9201517052f828039b5d111ae171060110e99e8ae71f84518b229443"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 4,
+      "target_contract": "LegislativePipeline",
+      "target_address": "0x0c45111b08fdd26af7b157851122826fc6791937",
+      "selector": "0xf698da25",
+      "function": "domainSeparator()",
+      "args": [],
+      "raw_calldata": "0xf698da25",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x7519378f9201517052f828039b5d111ae171060110e99e8ae71f84518b229443"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 5,
+      "target_contract": "LegislativePipeline",
+      "target_address": "0x0c45111b08fdd26af7b157851122826fc6791937",
+      "selector": "0xa2963d2d",
+      "function": "submitProposal(uint256,bytes32,(uint8,bytes32,bytes32,address,uint256,uint256)[5])",
+      "args": [],
+      "raw_calldata": "0xa2963d2d0000000000000000000000000000000000000000000000000000000000000004fd65e1301a89112fc3bc95a2730b92a002e772986b0fcce7dda1ed69c80eb04d000000000000000000000000000000000000000000000000000000000000001c2580a8efb558b37d996cc6becefe94197219bd2ddcbd12134de186d89121518856274c931c8f01599e3e4a9ce6c269c9de301b29ff992327302cdc959076cdb200000000000000000000000002c4fec9457dfa20b4ec07a45f267176fc97d23b00000000000000000000000000000000000000000000000000000000000000050000000000000000000000000000000000000000000000000000000000015181000000000000000000000000000000000000000000000000000000000000001c0642365b193b4a0a6a0f1870025238c90f738eab92c1df0876e917e11fc4958568352b479692cb9a294c67911ea73586f26851f35cbe6986a71705b24da91e870000000000000000000000002c7006c8e20ac50b09caecb8dba99653f916ebb300000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000015181000000000000000000000000000000000000000000000000000000000000001c7fc09ecce8d6a89237d0017f35c99931ad3146998c52c8cf589b1ae15184538f0d28175121fc57349f52b389c0dde5510affeb177405d19542c56ce11427b2f300000000000000000000000048f65cc424f8612724db954120cc11da153cc28800000000000000000000000000000000000000000000000000000000000000070000000000000000000000000000000000000000000000000000000000015181000000000000000000000000000000000000000000000000000000000000001c2acc3a022224712d5461ab0a9b272b41e720b9e812bfa699e73469a5a0527ba32225cb94e448a118a97ce31a3862b4611ba7e86ec12927873b34773484d7b84200000000000000000000000050b58e6db0c34c69991286b52b12550c552e62d700000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000015181000000000000000000000000000000000000000000000000000000000000001bcacbc496998bf95c407c8f5369529e05ff122eeefa0a556831aa47c31230647e7743c71c90d8f22ac4725a89676627ed430bca73475a394e8a6b37c9030ea6cb0000000000000000000000007d75678b964df6242bd3fbba596405c9a65a614800000000000000000000000000000000000000000000000000000000000000090000000000000000000000000000000000000000000000000000000000015181",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0xe2951ab3489f528193eed3c32cbb9aef65d59885d80c3e75d906933c09187dbc"
+      },
+      "events": [
+        {
+          "name": "ProposalSubmitted",
+          "args": {
+            "proposalId": "0xe2951ab3489f528193eed3c32cbb9aef65d59885d80c3e75d906933c09187dbc",
+            "proposer": "0x6bef539e8319dacba4c2dad055006e79682c0f32",
+            "proposerAgentId": "4",
+            "dagMerkleRoot": "0xfd65e1301a89112fc3bc95a2730b92a002e772986b0fcce7dda1ed69c80eb04d",
+            "evidenceAnchorRef": "0xfd65e1301a89112fc3bc95a2730b92a002e772986b0fcce7dda1ed69c80eb04d"
+          }
+        },
+        {
+          "name": "StageAdvanced",
+          "args": {
+            "proposalId": "0xe2951ab3489f528193eed3c32cbb9aef65d59885d80c3e75d906933c09187dbc",
+            "from": "0",
+            "to": "1"
+          }
+        }
+      ],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 6,
+      "target_contract": "AgentRegistry",
+      "target_address": "0x3ede3eca2a72b3aecc820e955b36f38437d01395",
+      "selector": "0x907a7a60",
+      "function": "isActiveAgent(uint256)",
+      "args": [],
+      "raw_calldata": "0x907a7a600000000000000000000000000000000000000000000000000000000000000004",
+      "msg_sender": "0x0c45111b08fdd26af7b157851122826fc6791937",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x0000000000000000000000000000000000000000000000000000000000000001"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 7,
+      "target_contract": "AgentRegistry",
+      "target_address": "0x3ede3eca2a72b3aecc820e955b36f38437d01395",
+      "selector": "0xd95e72be",
+      "function": "isAuthorizedOrOwner(address,uint256)",
+      "args": [],
+      "raw_calldata": "0xd95e72be0000000000000000000000006bef539e8319dacba4c2dad055006e79682c0f320000000000000000000000000000000000000000000000000000000000000004",
+      "msg_sender": "0x0c45111b08fdd26af7b157851122826fc6791937",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x0000000000000000000000000000000000000000000000000000000000000001"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 8,
+      "target_contract": "AgentRegistry",
+      "target_address": "0x3ede3eca2a72b3aecc820e955b36f38437d01395",
+      "selector": "0x907a7a60",
+      "function": "isActiveAgent(uint256)",
+      "args": [],
+      "raw_calldata": "0x907a7a600000000000000000000000000000000000000000000000000000000000000005",
+      "msg_sender": "0x0c45111b08fdd26af7b157851122826fc6791937",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x0000000000000000000000000000000000000000000000000000000000000001"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 9,
+      "target_contract": "AgentRegistry",
+      "target_address": "0x3ede3eca2a72b3aecc820e955b36f38437d01395",
+      "selector": "0xd95e72be",
+      "function": "isAuthorizedOrOwner(address,uint256)",
+      "args": [],
+      "raw_calldata": "0xd95e72be00000000000000000000000002c4fec9457dfa20b4ec07a45f267176fc97d23b0000000000000000000000000000000000000000000000000000000000000005",
+      "msg_sender": "0x0c45111b08fdd26af7b157851122826fc6791937",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x0000000000000000000000000000000000000000000000000000000000000001"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 10,
+      "target_contract": "0x0000000000000000000000000000000000000001",
+      "target_address": "0x0000000000000000000000000000000000000001",
+      "selector": "0x37562b0b",
+      "function": "0x37562b0b",
+      "args": [],
+      "raw_calldata": "0x37562b0bd56c1a91cf88161b27496c0887c829095d2acbdf2d51246bebeda9dc000000000000000000000000000000000000000000000000000000000000001c2580a8efb558b37d996cc6becefe94197219bd2ddcbd12134de186d89121518856274c931c8f01599e3e4a9ce6c269c9de301b29ff992327302cdc959076cdb2",
+      "msg_sender": "0x0c45111b08fdd26af7b157851122826fc6791937",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x00000000000000000000000002c4fec9457dfa20b4ec07a45f267176fc97d23b"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 11,
+      "target_contract": "AgentRegistry",
+      "target_address": "0x3ede3eca2a72b3aecc820e955b36f38437d01395",
+      "selector": "0x907a7a60",
+      "function": "isActiveAgent(uint256)",
+      "args": [],
+      "raw_calldata": "0x907a7a600000000000000000000000000000000000000000000000000000000000000006",
+      "msg_sender": "0x0c45111b08fdd26af7b157851122826fc6791937",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x0000000000000000000000000000000000000000000000000000000000000001"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 12,
+      "target_contract": "AgentRegistry",
+      "target_address": "0x3ede3eca2a72b3aecc820e955b36f38437d01395",
+      "selector": "0xd95e72be",
+      "function": "isAuthorizedOrOwner(address,uint256)",
+      "args": [],
+      "raw_calldata": "0xd95e72be0000000000000000000000002c7006c8e20ac50b09caecb8dba99653f916ebb30000000000000000000000000000000000000000000000000000000000000006",
+      "msg_sender": "0x0c45111b08fdd26af7b157851122826fc6791937",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x0000000000000000000000000000000000000000000000000000000000000001"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 13,
+      "target_contract": "0x0000000000000000000000000000000000000001",
+      "target_address": "0x0000000000000000000000000000000000000001",
+      "selector": "0x3f97c250",
+      "function": "0x3f97c250",
+      "args": [],
+      "raw_calldata": "0x3f97c250871b4cc91ac54b4817f7733dafab54ca30a7c7d09eaca49f5a9a6c90000000000000000000000000000000000000000000000000000000000000001c0642365b193b4a0a6a0f1870025238c90f738eab92c1df0876e917e11fc4958568352b479692cb9a294c67911ea73586f26851f35cbe6986a71705b24da91e87",
+      "msg_sender": "0x0c45111b08fdd26af7b157851122826fc6791937",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x0000000000000000000000002c7006c8e20ac50b09caecb8dba99653f916ebb3"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 14,
+      "target_contract": "AgentRegistry",
+      "target_address": "0x3ede3eca2a72b3aecc820e955b36f38437d01395",
+      "selector": "0x907a7a60",
+      "function": "isActiveAgent(uint256)",
+      "args": [],
+      "raw_calldata": "0x907a7a600000000000000000000000000000000000000000000000000000000000000007",
+      "msg_sender": "0x0c45111b08fdd26af7b157851122826fc6791937",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x0000000000000000000000000000000000000000000000000000000000000001"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 15,
+      "target_contract": "AgentRegistry",
+      "target_address": "0x3ede3eca2a72b3aecc820e955b36f38437d01395",
+      "selector": "0xd95e72be",
+      "function": "isAuthorizedOrOwner(address,uint256)",
+      "args": [],
+      "raw_calldata": "0xd95e72be00000000000000000000000048f65cc424f8612724db954120cc11da153cc2880000000000000000000000000000000000000000000000000000000000000007",
+      "msg_sender": "0x0c45111b08fdd26af7b157851122826fc6791937",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x0000000000000000000000000000000000000000000000000000000000000001"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 16,
+      "target_contract": "0x0000000000000000000000000000000000000001",
+      "target_address": "0x0000000000000000000000000000000000000001",
+      "selector": "0xbe2ad84f",
+      "function": "0xbe2ad84f",
+      "args": [],
+      "raw_calldata": "0xbe2ad84f1665b8ffdd7c5ff1072191b3055d96fc30609fcf298c952a350586bb000000000000000000000000000000000000000000000000000000000000001c7fc09ecce8d6a89237d0017f35c99931ad3146998c52c8cf589b1ae15184538f0d28175121fc57349f52b389c0dde5510affeb177405d19542c56ce11427b2f3",
+      "msg_sender": "0x0c45111b08fdd26af7b157851122826fc6791937",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x00000000000000000000000048f65cc424f8612724db954120cc11da153cc288"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 17,
+      "target_contract": "AgentRegistry",
+      "target_address": "0x3ede3eca2a72b3aecc820e955b36f38437d01395",
+      "selector": "0x907a7a60",
+      "function": "isActiveAgent(uint256)",
+      "args": [],
+      "raw_calldata": "0x907a7a600000000000000000000000000000000000000000000000000000000000000008",
+      "msg_sender": "0x0c45111b08fdd26af7b157851122826fc6791937",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x0000000000000000000000000000000000000000000000000000000000000001"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 18,
+      "target_contract": "AgentRegistry",
+      "target_address": "0x3ede3eca2a72b3aecc820e955b36f38437d01395",
+      "selector": "0xd95e72be",
+      "function": "isAuthorizedOrOwner(address,uint256)",
+      "args": [],
+      "raw_calldata": "0xd95e72be00000000000000000000000050b58e6db0c34c69991286b52b12550c552e62d70000000000000000000000000000000000000000000000000000000000000008",
+      "msg_sender": "0x0c45111b08fdd26af7b157851122826fc6791937",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x0000000000000000000000000000000000000000000000000000000000000001"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 19,
+      "target_contract": "0x0000000000000000000000000000000000000001",
+      "target_address": "0x0000000000000000000000000000000000000001",
+      "selector": "0xbb2d4936",
+      "function": "0xbb2d4936",
+      "args": [],
+      "raw_calldata": "0xbb2d49364027c6902b2f0720cfaecb357990aa6fdfc84a61bdf9240a5317db21000000000000000000000000000000000000000000000000000000000000001c2acc3a022224712d5461ab0a9b272b41e720b9e812bfa699e73469a5a0527ba32225cb94e448a118a97ce31a3862b4611ba7e86ec12927873b34773484d7b842",
+      "msg_sender": "0x0c45111b08fdd26af7b157851122826fc6791937",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x00000000000000000000000050b58e6db0c34c69991286b52b12550c552e62d7"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 20,
+      "target_contract": "AgentRegistry",
+      "target_address": "0x3ede3eca2a72b3aecc820e955b36f38437d01395",
+      "selector": "0x907a7a60",
+      "function": "isActiveAgent(uint256)",
+      "args": [],
+      "raw_calldata": "0x907a7a600000000000000000000000000000000000000000000000000000000000000009",
+      "msg_sender": "0x0c45111b08fdd26af7b157851122826fc6791937",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x0000000000000000000000000000000000000000000000000000000000000001"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 21,
+      "target_contract": "AgentRegistry",
+      "target_address": "0x3ede3eca2a72b3aecc820e955b36f38437d01395",
+      "selector": "0xd95e72be",
+      "function": "isAuthorizedOrOwner(address,uint256)",
+      "args": [],
+      "raw_calldata": "0xd95e72be0000000000000000000000007d75678b964df6242bd3fbba596405c9a65a61480000000000000000000000000000000000000000000000000000000000000009",
+      "msg_sender": "0x0c45111b08fdd26af7b157851122826fc6791937",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x0000000000000000000000000000000000000000000000000000000000000001"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 22,
+      "target_contract": "0x0000000000000000000000000000000000000001",
+      "target_address": "0x0000000000000000000000000000000000000001",
+      "selector": "0x8c8b7279",
+      "function": "0x8c8b7279",
+      "args": [],
+      "raw_calldata": "0x8c8b7279c9b57aa3f5629bd151f9b9254e9dc35dbd43fa4e113fad811004c3a6000000000000000000000000000000000000000000000000000000000000001bcacbc496998bf95c407c8f5369529e05ff122eeefa0a556831aa47c31230647e7743c71c90d8f22ac4725a89676627ed430bca73475a394e8a6b37c9030ea6cb",
+      "msg_sender": "0x0c45111b08fdd26af7b157851122826fc6791937",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x0000000000000000000000007d75678b964df6242bd3fbba596405c9a65a6148"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 23,
+      "target_contract": "EvidenceAnchor",
+      "target_address": "0x5c513e7c7165ddd8c6a019c87e301a86ceb83f9f",
+      "selector": "0xa25e29d7",
+      "function": "anchor(bytes32,uint8)",
+      "args": [],
+      "raw_calldata": "0xa25e29d7fd65e1301a89112fc3bc95a2730b92a002e772986b0fcce7dda1ed69c80eb04d0000000000000000000000000000000000000000000000000000000000000000",
+      "msg_sender": "0x0c45111b08fdd26af7b157851122826fc6791937",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x"
+      },
+      "events": [
+        {
+          "name": "EvidenceAnchored",
+          "args": {
+            "contentHash": "0xfd65e1301a89112fc3bc95a2730b92a002e772986b0fcce7dda1ed69c80eb04d",
+            "submitter": "0x0c45111b08fdd26af7b157851122826fc6791937",
+            "evidenceType": "0",
+            "timestamp": "1"
+          }
+        }
+      ],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 24,
+      "target_contract": "LegislativePipeline",
+      "target_address": "0x0c45111b08fdd26af7b157851122826fc6791937",
+      "selector": "0x9074fa29",
+      "function": "advanceToRatification(bytes32)",
+      "args": [],
+      "raw_calldata": "0x9074fa29e2951ab3489f528193eed3c32cbb9aef65d59885d80c3e75d906933c09187dbc",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x"
+      },
+      "events": [
+        {
+          "name": "StageAdvanced",
+          "args": {
+            "proposalId": "0xe2951ab3489f528193eed3c32cbb9aef65d59885d80c3e75d906933c09187dbc",
+            "from": "1",
+            "to": "2"
+          }
+        }
+      ],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 25,
+      "target_contract": "VotingVerifier",
+      "target_address": "0x0ad6161c0dc6b9a6c73b1bc505f142c6b91b2e26",
+      "selector": "0xcb6f5b8c",
+      "function": "openCommitPhase(bytes32,uint256,uint64,uint64,uint64)",
+      "args": [],
+      "raw_calldata": "0xcb6f5b8ce2951ab3489f528193eed3c32cbb9aef65d59885d80c3e75d906933c09187dbc00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000e100000000000000000000000000000000000000000000000000000000000000e100000000000000000000000000000000000000000000000000000000000000e10",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x"
+      },
+      "events": [
+        {
+          "name": "EligibleVoterSnapshotRecorded",
+          "args": {
+            "proposalId": "0xe2951ab3489f528193eed3c32cbb9aef65d59885d80c3e75d906933c09187dbc",
+            "snapshotTime": "1",
+            "eligibleVoterCount": "1"
+          }
+        },
+        {
+          "name": "CommitPhaseOpened",
+          "args": {
+            "proposalId": "0xe2951ab3489f528193eed3c32cbb9aef65d59885d80c3e75d906933c09187dbc",
+            "commitDeadline": "3601",
+            "revealDeadline": "7201",
+            "challengeDuration": "3600",
+            "eligibleVoterCount": "1"
+          }
+        }
+      ],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 26,
+      "target_contract": "LegislativePipeline",
+      "target_address": "0x0c45111b08fdd26af7b157851122826fc6791937",
+      "selector": "0x893c9c15",
+      "function": "stakingWithdrawalCooldown()",
+      "args": [],
+      "raw_calldata": "0x893c9c15",
+      "msg_sender": "0x0ad6161c0dc6b9a6c73b1bc505f142c6b91b2e26",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 27,
+      "target_contract": "LegislativePipeline",
+      "target_address": "0x0c45111b08fdd26af7b157851122826fc6791937",
+      "selector": "0x430694cf",
+      "function": "getProposal(bytes32)",
+      "args": [],
+      "raw_calldata": "0x430694cfe2951ab3489f528193eed3c32cbb9aef65d59885d80c3e75d906933c09187dbc",
+      "msg_sender": "0x0ad6161c0dc6b9a6c73b1bc505f142c6b91b2e26",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0xe2951ab3489f528193eed3c32cbb9aef65d59885d80c3e75d906933c09187dbc0000000000000000000000006bef539e8319dacba4c2dad055006e79682c0f320000000000000000000000000000000000000000000000000000000000000004fd65e1301a89112fc3bc95a2730b92a002e772986b0fcce7dda1ed69c80eb04d00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000fd65e1301a89112fc3bc95a2730b92a002e772986b0fcce7dda1ed69c80eb04d00000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002c4fec9457dfa20b4ec07a45f267176fc97d23b0000000000000000000000002c7006c8e20ac50b09caecb8dba99653f916ebb300000000000000000000000048f65cc424f8612724db954120cc11da153cc28800000000000000000000000050b58e6db0c34c69991286b52b12550c552e62d70000000000000000000000007d75678b964df6242bd3fbba596405c9a65a6148"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 28,
+      "target_contract": "VotingVerifier",
+      "target_address": "0x0ad6161c0dc6b9a6c73b1bc505f142c6b91b2e26",
+      "selector": "0x39b240bd",
+      "function": "getSession(bytes32)",
+      "args": [],
+      "raw_calldata": "0x39b240bde2951ab3489f528193eed3c32cbb9aef65d59885d80c3e75d906933c09187dbc",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000e110000000000000000000000000000000000000000000000000000000000001c2100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000e10000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 29,
+      "target_contract": "VotingVerifier",
+      "target_address": "0x0ad6161c0dc6b9a6c73b1bc505f142c6b91b2e26",
+      "selector": "0x3bbd2235",
+      "function": "commitVote(bytes32,bytes32)",
+      "args": [],
+      "raw_calldata": "0x3bbd2235e2951ab3489f528193eed3c32cbb9aef65d59885d80c3e75d906933c09187dbcbe0f5cfdb5b7ea34516c57ebed2e2534ecab3bfd9afa851dab9d0e9b7426d42a",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x"
+      },
+      "events": [
+        {
+          "name": "VoteCommitted",
+          "args": {
+            "proposalId": "0xe2951ab3489f528193eed3c32cbb9aef65d59885d80c3e75d906933c09187dbc",
+            "voter": "0xe05fcc23807536bee418f142d19fa0d21bb0cff7",
+            "commitment": "0xbe0f5cfdb5b7ea34516c57ebed2e2534ecab3bfd9afa851dab9d0e9b7426d42a"
+          }
+        }
+      ],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 30,
+      "target_contract": "AgentRegistry",
+      "target_address": "0x3ede3eca2a72b3aecc820e955b36f38437d01395",
+      "selector": "0xac3c0e30",
+      "function": "agentOf(address)",
+      "args": [],
+      "raw_calldata": "0xac3c0e30000000000000000000000000e05fcc23807536bee418f142d19fa0d21bb0cff7",
+      "msg_sender": "0x0ad6161c0dc6b9a6c73b1bc505f142c6b91b2e26",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x0000000000000000000000000000000000000000000000000000000000000001"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 31,
+      "target_contract": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
+      "target_address": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
+      "selector": "0xdb46088c",
+      "function": "getPastTotalStaked(uint256,uint48)",
+      "args": [],
+      "raw_calldata": "0xdb46088c00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001",
+      "msg_sender": "0x0ad6161c0dc6b9a6c73b1bc505f142c6b91b2e26",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x000000000000000000000000000000000000000000000000000000003b9aca00"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 32,
+      "target_contract": "VotingVerifier",
+      "target_address": "0x0ad6161c0dc6b9a6c73b1bc505f142c6b91b2e26",
+      "selector": "0x2e177989",
+      "function": "revealVote(bytes32,bytes32,bytes32)",
+      "args": [],
+      "raw_calldata": "0x2e177989e2951ab3489f528193eed3c32cbb9aef65d59885d80c3e75d906933c09187dbce5a97dce79bf32bfcbdf53aeea25a96613a2e4445d8256ed079c33d9124af36ea05e334153147e75f3f416139b5109d1179cb56fef6a4ecb4c4cbc92a7c37b70",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x"
+      },
+      "events": [
+        {
+          "name": "VoteRevealed",
+          "args": {
+            "proposalId": "0xe2951ab3489f528193eed3c32cbb9aef65d59885d80c3e75d906933c09187dbc",
+            "voter": "0xe05fcc23807536bee418f142d19fa0d21bb0cff7",
+            "rankingHash": "0xe5a97dce79bf32bfcbdf53aeea25a96613a2e4445d8256ed079c33d9124af36e"
+          }
+        }
+      ],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 33,
+      "target_contract": "VotingVerifier",
+      "target_address": "0x0ad6161c0dc6b9a6c73b1bc505f142c6b91b2e26",
+      "selector": "0x39b240bd",
+      "function": "getSession(bytes32)",
+      "args": [],
+      "raw_calldata": "0x39b240bde2951ab3489f528193eed3c32cbb9aef65d59885d80c3e75d906933c09187dbc",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000e110000000000000000000000000000000000000000000000000000000000001c2100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000e10000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 34,
+      "target_contract": "VotingVerifier",
+      "target_address": "0x0ad6161c0dc6b9a6c73b1bc505f142c6b91b2e26",
+      "selector": "0x8a75eb34",
+      "function": "submitVotingResult(bytes32,bytes32,bytes32,uint256)",
+      "args": [],
+      "raw_calldata": "0x8a75eb34e2951ab3489f528193eed3c32cbb9aef65d59885d80c3e75d906933c09187dbcc31f1f50fd139d14d775f4345e3e69bffa6cdee592e959bda83c915ce909e9a91dfe87606d68880020ae423c1a87d7112aa24ff13227e1fd34b89afae3c490850000000000000000000000000000000000000000000000000000000000000001",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x"
+      },
+      "events": [
+        {
+          "name": "VotingResultSubmitted",
+          "args": {
+            "proposalId": "0xe2951ab3489f528193eed3c32cbb9aef65d59885d80c3e75d906933c09187dbc",
+            "resultRoot": "0xc31f1f50fd139d14d775f4345e3e69bffa6cdee592e959bda83c915ce909e9a9",
+            "winnerHash": "0x1dfe87606d68880020ae423c1a87d7112aa24ff13227e1fd34b89afae3c49085",
+            "voterCount": "1"
+          }
+        }
+      ],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 35,
+      "target_contract": "VotingVerifier",
+      "target_address": "0x0ad6161c0dc6b9a6c73b1bc505f142c6b91b2e26",
+      "selector": "0x39b240bd",
+      "function": "getSession(bytes32)",
+      "args": [],
+      "raw_calldata": "0x39b240bde2951ab3489f528193eed3c32cbb9aef65d59885d80c3e75d906933c09187dbc",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x000000000000000000000000000000000000000000000000000000000000000300000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000e110000000000000000000000000000000000000000000000000000000000001c210000000000000000000000000000000000000000000000000000000000002a320000000000000000000000000000000000000000000000000000000000000e10000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000c31f1f50fd139d14d775f4345e3e69bffa6cdee592e959bda83c915ce909e9a91dfe87606d68880020ae423c1a87d7112aa24ff13227e1fd34b89afae3c490850000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 36,
+      "target_contract": "VotingVerifier",
+      "target_address": "0x0ad6161c0dc6b9a6c73b1bc505f142c6b91b2e26",
+      "selector": "0xd8fa2efd",
+      "function": "abortSession(bytes32)",
+      "args": [],
+      "raw_calldata": "0xd8fa2efde2951ab3489f528193eed3c32cbb9aef65d59885d80c3e75d906933c09187dbc",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x"
+      },
+      "events": [
+        {
+          "name": "VotingSessionAborted",
+          "args": {
+            "proposalId": "0xe2951ab3489f528193eed3c32cbb9aef65d59885d80c3e75d906933c09187dbc",
+            "resultRoot": "0xc31f1f50fd139d14d775f4345e3e69bffa6cdee592e959bda83c915ce909e9a9",
+            "winnerHash": "0x1dfe87606d68880020ae423c1a87d7112aa24ff13227e1fd34b89afae3c49085"
+          }
+        }
+      ],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 37,
+      "target_contract": "VotingVerifier",
+      "target_address": "0x0ad6161c0dc6b9a6c73b1bc505f142c6b91b2e26",
+      "selector": "0x39b240bd",
+      "function": "getSession(bytes32)",
+      "args": [],
+      "raw_calldata": "0x39b240bde2951ab3489f528193eed3c32cbb9aef65d59885d80c3e75d906933c09187dbc",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 38,
+      "target_contract": "VotingVerifier",
+      "target_address": "0x0ad6161c0dc6b9a6c73b1bc505f142c6b91b2e26",
+      "selector": "0x2f2ae269",
+      "function": "isEligibleVoter(bytes32,address)",
+      "args": [],
+      "raw_calldata": "0x2f2ae269e2951ab3489f528193eed3c32cbb9aef65d59885d80c3e75d906933c09187dbc000000000000000000000000e05fcc23807536bee418f142d19fa0d21bb0cff7",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 39,
+      "target_contract": "VotingVerifier",
+      "target_address": "0x0ad6161c0dc6b9a6c73b1bc505f142c6b91b2e26",
+      "selector": "0xcb7046c7",
+      "function": "hasCommitted(bytes32,address)",
+      "args": [],
+      "raw_calldata": "0xcb7046c7e2951ab3489f528193eed3c32cbb9aef65d59885d80c3e75d906933c09187dbc000000000000000000000000e05fcc23807536bee418f142d19fa0d21bb0cff7",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 40,
+      "target_contract": "VotingVerifier",
+      "target_address": "0x0ad6161c0dc6b9a6c73b1bc505f142c6b91b2e26",
+      "selector": "0x33ccdac2",
+      "function": "hasRevealed(bytes32,address)",
+      "args": [],
+      "raw_calldata": "0x33ccdac2e2951ab3489f528193eed3c32cbb9aef65d59885d80c3e75d906933c09187dbc000000000000000000000000e05fcc23807536bee418f142d19fa0d21bb0cff7",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 41,
+      "target_contract": "VotingVerifier",
+      "target_address": "0x0ad6161c0dc6b9a6c73b1bc505f142c6b91b2e26",
+      "selector": "0xcb6f5b8c",
+      "function": "openCommitPhase(bytes32,uint256,uint64,uint64,uint64)",
+      "args": [],
+      "raw_calldata": "0xcb6f5b8ce2951ab3489f528193eed3c32cbb9aef65d59885d80c3e75d906933c09187dbc00000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000001c200000000000000000000000000000000000000000000000000000000000001c200000000000000000000000000000000000000000000000000000000000001c20",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x"
+      },
+      "events": [
+        {
+          "name": "EligibleVoterSnapshotRecorded",
+          "args": {
+            "proposalId": "0xe2951ab3489f528193eed3c32cbb9aef65d59885d80c3e75d906933c09187dbc",
+            "snapshotTime": "1",
+            "eligibleVoterCount": "2"
+          }
+        },
+        {
+          "name": "CommitPhaseOpened",
+          "args": {
+            "proposalId": "0xe2951ab3489f528193eed3c32cbb9aef65d59885d80c3e75d906933c09187dbc",
+            "commitDeadline": "18003",
+            "revealDeadline": "25203",
+            "challengeDuration": "7200",
+            "eligibleVoterCount": "2"
+          }
+        }
+      ],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 42,
+      "target_contract": "LegislativePipeline",
+      "target_address": "0x0c45111b08fdd26af7b157851122826fc6791937",
+      "selector": "0x893c9c15",
+      "function": "stakingWithdrawalCooldown()",
+      "args": [],
+      "raw_calldata": "0x893c9c15",
+      "msg_sender": "0x0ad6161c0dc6b9a6c73b1bc505f142c6b91b2e26",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 43,
+      "target_contract": "LegislativePipeline",
+      "target_address": "0x0c45111b08fdd26af7b157851122826fc6791937",
+      "selector": "0x430694cf",
+      "function": "getProposal(bytes32)",
+      "args": [],
+      "raw_calldata": "0x430694cfe2951ab3489f528193eed3c32cbb9aef65d59885d80c3e75d906933c09187dbc",
+      "msg_sender": "0x0ad6161c0dc6b9a6c73b1bc505f142c6b91b2e26",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0xe2951ab3489f528193eed3c32cbb9aef65d59885d80c3e75d906933c09187dbc0000000000000000000000006bef539e8319dacba4c2dad055006e79682c0f320000000000000000000000000000000000000000000000000000000000000004fd65e1301a89112fc3bc95a2730b92a002e772986b0fcce7dda1ed69c80eb04d00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000fd65e1301a89112fc3bc95a2730b92a002e772986b0fcce7dda1ed69c80eb04d00000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002c4fec9457dfa20b4ec07a45f267176fc97d23b0000000000000000000000002c7006c8e20ac50b09caecb8dba99653f916ebb300000000000000000000000048f65cc424f8612724db954120cc11da153cc28800000000000000000000000050b58e6db0c34c69991286b52b12550c552e62d70000000000000000000000007d75678b964df6242bd3fbba596405c9a65a6148"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 44,
+      "target_contract": "VotingVerifier",
+      "target_address": "0x0ad6161c0dc6b9a6c73b1bc505f142c6b91b2e26",
+      "selector": "0x39b240bd",
+      "function": "getSession(bytes32)",
+      "args": [],
+      "raw_calldata": "0x39b240bde2951ab3489f528193eed3c32cbb9aef65d59885d80c3e75d906933c09187dbc",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000004653000000000000000000000000000000000000000000000000000000000000627300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001c20000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 45,
+      "target_contract": "VotingVerifier",
+      "target_address": "0x0ad6161c0dc6b9a6c73b1bc505f142c6b91b2e26",
+      "selector": "0x2f2ae269",
+      "function": "isEligibleVoter(bytes32,address)",
+      "args": [],
+      "raw_calldata": "0x2f2ae269e2951ab3489f528193eed3c32cbb9aef65d59885d80c3e75d906933c09187dbc000000000000000000000000e05fcc23807536bee418f142d19fa0d21bb0cff7",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x0000000000000000000000000000000000000000000000000000000000000001"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 46,
+      "target_contract": "AgentRegistry",
+      "target_address": "0x3ede3eca2a72b3aecc820e955b36f38437d01395",
+      "selector": "0xac3c0e30",
+      "function": "agentOf(address)",
+      "args": [],
+      "raw_calldata": "0xac3c0e30000000000000000000000000e05fcc23807536bee418f142d19fa0d21bb0cff7",
+      "msg_sender": "0x0ad6161c0dc6b9a6c73b1bc505f142c6b91b2e26",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x0000000000000000000000000000000000000000000000000000000000000001"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 47,
+      "target_contract": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
+      "target_address": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
+      "selector": "0xdb46088c",
+      "function": "getPastTotalStaked(uint256,uint48)",
+      "args": [],
+      "raw_calldata": "0xdb46088c00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001",
+      "msg_sender": "0x0ad6161c0dc6b9a6c73b1bc505f142c6b91b2e26",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x000000000000000000000000000000000000000000000000000000003b9aca00"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 48,
+      "target_contract": "VotingVerifier",
+      "target_address": "0x0ad6161c0dc6b9a6c73b1bc505f142c6b91b2e26",
+      "selector": "0x2f2ae269",
+      "function": "isEligibleVoter(bytes32,address)",
+      "args": [],
+      "raw_calldata": "0x2f2ae269e2951ab3489f528193eed3c32cbb9aef65d59885d80c3e75d906933c09187dbc0000000000000000000000000376aac07ad725e01357b1725b5cec61ae10473c",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x0000000000000000000000000000000000000000000000000000000000000001"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 49,
+      "target_contract": "AgentRegistry",
+      "target_address": "0x3ede3eca2a72b3aecc820e955b36f38437d01395",
+      "selector": "0xac3c0e30",
+      "function": "agentOf(address)",
+      "args": [],
+      "raw_calldata": "0xac3c0e300000000000000000000000000376aac07ad725e01357b1725b5cec61ae10473c",
+      "msg_sender": "0x0ad6161c0dc6b9a6c73b1bc505f142c6b91b2e26",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x0000000000000000000000000000000000000000000000000000000000000002"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 50,
+      "target_contract": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
+      "target_address": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
+      "selector": "0xdb46088c",
+      "function": "getPastTotalStaked(uint256,uint48)",
+      "args": [],
+      "raw_calldata": "0xdb46088c00000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000001",
+      "msg_sender": "0x0ad6161c0dc6b9a6c73b1bc505f142c6b91b2e26",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x000000000000000000000000000000000000000000000000000000003b9aca00"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 51,
+      "target_contract": "VotingVerifier",
+      "target_address": "0x0ad6161c0dc6b9a6c73b1bc505f142c6b91b2e26",
+      "selector": "0x3bbd2235",
+      "function": "commitVote(bytes32,bytes32)",
+      "args": [],
+      "raw_calldata": "0x3bbd2235e2951ab3489f528193eed3c32cbb9aef65d59885d80c3e75d906933c09187dbcd7873d1a971d91a7c5dc274d4b0e136395728e2918d75077a1296a815298c8bd",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x"
+      },
+      "events": [
+        {
+          "name": "VoteCommitted",
+          "args": {
+            "proposalId": "0xe2951ab3489f528193eed3c32cbb9aef65d59885d80c3e75d906933c09187dbc",
+            "voter": "0xe05fcc23807536bee418f142d19fa0d21bb0cff7",
+            "commitment": "0xd7873d1a971d91a7c5dc274d4b0e136395728e2918d75077a1296a815298c8bd"
+          }
+        }
+      ],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 52,
+      "target_contract": "AgentRegistry",
+      "target_address": "0x3ede3eca2a72b3aecc820e955b36f38437d01395",
+      "selector": "0xac3c0e30",
+      "function": "agentOf(address)",
+      "args": [],
+      "raw_calldata": "0xac3c0e30000000000000000000000000e05fcc23807536bee418f142d19fa0d21bb0cff7",
+      "msg_sender": "0x0ad6161c0dc6b9a6c73b1bc505f142c6b91b2e26",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x0000000000000000000000000000000000000000000000000000000000000001"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 53,
+      "target_contract": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
+      "target_address": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
+      "selector": "0xdb46088c",
+      "function": "getPastTotalStaked(uint256,uint48)",
+      "args": [],
+      "raw_calldata": "0xdb46088c00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001",
+      "msg_sender": "0x0ad6161c0dc6b9a6c73b1bc505f142c6b91b2e26",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x000000000000000000000000000000000000000000000000000000003b9aca00"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 54,
+      "target_contract": "VotingVerifier",
+      "target_address": "0x0ad6161c0dc6b9a6c73b1bc505f142c6b91b2e26",
+      "selector": "0x3bbd2235",
+      "function": "commitVote(bytes32,bytes32)",
+      "args": [],
+      "raw_calldata": "0x3bbd2235e2951ab3489f528193eed3c32cbb9aef65d59885d80c3e75d906933c09187dbcb8a3f6993915b50c6a2c4f1d24585abfd9eb73490038c31f37f217ed65e8e1da",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x"
+      },
+      "events": [
+        {
+          "name": "VoteCommitted",
+          "args": {
+            "proposalId": "0xe2951ab3489f528193eed3c32cbb9aef65d59885d80c3e75d906933c09187dbc",
+            "voter": "0x0376aac07ad725e01357b1725b5cec61ae10473c",
+            "commitment": "0xb8a3f6993915b50c6a2c4f1d24585abfd9eb73490038c31f37f217ed65e8e1da"
+          }
+        }
+      ],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 55,
+      "target_contract": "AgentRegistry",
+      "target_address": "0x3ede3eca2a72b3aecc820e955b36f38437d01395",
+      "selector": "0xac3c0e30",
+      "function": "agentOf(address)",
+      "args": [],
+      "raw_calldata": "0xac3c0e300000000000000000000000000376aac07ad725e01357b1725b5cec61ae10473c",
+      "msg_sender": "0x0ad6161c0dc6b9a6c73b1bc505f142c6b91b2e26",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x0000000000000000000000000000000000000000000000000000000000000002"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 56,
+      "target_contract": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
+      "target_address": "0x2e234dae75c793f67a35089c9d99245e1c58470b",
+      "selector": "0xdb46088c",
+      "function": "getPastTotalStaked(uint256,uint48)",
+      "args": [],
+      "raw_calldata": "0xdb46088c00000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000001",
+      "msg_sender": "0x0ad6161c0dc6b9a6c73b1bc505f142c6b91b2e26",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x000000000000000000000000000000000000000000000000000000003b9aca00"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 57,
+      "target_contract": "VotingVerifier",
+      "target_address": "0x0ad6161c0dc6b9a6c73b1bc505f142c6b91b2e26",
+      "selector": "0x39b240bd",
+      "function": "getSession(bytes32)",
+      "args": [],
+      "raw_calldata": "0x39b240bde2951ab3489f528193eed3c32cbb9aef65d59885d80c3e75d906933c09187dbc",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000004653000000000000000000000000000000000000000000000000000000000000627300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001c20000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 58,
+      "target_contract": "VotingVerifier",
+      "target_address": "0x0ad6161c0dc6b9a6c73b1bc505f142c6b91b2e26",
+      "selector": "0x2e177989",
+      "function": "revealVote(bytes32,bytes32,bytes32)",
+      "args": [],
+      "raw_calldata": "0x2e177989e2951ab3489f528193eed3c32cbb9aef65d59885d80c3e75d906933c09187dbc4266d3934518fe649167fece2563ea48f05d9ba8379631f7eb37bdfb97e668eafa17354dc41f2db14d88da8282e4a93285146eaed175f011797cf525e0c0dfe9",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x"
+      },
+      "events": [
+        {
+          "name": "VoteRevealed",
+          "args": {
+            "proposalId": "0xe2951ab3489f528193eed3c32cbb9aef65d59885d80c3e75d906933c09187dbc",
+            "voter": "0xe05fcc23807536bee418f142d19fa0d21bb0cff7",
+            "rankingHash": "0x4266d3934518fe649167fece2563ea48f05d9ba8379631f7eb37bdfb97e668ea"
+          }
+        }
+      ],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 59,
+      "target_contract": "VotingVerifier",
+      "target_address": "0x0ad6161c0dc6b9a6c73b1bc505f142c6b91b2e26",
+      "selector": "0x2e177989",
+      "function": "revealVote(bytes32,bytes32,bytes32)",
+      "args": [],
+      "raw_calldata": "0x2e177989e2951ab3489f528193eed3c32cbb9aef65d59885d80c3e75d906933c09187dbc3b3d34e5658ec2db4320dfa997875e1c4491e75240f75cd24a2df2d3c2dc78f2072f5088c0dd9d9e960ca32e483486d89a29ee71a57cba3b3b2b6295f15b3fe4",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x"
+      },
+      "events": [
+        {
+          "name": "VoteRevealed",
+          "args": {
+            "proposalId": "0xe2951ab3489f528193eed3c32cbb9aef65d59885d80c3e75d906933c09187dbc",
+            "voter": "0x0376aac07ad725e01357b1725b5cec61ae10473c",
+            "rankingHash": "0x3b3d34e5658ec2db4320dfa997875e1c4491e75240f75cd24a2df2d3c2dc78f2"
+          }
+        }
+      ],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 60,
+      "target_contract": "VotingVerifier",
+      "target_address": "0x0ad6161c0dc6b9a6c73b1bc505f142c6b91b2e26",
+      "selector": "0x39b240bd",
+      "function": "getSession(bytes32)",
+      "args": [],
+      "raw_calldata": "0x39b240bde2951ab3489f528193eed3c32cbb9aef65d59885d80c3e75d906933c09187dbc",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000004653000000000000000000000000000000000000000000000000000000000000627300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001c20000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 61,
+      "target_contract": "VotingVerifier",
+      "target_address": "0x0ad6161c0dc6b9a6c73b1bc505f142c6b91b2e26",
+      "selector": "0x8a75eb34",
+      "function": "submitVotingResult(bytes32,bytes32,bytes32,uint256)",
+      "args": [],
+      "raw_calldata": "0x8a75eb34e2951ab3489f528193eed3c32cbb9aef65d59885d80c3e75d906933c09187dbc89fa09570bfc40270bdeb3afd0b525c4e454ce56ac640cb16e1c06707650a123a0d3785d75790e55fbf1b33b160a6522b4bc7bbb121f1b2f95c6020d1f2c8a7b0000000000000000000000000000000000000000000000000000000000000002",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x"
+      },
+      "events": [
+        {
+          "name": "VotingResultSubmitted",
+          "args": {
+            "proposalId": "0xe2951ab3489f528193eed3c32cbb9aef65d59885d80c3e75d906933c09187dbc",
+            "resultRoot": "0x89fa09570bfc40270bdeb3afd0b525c4e454ce56ac640cb16e1c06707650a123",
+            "winnerHash": "0xa0d3785d75790e55fbf1b33b160a6522b4bc7bbb121f1b2f95c6020d1f2c8a7b",
+            "voterCount": "2"
+          }
+        }
+      ],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 62,
+      "target_contract": "VotingVerifier",
+      "target_address": "0x0ad6161c0dc6b9a6c73b1bc505f142c6b91b2e26",
+      "selector": "0x39b240bd",
+      "function": "getSession(bytes32)",
+      "args": [],
+      "raw_calldata": "0x39b240bde2951ab3489f528193eed3c32cbb9aef65d59885d80c3e75d906933c09187dbc",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x00000000000000000000000000000000000000000000000000000000000000030000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000465300000000000000000000000000000000000000000000000000000000000062730000000000000000000000000000000000000000000000000000000000007e940000000000000000000000000000000000000000000000000000000000001c2000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000189fa09570bfc40270bdeb3afd0b525c4e454ce56ac640cb16e1c06707650a123a0d3785d75790e55fbf1b33b160a6522b4bc7bbb121f1b2f95c6020d1f2c8a7b0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 63,
+      "target_contract": "VotingVerifier",
+      "target_address": "0x0ad6161c0dc6b9a6c73b1bc505f142c6b91b2e26",
+      "selector": "0x9d77be29",
+      "function": "finalizeResult(bytes32)",
+      "args": [],
+      "raw_calldata": "0x9d77be29e2951ab3489f528193eed3c32cbb9aef65d59885d80c3e75d906933c09187dbc",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x"
+      },
+      "events": [
+        {
+          "name": "VotingResultFinalized",
+          "args": {
+            "proposalId": "0xe2951ab3489f528193eed3c32cbb9aef65d59885d80c3e75d906933c09187dbc",
+            "winnerHash": "0xa0d3785d75790e55fbf1b33b160a6522b4bc7bbb121f1b2f95c6020d1f2c8a7b",
+            "resultRoot": "0x89fa09570bfc40270bdeb3afd0b525c4e454ce56ac640cb16e1c06707650a123"
+          }
+        }
+      ],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 64,
+      "target_contract": "LegislativePipeline",
+      "target_address": "0x0c45111b08fdd26af7b157851122826fc6791937",
+      "selector": "0xd80952da",
+      "function": "advanceToConstitutionalReview(bytes32,bytes32,bytes32,uint256,uint256)",
+      "args": [],
+      "raw_calldata": "0xd80952dae2951ab3489f528193eed3c32cbb9aef65d59885d80c3e75d906933c09187dbc89fa09570bfc40270bdeb3afd0b525c4e454ce56ac640cb16e1c06707650a123a0d3785d75790e55fbf1b33b160a6522b4bc7bbb121f1b2f95c6020d1f2c8a7b00000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000002",
+      "msg_sender": "0x0ad6161c0dc6b9a6c73b1bc505f142c6b91b2e26",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x"
+      },
+      "events": [
+        {
+          "name": "VotingProofSubmitted",
+          "args": {
+            "proposalId": "0xe2951ab3489f528193eed3c32cbb9aef65d59885d80c3e75d906933c09187dbc",
+            "votingProofRoot": "0x89fa09570bfc40270bdeb3afd0b525c4e454ce56ac640cb16e1c06707650a123",
+            "achievedBps": "10000"
+          }
+        },
+        {
+          "name": "StageAdvanced",
+          "args": {
+            "proposalId": "0xe2951ab3489f528193eed3c32cbb9aef65d59885d80c3e75d906933c09187dbc",
+            "from": "2",
+            "to": "3"
+          }
+        }
+      ],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 65,
+      "target_contract": "EvidenceAnchor",
+      "target_address": "0x5c513e7c7165ddd8c6a019c87e301a86ceb83f9f",
+      "selector": "0xa25e29d7",
+      "function": "anchor(bytes32,uint8)",
+      "args": [],
+      "raw_calldata": "0xa25e29d789fa09570bfc40270bdeb3afd0b525c4e454ce56ac640cb16e1c06707650a1230000000000000000000000000000000000000000000000000000000000000003",
+      "msg_sender": "0x0c45111b08fdd26af7b157851122826fc6791937",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0x"
+      },
+      "events": [
+        {
+          "name": "EvidenceAnchored",
+          "args": {
+            "contentHash": "0x89fa09570bfc40270bdeb3afd0b525c4e454ce56ac640cb16e1c06707650a123",
+            "submitter": "0x0c45111b08fdd26af7b157851122826fc6791937",
+            "evidenceType": "3",
+            "timestamp": "32405"
+          }
+        }
+      ],
+      "state_delta": [],
+      "revert_reason": null
+    },
+    {
+      "idx": 66,
+      "target_contract": "LegislativePipeline",
+      "target_address": "0x0c45111b08fdd26af7b157851122826fc6791937",
+      "selector": "0x430694cf",
+      "function": "getProposal(bytes32)",
+      "args": [],
+      "raw_calldata": "0x430694cfe2951ab3489f528193eed3c32cbb9aef65d59885d80c3e75d906933c09187dbc",
+      "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
+      "value_wei": "0",
+      "result": {
+        "kind": "ok",
+        "return_data": "0xe2951ab3489f528193eed3c32cbb9aef65d59885d80c3e75d906933c09187dbc0000000000000000000000006bef539e8319dacba4c2dad055006e79682c0f320000000000000000000000000000000000000000000000000000000000000004fd65e1301a89112fc3bc95a2730b92a002e772986b0fcce7dda1ed69c80eb04d89fa09570bfc40270bdeb3afd0b525c4e454ce56ac640cb16e1c06707650a123a0d3785d75790e55fbf1b33b160a6522b4bc7bbb121f1b2f95c6020d1f2c8a7bfd65e1301a89112fc3bc95a2730b92a002e772986b0fcce7dda1ed69c80eb04d000000000000000000000000000000000000000000000000000000000000000300000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000007e9500000000000000000000000000000000000000000000000000000000000027100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002c4fec9457dfa20b4ec07a45f267176fc97d23b0000000000000000000000002c7006c8e20ac50b09caecb8dba99653f916ebb300000000000000000000000048f65cc424f8612724db954120cc11da153cc28800000000000000000000000050b58e6db0c34c69991286b52b12550c552e62d70000000000000000000000007d75678b964df6242bd3fbba596405c9a65a6148"
+      },
+      "events": [],
+      "state_delta": [],
+      "revert_reason": null
+    }
+  ]
+}

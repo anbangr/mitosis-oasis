@@ -92,14 +92,14 @@ def test_t1_pyproject_version_is_080() -> None:
 
 def test_t1_init_version_is_080() -> None:
     text = _read_file_text("oasis/__init__.py")
-    assert re.search(r'__version__\s*=\s*"0\.8\.1"', text), (
+    assert re.search(r'__version__\s*=\s*"0\.8\.2"', text), (
         "oasis/__init__.py missing __version__ = '0.8.2'"
     )
 
 
 def test_t1_api_version_is_080() -> None:
     text = _read_file_text("oasis/api.py")
-    assert re.search(r'version\s*=\s*"0\.8\.1"', text), (
+    assert re.search(r'version\s*=\s*"0\.8\.2"', text), (
         "oasis/api.py missing version='0.8.2' in FastAPI(...)"
     )
 

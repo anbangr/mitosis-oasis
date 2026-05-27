@@ -3,11 +3,11 @@
   "source": {
     "foundry_test": "test/LegislativePipeline.t.sol:LegislativePipelineTest::testFuzz_quorumMath_matchesBpsFormula(uint256,uint256)",
     "contracts_sha": "0x19e8e5db7d2dce557ecf00eeff05c55c9c230293040f11c2f15719d0dbf9ec54",
-    "captured_at": "2026-05-26T04:17:12Z",
+    "captured_at": "2026-05-27T08:33:03Z",
     "solc_version": "0.8.28",
     "forge_json_version": "1.5.1-stable"
   },
-  "power": "legislation",
+  "power": "legislative",
   "primary_contract": "LegislativePipeline",
   "test_status": "Success",
   "calls": [
@@ -524,12 +524,12 @@
       "selector": "0x49641c28",
       "function": "submitVotingProof(bytes32,bytes32,uint256,uint256)",
       "args": [],
-      "raw_calldata": "0x49641c28273ece85dbfc3bca30d0bcba93663c236c59ff1dc61becc2f40616f5f00de8f28b412ba692fbf34567f645a515751c37e3191260aa13f60ba56ffdcae318d87b0000000000000000000000000000000000000000000000000000000000080f8a00000000000000000000000000000000000000000000000000000000000f4240",
+      "raw_calldata": "0x49641c28273ece85dbfc3bca30d0bcba93663c236c59ff1dc61becc2f40616f5f00de8f2f05c61f41db41191e62fd80f6b7619d7abeeb980e49e2b7116c1d249266c42bd0000000000000000000000000000000000000000000000000000000000036eca0000000000000000000000000000000000000000000000000000000000081f2a",
       "msg_sender": "0x7fa9385be102ac3eac297483dd6233d62b3e1496",
       "value_wei": "0",
       "result": {
         "kind": "revert",
-        "return_data": "0x2694e19e00000000000000000000000000000000000000000000000000000000000014a20000000000000000000000000000000000000000000000000000000000001770"
+        "return_data": "0x2694e19e00000000000000000000000000000000000000000000000000000000000010820000000000000000000000000000000000000000000000000000000000001770"
       },
       "events": [],
       "state_delta": [],

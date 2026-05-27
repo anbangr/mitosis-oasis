@@ -131,3 +131,4 @@ scratch_*.log
 
 # Conformance test reports (generated artefacts, not tracked)
 test/conformance/reports/
+.llm-tmp/

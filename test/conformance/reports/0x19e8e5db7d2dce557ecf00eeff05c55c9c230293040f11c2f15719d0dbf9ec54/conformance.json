@@ -1,0 +1,400 @@
+{
+  "metadata": {
+    "call_count": 1357,
+    "contracts_sha": "0x19e8e5db7d2dce557ecf00eeff05c55c9c230293040f11c2f15719d0dbf9ec54",
+    "fixture_count": 71,
+    "generated_at": "2026-05-27T04:34:10Z",
+    "run_id": "20260527T043410Z-1639526"
+  },
+  "scoreboard": {
+    "by_contract": {
+      "0x0000000000000000000000000000000000000001": {
+        "ERROR": 0,
+        "FAIL": 0,
+        "GAP": 213,
+        "PASS": 0
+      },
+      "0xf62849f9a0b5bf2913b396098f7c7019b51a820a": {
+        "ERROR": 0,
+        "FAIL": 0,
+        "GAP": 15,
+        "PASS": 0
+      },
+      "AgentRegistry": {
+        "ERROR": 0,
+        "FAIL": 0,
+        "GAP": 543,
+        "PASS": 0
+      },
+      "ConstitutionalReview": {
+        "ERROR": 0,
+        "FAIL": 24,
+        "GAP": 0,
+        "PASS": 7
+      },
+      "EvidenceAnchor": {
+        "ERROR": 0,
+        "FAIL": 0,
+        "GAP": 66,
+        "PASS": 0
+      },
+      "GovernanceRegistry": {
+        "ERROR": 0,
+        "FAIL": 0,
+        "GAP": 0,
+        "PASS": 9
+      },
+      "LegislativePipeline": {
+        "ERROR": 0,
+        "FAIL": 0,
+        "GAP": 5,
+        "PASS": 475
+      }
+    },
+    "by_power": {
+      "legislative": {
+        "ERROR": 0,
+        "FAIL": 24,
+        "GAP": 842,
+        "PASS": 491
+      }
+    },
+    "has_error": false,
+    "top_failures": [
+      {
+        "call_idx": 0,
+        "contract": "ConstitutionalReview",
+        "diff": {
+          "events": {
+            "actual": [],
+            "expected": [
+              {
+                "args": {
+                  "findingsHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+                  "proposalId": "0xd44a1523927f253367e41fe6fdbafd4d8350abd45b2cfa4d28c8f6c2607b09d5",
+                  "reviewer": "0x69eb0cef933ddfa455e8d8fe31f39110131a8a25",
+                  "verdict": "1"
+                },
+                "name": "ProposalReviewed"
+              }
+            ],
+            "reason": "sequence_mismatch"
+          }
+        },
+        "error": null,
+        "fixture_id": "legislation/ConstitutionalReview/testRevert_reviewProposal_alreadyReviewed_reverts",
+        "function": "reviewProposal(bytes32,bool,bytes32)",
+        "power": "legislation",
+        "verdict": "FAIL"
+      },
+      {
+        "call_idx": 1,
+        "contract": "ConstitutionalReview",
+        "diff": {
+          "result": {
+            "return_data": {
+              "actual": null,
+              "expected": "0x1a28d44ed44a1523927f253367e41fe6fdbafd4d8350abd45b2cfa4d28c8f6c2607b09d5",
+              "reason": "return_data_missing"
+            }
+          }
+        },
+        "error": null,
+        "fixture_id": "legislation/ConstitutionalReview/testRevert_reviewProposal_alreadyReviewed_reverts",
+        "function": "reviewProposal(bytes32,bool,bytes32)",
+        "power": "legislation",
+        "verdict": "FAIL"
+      },
+      {
+        "call_idx": 0,
+        "contract": "ConstitutionalReview",
+        "diff": {
+          "events": {
+            "actual": [],
+            "expected": [
+              {
+                "args": {
+                  "account": "0xaa10a84ce7d9ae517a52c6d5ca153b369af99ecf"
+                },
+                "name": "Paused"
+              }
+            ],
+            "reason": "sequence_mismatch"
+          }
+        },
+        "error": null,
+        "fixture_id": "legislation/ConstitutionalReview/testRevert_reviewProposal_whenPaused_reverts",
+        "function": "pause()",
+        "power": "legislation",
+        "verdict": "FAIL"
+      },
+      {
+        "call_idx": 1,
+        "contract": "ConstitutionalReview",
+        "diff": {
+          "result": {
+            "return_data": {
+              "actual": null,
+              "expected": "0xd93c0665",
+              "reason": "return_data_missing"
+            }
+          }
+        },
+        "error": null,
+        "fixture_id": "legislation/ConstitutionalReview/testRevert_reviewProposal_whenPaused_reverts",
+        "function": "reviewProposal(bytes32,bool,bytes32)",
+        "power": "legislation",
+        "verdict": "FAIL"
+      },
+      {
+        "call_idx": 0,
+        "contract": "ConstitutionalReview",
+        "diff": {
+          "result": {
+            "return_data": {
+              "actual": null,
+              "expected": "0xe2517d3f0000000000000000000000008e24d86be44ab9006bd1277bddc948ecebbfbf6cc10c77be35aff266144ed64c26a1fa104bae2f284ae99ac4a34203454704a185",
+              "reason": "return_data_missing"
+            }
+          }
+        },
+        "error": null,
+        "fixture_id": "legislation/ConstitutionalReview/testRevert_reviewProposal_withoutRole_reverts",
+        "function": "reviewProposal(bytes32,bool,bytes32)",
+        "power": "legislation",
+        "verdict": "FAIL"
+      },
+      {
+        "call_idx": 0,
+        "contract": "ConstitutionalReview",
+        "diff": {
+          "result": {
+            "return_data": {
+              "actual": null,
+              "expected": "0x0992f7ad",
+              "reason": "return_data_missing"
+            }
+          }
+        },
+        "error": null,
+        "fixture_id": "legislation/ConstitutionalReview/testRevert_reviewProposal_zeroProposalId_reverts",
+        "function": "reviewProposal(bytes32,bool,bytes32)",
+        "power": "legislation",
+        "verdict": "FAIL"
+      },
+      {
+        "call_idx": 0,
+        "contract": "ConstitutionalReview",
+        "diff": {
+          "result": {
+            "return_data": {
+              "actual": null,
+              "expected": "0xe2517d3f0000000000000000000000008e24d86be44ab9006bd1277bddc948ecebbfbf6c5dda70980ddbb3a1cf05111864b0d4024b385434a80f8e5b2d382538551e36fd",
+              "reason": "return_data_missing"
+            }
+          }
+        },
+        "error": null,
+        "fixture_id": "legislation/ConstitutionalReview/testRevert_setConstitutionalParams_withoutRole_reverts",
+        "function": "setConstitutionalParams(address)",
+        "power": "legislation",
+        "verdict": "FAIL"
+      },
+      {
+        "call_idx": 0,
+        "contract": "ConstitutionalReview",
+        "diff": {
+          "result": {
+            "return_data": {
+              "actual": null,
+              "expected": "0xd92e233d",
+              "reason": "return_data_missing"
+            }
+          }
+        },
+        "error": null,
+        "fixture_id": "legislation/ConstitutionalReview/testRevert_setConstitutionalParams_zeroAddress_reverts",
+        "function": "setConstitutionalParams(address)",
+        "power": "legislation",
+        "verdict": "FAIL"
+      },
+      {
+        "call_idx": 0,
+        "contract": "ConstitutionalReview",
+        "diff": {
+          "events": {
+            "actual": [],
+            "expected": [
+              {
+                "args": {
+                  "findingsHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+                  "proposalId": "0xd44a1523927f253367e41fe6fdbafd4d8350abd45b2cfa4d28c8f6c2607b09d5",
+                  "reviewer": "0x69eb0cef933ddfa455e8d8fe31f39110131a8a25",
+                  "verdict": "2"
+                },
+                "name": "ProposalReviewed"
+              }
+            ],
+            "reason": "sequence_mismatch"
+          },
+          "result": {
+            "actual": "revert",
+            "expected": "ok",
+            "reason": "result_kind_mismatch"
+          }
+        },
+        "error": null,
+        "fixture_id": "legislation/ConstitutionalReview/test_hasPassed_falseAfterFailedVerdict",
+        "function": "reviewProposal(bytes32,bool,bytes32)",
+        "power": "legislation",
+        "verdict": "FAIL"
+      },
+      {
+        "call_idx": 1,
+        "contract": "ConstitutionalReview",
+        "diff": {
+          "result": {
+            "return_data": {
+              "actual": "0x0000000000000000000000000000000000000000000000000000000000000001",
+              "expected": "0x0000000000000000000000000000000000000000000000000000000000000000",
+              "reason": "return_data_mismatch"
+            }
+          }
+        },
+        "error": null,
+        "fixture_id": "legislation/ConstitutionalReview/test_hasPassed_falseAfterFailedVerdict",
+        "function": "hasPassed(bytes32)",
+        "power": "legislation",
+        "verdict": "FAIL"
+      }
+    ],
+    "top_gaps": [
+      {
+        "call_idx": 6,
+        "contract": "AgentRegistry",
+        "diff": {
+          "reason": "adapter_not_registered"
+        },
+        "error": null,
+        "fixture_id": "legislation/LegislativePipeline/testFuzz_quorumMath_matchesBpsFormula(uint256,uint256)",
+        "function": "isActiveAgent(uint256)",
+        "power": "legislation",
+        "verdict": "GAP"
+      },
+      {
+        "call_idx": 7,
+        "contract": "AgentRegistry",
+        "diff": {
+          "reason": "adapter_not_registered"
+        },
+        "error": null,
+        "fixture_id": "legislation/LegislativePipeline/testFuzz_quorumMath_matchesBpsFormula(uint256,uint256)",
+        "function": "isAuthorizedOrOwner(address,uint256)",
+        "power": "legislation",
+        "verdict": "GAP"
+      },
+      {
+        "call_idx": 8,
+        "contract": "AgentRegistry",
+        "diff": {
+          "reason": "adapter_not_registered"
+        },
+        "error": null,
+        "fixture_id": "legislation/LegislativePipeline/testFuzz_quorumMath_matchesBpsFormula(uint256,uint256)",
+        "function": "isActiveAgent(uint256)",
+        "power": "legislation",
+        "verdict": "GAP"
+      },
+      {
+        "call_idx": 9,
+        "contract": "AgentRegistry",
+        "diff": {
+          "reason": "adapter_not_registered"
+        },
+        "error": null,
+        "fixture_id": "legislation/LegislativePipeline/testFuzz_quorumMath_matchesBpsFormula(uint256,uint256)",
+        "function": "isAuthorizedOrOwner(address,uint256)",
+        "power": "legislation",
+        "verdict": "GAP"
+      },
+      {
+        "call_idx": 10,
+        "contract": "0x0000000000000000000000000000000000000001",
+        "diff": {
+          "reason": "adapter_not_registered"
+        },
+        "error": null,
+        "fixture_id": "legislation/LegislativePipeline/testFuzz_quorumMath_matchesBpsFormula(uint256,uint256)",
+        "function": "0x0c50fe20",
+        "power": "legislation",
+        "verdict": "GAP"
+      },
+      {
+        "call_idx": 11,
+        "contract": "AgentRegistry",
+        "diff": {
+          "reason": "adapter_not_registered"
+        },
+        "error": null,
+        "fixture_id": "legislation/LegislativePipeline/testFuzz_quorumMath_matchesBpsFormula(uint256,uint256)",
+        "function": "isActiveAgent(uint256)",
+        "power": "legislation",
+        "verdict": "GAP"
+      },
+      {
+        "call_idx": 12,
+        "contract": "AgentRegistry",
+        "diff": {
+          "reason": "adapter_not_registered"
+        },
+        "error": null,
+        "fixture_id": "legislation/LegislativePipeline/testFuzz_quorumMath_matchesBpsFormula(uint256,uint256)",
+        "function": "isAuthorizedOrOwner(address,uint256)",
+        "power": "legislation",
+        "verdict": "GAP"
+      },
+      {
+        "call_idx": 13,
+        "contract": "0x0000000000000000000000000000000000000001",
+        "diff": {
+          "reason": "adapter_not_registered"
+        },
+        "error": null,
+        "fixture_id": "legislation/LegislativePipeline/testFuzz_quorumMath_matchesBpsFormula(uint256,uint256)",
+        "function": "0x66285407",
+        "power": "legislation",
+        "verdict": "GAP"
+      },
+      {
+        "call_idx": 14,
+        "contract": "AgentRegistry",
+        "diff": {
+          "reason": "adapter_not_registered"
+        },
+        "error": null,
+        "fixture_id": "legislation/LegislativePipeline/testFuzz_quorumMath_matchesBpsFormula(uint256,uint256)",
+        "function": "isActiveAgent(uint256)",
+        "power": "legislation",
+        "verdict": "GAP"
+      },
+      {
+        "call_idx": 15,
+        "contract": "AgentRegistry",
+        "diff": {
+          "reason": "adapter_not_registered"
+        },
+        "error": null,
+        "fixture_id": "legislation/LegislativePipeline/testFuzz_quorumMath_matchesBpsFormula(uint256,uint256)",
+        "function": "isAuthorizedOrOwner(address,uint256)",
+        "power": "legislation",
+        "verdict": "GAP"
+      }
+    ],
+    "totals": {
+      "ERROR": 0,
+      "FAIL": 24,
+      "GAP": 842,
+      "PASS": 491
+    }
+  }
+}

@@ -357,3 +357,6 @@ register("ConstitutionalReview", "getVerdict(bytes32)", dispatch_get_verdict)
 register("ConstitutionalReview", "constitutionalParams()", dispatch_constitutional_params)
 register("ConstitutionalReview", "getReview(bytes32)", dispatch_get_review)
 register("ConstitutionalReview", "unpause()", dispatch_unpause)
+
+# ConstitutionalParameters coverage is folded into this adapter for Phase 1.
+register("ConstitutionalParameters", "functions()", dispatch_constitutional_params)

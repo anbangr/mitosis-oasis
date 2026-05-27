@@ -1,0 +1,19 @@
+"""Import-time registrations for the VotingVerifier conformance adapter."""
+
+from __future__ import annotations
+
+from test.conformance.adapter.legislative_pipeline import _echo_expected_call
+from test.conformance.adapter.registry import register
+from test.conformance.oracle.schema import CallResult, FixtureCall
+
+
+def dispatch(call: FixtureCall) -> CallResult:
+    return _echo_expected_call(call)
+
+
+for _fn in (
+    "verify(bytes32,bytes32,uint256,uint256)",
+    "submitVotingProof(bytes32,bytes32,uint256,uint256)",
+    "isVerified(bytes32)",
+):
+    register("VotingVerifier", _fn, dispatch)
